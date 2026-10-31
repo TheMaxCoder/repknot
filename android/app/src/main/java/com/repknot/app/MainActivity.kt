@@ -219,11 +219,12 @@ private fun FinishSection(state: LoggingState, session: com.repknot.data.Session
             session?.let { row ->
                 Text(when (row.status) {
                     "conflict" -> "Changed elsewhere · choose which version to keep"
+                    "conflict_deleted" -> "Deleted elsewhere · keep your copy or accept deletion"
                     "pushed" -> "Uploaded"
                     "finished" -> "Saved on phone · will upload"
                     else -> "Ready to finish"
                 })
-                if (row.status == "conflict") {
+                if (row.status == "conflict" || row.status == "conflict_deleted") {
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Button(onClick = sync::keepMine) { Text("Keep mine") }
                         OutlinedButton(onClick = sync::takeTheirs) { Text("Take theirs") }

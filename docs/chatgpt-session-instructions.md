@@ -17,3 +17,8 @@ is not evidence that this ChatGPT account has a compatible scoped write connecti
 - Send a complete snapshot: `performed_on` (ISO date), `title`, optional `notes`, and
   `sets` as an array with `exercise_name`, `load`, `unit` (`kg` or `lb`), `reps`,
   optional `rir` and optional `notes`. Saving replaces the session's set list.
+- When updating an existing session, include its last-read `revision` as
+  `expected_revision`. If the function returns `status: conflict`, re-read the
+  session and ask the user how to resolve it; do not retry with a newer revision
+  without reviewing the intervening changes. A conflict with `session: null` means
+  it was deleted. Omit `expected_revision` only when creating a new session.

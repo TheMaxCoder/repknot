@@ -3,6 +3,7 @@ package com.repknot.data
 import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Columns
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -51,7 +52,13 @@ class SessionSync(private val cloud: CloudAccount, private val dao: SessionDao, 
         val client = cloud.requireClient()
         val remote = client.from("workout_sessions").select(Columns.raw("*,session_sets(*)")).decodeList<ServerSession>()
         dao.replaceCache(remote)
-        for (row in dao.pending()) push(row)
+        var firstFailure: Exception? = null
+        for (row in dao.pending()) {
+            try { push(row) }
+            catch (e: CancellationException) { throw e }
+            catch (e: Exception) { if (firstFailure == null) firstFailure = e }
+        }
+        firstFailure?.let { throw it }
     }
 
     private suspend fun push(row: SessionRow) {
@@ -67,8 +74,8 @@ class SessionSync(private val cloud: CloudAccount, private val dao: SessionDao, 
                 dao.acknowledge(current.id, current.localRevision, remote.revision, remote.number)
             }
             "conflict" -> {
-                requireNotNull(remote)
-                dao.handleConflict(remote)
+                if (remote == null) dao.deletedConflict(current.id)
+                else dao.handleConflict(remote)
             }
             else -> error("Unexpected push status: ${response.status}")
         }
@@ -76,13 +83,19 @@ class SessionSync(private val cloud: CloudAccount, private val dao: SessionDao, 
 
     suspend fun keepMine(id: String) {
         val row = dao.get(id) ?: return
-        val remote = codec.decodeFromString<ServerSession>(requireNotNull(row.serverSnapshot))
-        dao.keepMine(id, remote.revision, remote.clientRevision ?: 0)
+        if (row.status == "conflict_deleted") dao.recreateDeleted(id)
+        else {
+            val remote = codec.decodeFromString<ServerSession>(requireNotNull(row.serverSnapshot))
+            dao.keepMine(id, remote.revision, remote.clientRevision ?: 0)
+        }
         refreshAndPush()
     }
     suspend fun takeTheirs(id: String) {
         val row = dao.get(id) ?: return
-        val remote = codec.decodeFromString<ServerSession>(requireNotNull(row.serverSnapshot))
-        dao.adopt(remote, row.localRevision)
+        if (row.status == "conflict_deleted") dao.takeDeleted(id)
+        else {
+            val remote = codec.decodeFromString<ServerSession>(requireNotNull(row.serverSnapshot))
+            dao.adopt(remote, row.localRevision)
+        }
     }
 }

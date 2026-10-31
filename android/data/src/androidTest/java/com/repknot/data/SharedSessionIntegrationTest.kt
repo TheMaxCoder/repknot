@@ -15,6 +15,8 @@ import kotlinx.serialization.json.putJsonArray
 import kotlinx.serialization.json.putJsonObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Assume.assumeTrue
 import org.junit.Test
 import java.util.UUID
@@ -67,6 +69,39 @@ class SharedSessionIntegrationTest {
                 val remote = client.from("workout_sessions").select { filter { eq("id", id) } }.decodeList<ServerSession>()
                 assertEquals(1, remote.size)
             }
+            // A server deletion must not stop unrelated pending uploads, even when
+            // a different session's payload is rejected by the server.
+            val deletedId = UUID.randomUUID().toString(); val deletedSet = UUID.randomUUID().toString(); ids += deletedId
+            db.sets().save(deletedSet, deletedId, SetValues(10.0, LoadUnit.KG, 5, null))
+            db.sessions().finish(deletedId)
+            val sync = SessionSync(cloud, db.sessions())
+            sync.refreshAndPush()
+            client.from("workout_sessions").delete { filter { eq("id", deletedId) } }
+            db.sets().save(deletedSet, deletedId, SetValues(12.0, LoadUnit.KG, 5, null))
+            val badId = UUID.randomUUID().toString(); val goodId = UUID.randomUUID().toString()
+            val badSet = UUID.randomUUID().toString(); val goodSet = UUID.randomUUID().toString()
+            ids += badId; ids += goodId
+            db.sets().save(badSet, badId, SetValues(1.0, LoadUnit.KG, 5, null)); db.sessions().finish(badId)
+            val badRow = db.sessions().sets(badId).single()
+            db.sessions().putSets(listOf(badRow.copy(unit = "INVALID")))
+            db.sets().save(goodSet, goodId, SetValues(2.0, LoadUnit.KG, 5, null)); db.sessions().finish(goodId)
+            val order = db.sessions().pending().map { it.id }
+            assertTrue(order.indexOf(badId) < order.indexOf(goodId))
+            assertTrue(runCatching { sync.refreshAndPush() }.isFailure)
+            assertEquals("conflict_deleted", db.sessions().get(deletedId)!!.status)
+            assertEquals("finished", db.sessions().get(badId)!!.status)
+            assertEquals("pushed", db.sessions().get(goodId)!!.status)
+            // Keep mine recreates using the same ID; a second deletion can then be
+            // accepted, removing both local session and its sets.
+            runCatching { sync.keepMine(deletedId) }
+            assertEquals("pushed", db.sessions().get(deletedId)!!.status)
+            client.from("workout_sessions").delete { filter { eq("id", deletedId) } }
+            db.sets().save(deletedSet, deletedId, SetValues(14.0, LoadUnit.KG, 5, null))
+            runCatching { sync.refreshAndPush() }
+            assertEquals("conflict_deleted", db.sessions().get(deletedId)!!.status)
+            sync.takeTheirs(deletedId)
+            assertNull(db.sessions().get(deletedId))
+            assertEquals(0, db.sessions().sets(deletedId).size)
         } finally {
             for (id in ids) client.from("workout_sessions").delete { filter { eq("id", id) } }
             db.close()

@@ -16,7 +16,7 @@ insert into tap(line) select is((select value->'session'->'sets'->0->>'notes' fr
 insert into results values ('replay', public.push_session('{"id":"20000000-0000-4000-a000-000000000001"}'::jsonb,1,null));
 insert into tap(line) select is((select value->>'status' from results where key='replay'),'replay','lost response replay recognized');
 insert into tap(line) select is((select count(*) from workout_sessions),1::bigint,'replay creates no duplicate');
-insert into results values ('chat', public.save_session('{"ref":"20000000-0000-4000-a000-000000000001","performed_on":"2026-10-31","title":"Chat edit","sets":[]}'::jsonb));
+insert into results values ('chat', public.save_session('{"ref":"20000000-0000-4000-a000-000000000001","performed_on":"2026-10-31","title":"Chat edit","sets":[]}'::jsonb || jsonb_build_object('expected_revision', (select (value->'session'->>'revision')::bigint from results where key='first'))));
 insert into tap(line) select is((select value->>'source' from results where key='chat'),'chatgpt','save marks source');
 insert into results values ('stale_replay', public.push_session('{"id":"20000000-0000-4000-a000-000000000001"}'::jsonb,1,null));
 insert into tap(line) select is((select value->>'status' from results where key='stale_replay'),'conflict','replay after external edit conflicts');

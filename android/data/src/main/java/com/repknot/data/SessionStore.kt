@@ -39,7 +39,7 @@ interface SessionDao {
     suspend fun sets(id: String): List<SetRow>
     @Query("SELECT * FROM logged_sets WHERE sessionId = :id ORDER BY position, id")
     fun observeSets(id: String): Flow<List<SetRow>>
-    @Query("UPDATE sessions SET status = 'finished' WHERE id = :id AND status != 'conflict'")
+    @Query("UPDATE sessions SET status = 'finished' WHERE id = :id AND status NOT IN ('conflict', 'conflict_deleted')")
     suspend fun finish(id: String)
     @Query("UPDATE sessions SET notes = :notes, localRevision = localRevision + 1, status = CASE WHEN status = 'pushed' THEN 'finished' ELSE status END WHERE id = :id")
     suspend fun updateSessionNotes(id: String, notes: String?)
@@ -56,6 +56,18 @@ interface SessionDao {
     suspend fun acknowledge(id: String, revision: Long, serverRevision: Long, number: Long)
     @Query("UPDATE sessions SET status = 'conflict', serverSnapshot = :snapshot WHERE id = :id")
     suspend fun conflict(id: String, snapshot: String)
+    @Query("UPDATE sessions SET status = 'conflict_deleted', serverSnapshot = NULL WHERE id = :id")
+    suspend fun deletedConflict(id: String)
+    @Query("UPDATE sessions SET status = 'finished', baseRevision = NULL, localRevision = localRevision + 1, serverSnapshot = NULL WHERE id = :id AND status = 'conflict_deleted'")
+    suspend fun recreateDeleted(id: String)
+    @Query("DELETE FROM sessions WHERE id = :id AND status = 'conflict_deleted'")
+    suspend fun deleteConflictRow(id: String)
+    @Transaction
+    suspend fun takeDeleted(id: String) {
+        if (get(id)?.status != "conflict_deleted") return
+        deleteSets(id)
+        deleteConflictRow(id)
+    }
     @Query("UPDATE sessions SET status = 'finished', baseRevision = :revision, localRevision = MAX(localRevision, :clientRevision) + 1, serverSnapshot = NULL WHERE id = :id")
     suspend fun keepMine(id: String, revision: Long, clientRevision: Long)
     @Query("DELETE FROM logged_sets WHERE sessionId = :id")

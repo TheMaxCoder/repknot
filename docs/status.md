@@ -5,8 +5,8 @@ Updated: 2026-11-01
 ## Current state
 
 - Android app/domain/data modules; dark-only Compose logging screen for one synthetic set.
-- Last build verification (2026-10-31): `scripts/check --offline` passed with 4 unit
-  tests. Lint has only non-blocking version/backup warnings.
+- Last build verification (2026-11-01): `scripts/check --offline` passed; see task 004
+  for database and device verification. Lint has only non-blocking warnings.
 - Device smoke test (2026-10-31): installed the existing debug APK on the test phone
   (API 36). Cold launch and force-stop/relaunch succeeded. Screenshots confirmed
   readable content, unobstructed system-bar insets, and dark appearance with both
@@ -22,8 +22,7 @@ Updated: 2026-11-01
 
 ## Current task
 
-No active implementation task. [003 — Pull on open, push finished sessions](tasks/003-session-sync.md)
-is done. The next task is not yet authorized by the backlog alone.
+No active implementation task. [004 — Guard external saves and resolve deleted-session conflicts](tasks/004-sync-review-fixes.md) and [003](tasks/003-session-sync.md) are done.
 
 ## Next priorities
 

@@ -109,6 +109,9 @@ at a time on the phone. We need:
 - The phone keeps its copy and marks the session `conflict`.
 - The user chooses **keep mine** (re-push using the server's revision as the base) or
   **take theirs** (discard the local copy).
+- If the server session was deleted, the prompt offers keep mine (recreate with the
+  same ID) or take theirs (delete the local copy). A concurrent recreation is checked
+  again and can produce a new conflict.
 - Nothing is merged automatically.
 
 ### 6. Other writers
@@ -126,7 +129,9 @@ at a time on the phone. We need:
   ChatGPT project instructions must say:
   - Save sessions only with `save_session`.
   - Always reuse the `ref` from pasted text, and never invent IDs.
-  - Read the current session before updating it.
+  - Read the current session before updating it and supply its revision as
+    `expected_revision`; on mismatch or deletion the function returns a conflict and
+    leaves the server unchanged.
 - **Connector risk (unverified):** the connector likely runs SQL with owner privileges.
   That would bypass RLS, and depending on authorization it could reach every project on
   the account, prod included. Before relying on it:
