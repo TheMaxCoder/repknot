@@ -1,0 +1,13 @@
+# Local tools and generated output
+.idea/
+**/.gradle/
+**/.kotlin/
+**/build/
+**/local.properties
+.env
+.env.*
+!.env.example
+*.jks
+*.keystore
+# Private health exports
+/private-data/

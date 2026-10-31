@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">Repknot</string>
+    <string name="welcome_title">Make every rep count.</string>
+    <string name="welcome_body">Your workouts, at your pace.</string>
+    <string name="empty_title">A fresh start</string>
+    <string name="empty_body">Your training program and workouts will appear here.</string>
+</resources>
