@@ -22,7 +22,7 @@ Native Kotlin/Compose workout logger. Read `Repknot-PRD.md` for product scope,
   task size. Routine implementation details do not need ADRs.
 - Upgrade a small task to a plan if investigation warrants it. State the choice
   briefly and proceed; classification and planning do not require approval.
-- A task file contains: status, outcome/acceptance, scope, plan/progress,
+- A task file contains: status, starting commit, outcome/acceptance, scope, plan/progress,
   decisions/discoveries, verification, and handoff. Keep enough context to resume
   without chat history; link stable repo docs instead of copying them.
 - An ADR contains: status/date, context, decision, alternatives, consequences.
@@ -43,12 +43,34 @@ Native Kotlin/Compose workout logger. Read `Repknot-PRD.md` for product scope,
 - For one-shot changes, update durable docs only when project state or decisions
   change; the final report and Git diff are enough for trivial edits.
 
+## Commits and review handoff
+Work is reviewed from Git, so commit as you go; this is standing authorization to
+commit (not push) on `main`.
+- Commit each verified, coherent step (e.g. migration + its tests; one UI slice), not
+  a whole task at once. Relevant checks must pass first. Never commit a broken build;
+  if stopping mid-step, leave it uncommitted and list it in the task handoff.
+- Stage files explicitly and check `git status`/the staged diff: no secrets, `.env`,
+  `private-data/`, build output, or unrelated changes. Never rewrite existing commits.
+- Message: imperative subject with task number; body says what and why, then:
+  `Verified:` exact commands and results · `Not verified:` what is pending or skipped ·
+  `Review:` anything needing a careful look (omit empty lines only if truly none).
+- Always flag under `Review:` (and in the task notes): RLS/grants/security-definer or
+  auth changes, migrations that drop or rewrite data, sync/conflict/revision logic,
+  destructive device or database actions, weakened or skipped tests, new dependencies,
+  deviations from an ADR or the task plan, and guesses about requirements.
+- Record the task's starting commit in its file so the reviewer can diff the range.
+  The final report lists commits, verification, open concerns, and the next action.
+- Reviewers re-run checks rather than trusting reports, and verify claims against the diff.
+- Never print credential values (from `.env` or elsewhere) in output, logs, or commits.
+
 ## Commands
 - `scripts/check` — debug build, Android lint, and available unit tests.
 - `cd android && ./gradlew :app:installDebug` — install on a connected device.
 - `scripts/db push` / `scripts/db test` — apply migrations / run pgTAP tests on the linked
   dev project (refuses any other project). Tests must roll back; see existing test layout.
 - `scripts/repknot …` — CLI as the signed-in user (`--as test2` for the second user).
+- `scripts/airtable-normalize <export-dir>` — regenerate import-ready CSVs from a
+  private Airtable export (`private-data/README.md` describes the layout).
 
 ## Boundaries
 - Dark-only UI, including launch background and system bars. No theme toggle or dynamic colors.
