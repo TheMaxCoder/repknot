@@ -19,17 +19,22 @@ with Room (`WorkoutDatabase`, exported schema in `android/data/schemas/`). Manua
 - Session substitutions do not mutate the program.
 - Room is the local read source; Supabase will be the canonical shared store.
 - Persist edits and pending sync together, retain stable IDs, and handle retries without duplicates.
-- Upload acknowledgements must not discard newer local edits. Implemented locally as
-  revisions: each save increments `localRevision`; an ack sets `syncedRevision` to
-  max(current, uploaded revision); pending ⇔ `localRevision > syncedRevision`.
+- Upload acknowledgements must not discard newer local edits, and no writer (Android,
+  web, ChatGPT, CLI) may silently overwrite another's change. Revision rules are in
+  ADR 001; task 001 currently keeps local revisions per set until sessions exist.
 - Imports retain source IDs and ambiguous raw values.
 
-Start with single-device editing of active sessions. Evaluate a transactional session
-snapshot upload during implementation; avoid general multi-client sync machinery now.
+Sync model: [ADR 001](decisions/001-sync-model.md) — server data cached and refreshed on
+open, in-progress sessions phone-only, finished sessions pushed whole with retry and
+revision-based conflict detection. No general sync framework.
 
 ## Intentional deferrals
 
 Local verification only. No CI or custom command guards. Supabase schema, sign-in,
 and access policies come with the first logging slice. Use synthetic dev data;
 review access control and recovery before importing real health records. Record any
-actual temporary policy relaxation here when introduced. None exist yet.
+actual temporary policy relaxation here when introduced.
+
+- Building phase: Room schema changes ship without migrations; local data is disposable
+  (clear app data/reinstall after a schema change). Add real migrations once Android
+  starts logging real workouts.

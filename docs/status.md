@@ -27,8 +27,11 @@ not started. Needs the owner's hosted dev project and sign-in choice. Then
 ## Next priorities
 
 1. Task 002: dev backend, sign-in, ownership policies, second-user denial test.
-2. Task 003: session sync using the local revision fields.
-3. After the slice, expand session editing, previous-performance suggestions, program
+2. Task 003: pull on open + push finished sessions, per
+   [ADR 001](decisions/001-sync-model.md) (accounts for ChatGPT/web as other writers).
+3. ChatGPT write access (PRD §4): verify integration options before committing; writes
+   follow ADR 001 revision rules.
+4. After the slice, expand session editing, previous-performance suggestions, program
    rotation, check-ins, import/reconciliation, then the web companion per the PRD.
    These are roadmap directions, not claims that their detailed scope is settled.
 

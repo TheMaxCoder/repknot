@@ -30,9 +30,8 @@ Tasks 002 and 003 complete the end-to-end engineering slice; this is not PRD V0 
   cannot clear a newer edit. `SetDao.markSynced` exists for task 003; nothing calls it yet.
 - Save is a Room `@Transaction` (read, then insert or increment-update). SQLite UPSERT
   with `DO UPDATE` is unavailable on the framework SQLite of API 26, so it is not used.
-- Room schema v1 was redefined before it was ever committed or installed; exported
-  schema lives in `android/data/schemas/`. Future schema changes need a version bump
-  and migration.
+- Room schema v1 was redefined in place; exported schema lives in `android/data/schemas/`.
+  No Room migrations during the building phase (see architecture "Intentional deferrals").
 - Text input is parsed by `parseSetInput` (app), which accepts `,` or `.` as decimal
   separator. Domain `SetValues` enforces value rules.
 - Room tests are instrumented (`androidTest`) and need a device: first run needs
