@@ -29,6 +29,9 @@ and the signed-in user's session; RLS restricts every table to its owner. Schema
   ADR 001. Session revisions govern sync; individual sets do not have sync revisions.
 - Imports retain source IDs and ambiguous raw values.
 
+Training data model: [ADR 002](decisions/002-training-data-model.md) — exercises,
+immutable program versions, session prescription snapshots (being implemented in task 006).
+
 Sync model: [ADR 001](decisions/001-sync-model.md) — server data cached and refreshed on
 open, in-progress sessions phone-only, finished sessions pushed whole with retry and
 revision-based conflict detection. No general sync framework.

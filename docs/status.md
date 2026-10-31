@@ -22,14 +22,15 @@ Updated: 2026-11-01
 
 ## Current task
 
-No active implementation task. [005 — Sync review cleanup](tasks/005-sync-review-cleanup.md), [004](tasks/004-sync-review-fixes.md), and [003](tasks/003-session-sync.md) are done.
+[006 — Training data model and program-driven workouts](tasks/006-training-data-model.md)
+(in progress; design in [ADR 002](decisions/002-training-data-model.md)). Tasks 003–005 are done.
 
 ## Next priorities
 
-1. Verify a narrowly scoped, authenticated ChatGPT integration before using it to write
+1. Task 006: schema → program publish → today's workout + prefill → logging screen → import.
+2. Verify a narrowly scoped, authenticated ChatGPT integration before using it to write
    sessions; see [the draft instructions](chatgpt-session-instructions.md).
-2. Expand session editing, previous-performance suggestions, program rotation,
-   check-ins, import/reconciliation, then the web companion per the PRD.
+3. Check-ins UI, prod project + real import, then the web companion per the PRD.
    These are roadmap directions, not claims that their detailed scope is settled.
 
 ## Environment and handoff limitations

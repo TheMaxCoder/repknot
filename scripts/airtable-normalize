@@ -1,0 +1,233 @@
+#!/usr/bin/env -S python3 -I
+"""Normalize the frozen Airtable Health export into import-ready CSVs.
+
+Usage: scripts/airtable-normalize private-data/airtable-health-2026-10-31
+
+Reads <dir>/source/*.csv (untouched Airtable CSVs) and writes <dir>/normalized/.
+Nothing is guessed silently: anything ambiguous keeps its raw text and gets a
+`review` reason. The input and output are personal data; keep them in private-data/.
+"""
+import csv, json, re, sys
+from collections import Counter
+from pathlib import Path
+
+# Airtable exercise name -> stable slug and display name (program names where they exist).
+EXERCISES = {
+    "Low-Incline Bench Press": ("low-incline-db-press", "Low-incline DB press"),
+    "Lateral Raise": ("lateral-raise", "Lateral raise"),
+    "Pec Deck / Chest Fly Machine": ("pec-deck", "Pec deck"),
+    "Shoulder Press Machine": ("shoulder-press-machine", "Shoulder press machine"),
+    "Triceps Pushdown": ("triceps-pushdown", "Triceps pushdown"),
+    "Pull-Up": ("pull-up", "Pull-up"),
+    "Lat Pulldown": ("lat-pulldown", "Lat pulldown"),
+    "Seated Row": ("seated-row", "Seated row"),
+    "Biceps Curl Bar": ("biceps-curl-bar", "Biceps curl bar"),
+    "Reverse Pec Deck / Rear Delt Machine": ("reverse-pec-deck", "Reverse pec deck"),
+    "Leg Press": ("leg-press", "Leg press"),
+    "Dumbbell Romanian Deadlift": ("db-romanian-deadlift", "DB Romanian deadlift"),
+    "Leg Extension": ("leg-extension", "Leg extension"),
+    "Seated Abdominal Crunch": ("seated-ab-crunch", "Seated ab crunch"),
+    "Calf Raise": ("calf-raise", "Calf raise"),
+    "Captain's Chair Knee Raise": ("captains-chair-knee-raise", "Captain's chair knee raise"),
+}
+BODYWEIGHT = {"pull-up", "bench-dip", "push-up", "captains-chair-knee-raise"}
+UNITS = {"kg": "kg", "plates": "plates", "bodyweight": "bodyweight"}
+
+
+def slugify(name):
+    return re.sub(r"[^a-z0-9]+", "-", name.lower().replace("'", "")).strip("-")
+
+
+def exercise(name):
+    return EXERCISES.get(name, (slugify(name), name))
+
+
+def read(src, name):
+    with open(src / f"{name}.csv", encoding="utf-8-sig", newline="") as f:
+        return list(csv.DictReader(f))
+
+
+def write(out, name, fields, rows):
+    with open(out / f"{name}.csv", "w", encoding="utf-8", newline="") as f:
+        w = csv.DictWriter(f, fields, lineterminator="\n")
+        w.writeheader()
+        w.writerows(rows)
+
+
+def select(cell):
+    return json.loads(cell)["name"] if cell else ""
+
+
+def links(cell):
+    return [x["id"] for x in json.loads(cell)] if cell else []
+
+
+def link_names(cell):
+    return "; ".join(x["name"] for x in json.loads(cell)) if cell else ""
+
+
+def number(text):
+    text = text.strip().lstrip("~")
+    return float(text) if re.fullmatch(r"\d+(\.\d+)?", text) else None
+
+
+def fmt(n):
+    return "" if n is None else (str(int(n)) if float(n).is_integer() else str(n))
+
+
+def parse_reps(raw):
+    """-> list of (reps, duration_s), review reasons"""
+    raw = raw.strip()
+    review = []
+    if not raw:
+        return [(None, None)], ["no reps reported"]
+    m = re.fullmatch(r"(\d+)\s*x\s*(\d+)\s*sec", raw)
+    if m:
+        return [(None, int(m[2]))] * int(m[1]), review
+    m = re.fullmatch(r"(\d+) carries(.*)", raw)
+    if m:
+        return [(None, None)] * int(m[1]), [f"carries without exact duration: {raw}"]
+    sets = []
+    for token in (t.strip() for t in raw.split(",")):
+        if m := re.fullmatch(r"(\d+)\s*sec", token):
+            sets.append((None, int(m[1])))
+        elif m := re.fullmatch(r"(\d+)-(\d+)", token):
+            sets.append((float(m[1]), None))
+            review.append(f"rep range {token} stored as {m[1]}")
+        elif (n := number(token)) is not None:
+            sets.append((n, None))
+            if not n.is_integer():
+                review.append(f"partial rep {token}")
+        else:
+            sets.append((None, None))
+            review.append(f"unparsed reps {token!r}")
+    return sets, review
+
+
+def parse_rir(token):
+    """Lower bound of the reported reserve (closest to failure); None if unreported."""
+    token = token.strip().lower()
+    if token in ("", "not reported"):
+        return None
+    token = token.replace(" reported", "")
+    if token == "max":
+        return 0
+    m = re.fullmatch(r"~?(\d+)(?:-(\d+))?", token)
+    if not m:
+        return "?"
+    return min(int(m[1]), int(m[2] or m[1]))
+
+
+def per_set_loads(notes):
+    """'7p x12 @3 RIR. 8p x9' / '3 kg x 10,16,10' -> [(load, unit)] in note order."""
+    loads = []
+    for m in re.finditer(r"(\d+(?:\.\d+)?)\s*(kg|p)\b\s*x\s*(\d+(?:\s*,\s*\d+)*)", notes):
+        unit = "plates" if m[2] == "p" else "kg"
+        loads += [(float(m[1]), unit)] * len(m[3].split(","))
+    return loads
+
+
+def normalize_logs(logs, sessions_by_id, ex_by_id):
+    rows = []
+    for log in sorted(logs, key=lambda r: (sessions_by_id[links(r["Session"])[0]]["Date"], r["__airtable_created_time"], r["__airtable_record_id"])):
+        session = sessions_by_id[links(log["Session"])[0]]
+        slug = ex_by_id[links(log["Exercise"])[0]]
+        sets, review = parse_reps(log["Reps"])
+        rir_tokens = [t for t in log["RIR"].split(",")] if log["RIR"].strip() else []
+        if len(rir_tokens) == 1 and len(sets) > 1:
+            if rir_tokens[0].strip() == "0 by final set":
+                rir_tokens = [""] * (len(sets) - 1) + ["0"]
+            else:
+                review.append("one RIR value for several sets, applied to all")
+                rir_tokens = rir_tokens * len(sets)
+        elif rir_tokens and len(rir_tokens) != len(sets):
+            review.append(f"{len(rir_tokens)} RIR values for {len(sets)} sets")
+
+        unit = UNITS.get(select(log["Load Unit"]), "")
+        load = float(log["Load"]) if log["Load"] else None
+        loads = [(load, unit)] * len(sets)
+        if load is None and slug in BODYWEIGHT or unit == "bodyweight":
+            loads = [(None, "bodyweight")] * len(sets)
+        elif load is None:
+            parsed = per_set_loads(log["Notes"])
+            if len(parsed) == len(sets):
+                loads = parsed
+                review.append("per-set loads taken from notes")
+            elif "no added weight" in (log["Notes"] + log["Log"]).lower() or "bodyweight" in log["Log"].lower():
+                loads = [(None, "bodyweight")] * len(sets)
+            else:
+                review.append("load not recorded")
+
+        for i, ((reps, duration), (set_load, set_unit)) in enumerate(zip(sets, loads), 1):
+            rir_raw = rir_tokens[i - 1].strip() if i <= len(rir_tokens) else ""
+            rir = parse_rir(rir_raw)
+            set_review = list(review)
+            if rir == "?":
+                set_review.append(f"unparsed RIR {rir_raw!r}")
+                rir = None
+            rows.append({
+                "date": session["Date"],
+                "session_ref": session["__airtable_record_id"],
+                "log_ref": log["__airtable_record_id"],
+                "exercise": slug,
+                "set": i,
+                "load": fmt(set_load),
+                "unit": set_unit,
+                "reps": fmt(reps),
+                "duration_s": fmt(duration),
+                "rir": fmt(rir),
+                "rir_raw": rir_raw,
+                "notes": log["Notes"] if i == 1 else "",
+                "review": "; ".join(dict.fromkeys(set_review)),
+            })
+    return rows
+
+
+def main(base):
+    src, out = base / "source", base / "normalized"
+    out.mkdir(exist_ok=True)
+    ex_rows, logs, sessions = read(src, "Exercises"), read(src, "Exercise Logs"), read(src, "Sessions")
+
+    ex_by_id = {r["__airtable_record_id"]: exercise(r["Exercise"])[0] for r in ex_rows}
+    write(out, "exercises", ["slug", "name", "airtable_name", "airtable_ref", "default_unit", "active_in_airtable", "airtable_role", "airtable_notes"], [{
+        "slug": exercise(r["Exercise"])[0], "name": exercise(r["Exercise"])[1], "airtable_name": r["Exercise"],
+        "airtable_ref": r["__airtable_record_id"],
+        "default_unit": UNITS.get(select(r["Load Unit"]), "bodyweight" if exercise(r["Exercise"])[0] in BODYWEIGHT else ""),
+        "active_in_airtable": "true" if r["Active"] == "true" else "false", "airtable_role": r["Workout"], "airtable_notes": r["Notes"],
+    } for r in sorted(ex_rows, key=lambda r: exercise(r["Exercise"])[0])])
+
+    sessions_by_id = {r["__airtable_record_id"]: r for r in sessions}
+    sets = normalize_logs(logs, sessions_by_id, ex_by_id)
+    write(out, "sets", list(sets[0]), sets)
+
+    log_count = Counter(links(r["Session"])[0] for r in logs)
+    write(out, "sessions", ["date", "session_ref", "title", "workout", "soreness", "notes", "exercise_logs"], [{
+        "date": r["Date"], "session_ref": r["__airtable_record_id"], "title": r["Session"], "workout": r["Workout"],
+        "soreness": r["Soreness / Stiffness"], "notes": r["Session Notes"], "exercise_logs": log_count[r["__airtable_record_id"]],
+    } for r in sorted(sessions, key=lambda r: r["Date"])])
+
+    write(out, "checkins", ["date", "weight_kg", "waist_cm", "chest_cm", "arms_cm", "arms_flexed_cm", "legs_cm", "height_cm", "notes"], [{
+        "date": r["Date"], "weight_kg": r["Weight kg"], "waist_cm": r["Waist cm"], "chest_cm": r["Chest cm"], "arms_cm": r["Arms cm"],
+        "arms_flexed_cm": r["Arms Flexed cm"], "legs_cm": r["Legs cm"], "height_cm": r["Height cm"], "notes": r["Notes"],
+    } for r in sorted(read(src, "Check-ins"), key=lambda r: r["Date"])])
+
+    write(out, "health_state", ["name", "type", "status", "effective_from", "value", "rationale"], [{
+        "name": r["Name"], "type": select(r["Type"]), "status": select(r["Status"]), "effective_from": r["Effective From"],
+        "value": r["Value"], "rationale": r["Notes / Rationale"],
+    } for r in sorted(read(src, "Health State"), key=lambda r: (select(r["Status"]) != "Active", select(r["Type"]), r["Name"]))])
+
+    write(out, "training_habits", ["date", "event", "session", "behavior", "direction", "impact", "evidence", "next_session_rule"], [{
+        "date": r["Date"], "event": r["Habit Event"], "session": link_names(r["Session"]), "behavior": r["Behavior"],
+        "direction": select(r["Direction"]), "impact": select(r["Impact"]), "evidence": r["Evidence"], "next_session_rule": r["Next-session rule"],
+    } for r in sorted(read(src, "Training Habits Log"), key=lambda r: r["Date"])])
+
+    flagged = [s for s in sets if s["review"]]
+    print(f"sessions {len(sessions)}, exercise logs {len(logs)} -> sets {len(sets)} ({len(flagged)} flagged for review, "
+          f"{len({s['log_ref'] for s in flagged})} logs)")
+    assert {s["log_ref"] for s in sets} == {r["__airtable_record_id"] for r in logs}, "every log must produce sets"
+
+
+if __name__ == "__main__":
+    if len(sys.argv) != 2:
+        sys.exit(__doc__)
+    main(Path(sys.argv[1]))
