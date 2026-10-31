@@ -18,7 +18,7 @@ class SessionStoreTest {
     @After fun close() = db.close()
     private fun remote(revision: Long, client: Long? = null) = ServerSession(id, 42, "2026-10-31", "Push", "session note", revision, client,
         listOf(ServerSet("00000000-0000-4000-a000-000000000003", "Bench", 32.5, "kg", 7, 3, "set note")))
-    private suspend fun edit(load: Double) = db.sets().save(setId, id, SetValues(load, LoadUnit.KG, 7, 3))
+    private suspend fun edit(load: Double) = db.sets().save(db.sessions().sets(id).firstOrNull()?.id ?: setId, id, SetValues(load, LoadUnit.KG, 7, 3))
 
     @Test fun acknowledgementDoesNotClearAnEditMadeDuringUpload() = runBlocking {
         edit(20.0); db.sessions().finish(id)
@@ -31,23 +31,23 @@ class SessionStoreTest {
     }
     @Test fun refreshPreservesDraftAndRefreshesPushedWithoutResettingRevision() = runBlocking {
         edit(20.0); db.sessions().replaceCache(listOf(remote(5, 9)))
-        assertEquals(20.0, db.sets().get(setId)!!.load, 0.0)
+        assertEquals(20.0, db.sessions().sets(id).first().load, 0.0)
         db.sessions().finish(id); db.sessions().acknowledge(id, 1, 5, 42)
         db.sessions().replaceCache(listOf(remote(7, 9)))
         assertEquals(9L, db.sessions().get(id)!!.localRevision)
-        assertEquals(32.5, db.sets().get(setId)!!.load, 0.0)
-        assertEquals("set note", db.sets().get(setId)!!.notes)
+        assertEquals(32.5, db.sessions().sets(id).first().load, 0.0)
+        assertEquals("set note", db.sessions().sets(id).first().notes)
         edit(35.0); assertEquals(10L, db.sessions().get(id)!!.localRevision)
     }
     @Test fun sharedUnchangedIsAdoptedButAnEditAfterSharingConflicts() = runBlocking {
         edit(20.0); db.sessions().shareSnapshot(id); db.sessions().finish(id)
         db.sessions().replaceCache(listOf(remote(2)))
         assertEquals("pushed", db.sessions().get(id)!!.status)
-        assertEquals(32.5, db.sets().get(setId)!!.load, 0.0)
+        assertEquals(32.5, db.sessions().sets(id).first().load, 0.0)
         db.sessions().put(newSession(id)); edit(20.0); db.sessions().shareSnapshot(id); edit(25.0); db.sessions().finish(id)
         db.sessions().replaceCache(listOf(remote(2)))
         assertEquals("conflict", db.sessions().get(id)!!.status)
-        assertEquals(25.0, db.sets().get(setId)!!.load, 0.0)
+        assertEquals(25.0, db.sessions().sets(id).first().load, 0.0)
     }
     @Test fun keepMineUsesANewRevisionEvenAfterLostAcknowledgement() = runBlocking {
         edit(20.0); db.sessions().finish(id)
@@ -57,5 +57,16 @@ class SessionStoreTest {
         assertEquals(2L, row.localRevision)
         assertEquals(8L, row.baseRevision)
         assertEquals("finished", row.status)
+    }
+    @Test fun adoptionKeepsServerSetIdsWithTheirContentsAfterReordering() = runBlocking {
+        val first = ServerSet("first", "Bench", 20.0, "kg", 8, position = 0)
+        val second = ServerSet("second", "Row", 40.0, "kg", 10, position = 1)
+        db.sessions().adopt(remote(2).copy(sets = listOf(first, second)), 0)
+        db.sessions().adopt(remote(3).copy(sets = listOf(second.copy(position = 0), first.copy(position = 1))), 0)
+        val rows = db.sessions().sets(id)
+        assertEquals(listOf("second", "first"), rows.map { it.id })
+        assertEquals(listOf("Row", "Bench"), rows.map { it.exerciseName })
+        db.sessions().adopt(remote(4).copy(sets = listOf(first.copy(position = 0))), 0)
+        assertEquals(listOf("first"), db.sessions().sets(id).map { it.id })
     }
 }

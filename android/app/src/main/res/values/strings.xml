@@ -38,4 +38,27 @@
     <string name="error_sign_in">Sign-in failed. Check email and password.</string>
     <string name="error_cloud">Cloud request failed. Check your connection and try again.</string>
     <string name="error_no_local_set">Log a set first; it is uploaded as the test session.</string>
+    <string name="finish_workout">Finish workout</string>
+    <string name="workout_overview">Workout overview</string>
+    <string name="demo_session_title">Push A</string>
+    <string name="session_notes">Session notes</string>
+    <string name="set_notes">Set notes</string>
+    <string name="save_notes">Save notes</string>
+    <string name="overview_set">%1$s · %2$s %3$s × %4$d</string>
+    <string name="overview_rir">%1$s · RIR %2$d</string>
+    <string name="sync_conflict">Changed elsewhere · choose which version to keep</string>
+    <string name="sync_deleted_conflict">Deleted elsewhere · keep your copy or accept deletion</string>
+    <string name="sync_uploaded">Uploaded</string>
+    <string name="sync_pending">Saved on phone · will upload</string>
+    <string name="sync_ready">Ready to finish</string>
+    <string name="keep_mine">Keep mine</string>
+    <string name="take_theirs">Take theirs</string>
+    <string name="confirm_upload">Confirm and upload</string>
+    <string name="retry_upload">Retry upload</string>
+    <string name="share_workout">Share workout</string>
+    <string name="share">Share</string>
+    <string name="copy">Copy</string>
+    <string name="clipboard_workout">Workout</string>
+    <string name="back_to_workout">Back to workout</string>
+    <string name="error_sync_action">Action failed. Check your connection and try again; local changes are retained.</string>
 </resources>

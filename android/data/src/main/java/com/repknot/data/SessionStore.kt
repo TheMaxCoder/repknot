@@ -48,7 +48,7 @@ interface SessionDao {
     @Transaction
     suspend fun saveNotes(id: String, setId: String, sessionNotes: String?, setNotes: String?) {
         updateSessionNotes(id, sessionNotes)
-        updateSetNotes(setId, setNotes)
+        updateSetNotes(sets(id).firstOrNull()?.id ?: setId, setNotes)
     }
     @Query("UPDATE sessions SET sharedLocalRevision = localRevision WHERE id = :id")
     suspend fun shared(id: String)
@@ -120,12 +120,11 @@ interface SessionDao {
 
     @Transaction
     suspend fun adopt(remote: ServerSession, revision: Long) {
-        val previousSets = sets(remote.id)
         deleteSets(remote.id)
         val acknowledged = maxOf(revision, remote.clientRevision ?: 0)
         put(SessionRow(remote.id, remote.performedOn, remote.title ?: "Workout", remote.notes,
             "pushed", acknowledged, acknowledged, remote.revision, null, remote.number, null))
-        putSets(remote.sets.sortedBy { it.position }.mapIndexed { index, set -> SetRow(previousSets.getOrNull(index)?.id ?: set.id, remote.id, set.load, set.unit.uppercase(), set.reps, set.rir, acknowledged, acknowledged, set.exerciseName, set.notes, index) })
+        putSets(remote.sets.sortedBy { it.position }.mapIndexed { index, set -> SetRow(set.id, remote.id, set.load, set.unit.uppercase(), set.reps, set.rir, set.exerciseName, set.notes, index) })
     }
 }
 

@@ -201,48 +201,53 @@ private fun FinishSection(state: LoggingState, session: com.repknot.data.Session
     var overview by rememberSaveable { mutableStateOf(false) }
     val context = LocalContext.current
     val sets by sync.sets.collectAsState()
+    val syncError by sync.error.collectAsState()
+    val shareTitle = stringResource(R.string.share_workout)
+    val clipboardLabel = stringResource(R.string.clipboard_workout)
     if (state.saved != null) {
         HorizontalDivider()
         if (!overview) {
-            Button(onClick = { overview = true }) { Text("Finish workout") }
+            Button(onClick = { overview = true }) { Text(stringResource(R.string.finish_workout)) }
         } else {
-            Text("Workout overview", style = MaterialTheme.typography.titleLarge)
-            Text(session?.title ?: "Push A")
+            Text(stringResource(R.string.workout_overview), style = MaterialTheme.typography.titleLarge)
+            Text(session?.title ?: stringResource(R.string.demo_session_title))
             var sessionNotes by rememberSaveable(session?.id, session?.notes) { mutableStateOf(session?.notes.orEmpty()) }
             var setNotes by rememberSaveable(session?.id, sets.firstOrNull()?.notes) { mutableStateOf(sets.firstOrNull()?.notes.orEmpty()) }
-            OutlinedTextField(sessionNotes, { sessionNotes = it }, label = { Text("Session notes") }, modifier = Modifier.fillMaxWidth())
-            OutlinedTextField(setNotes, { setNotes = it }, label = { Text("Set notes") }, modifier = Modifier.fillMaxWidth())
-            OutlinedButton(onClick = { sync.saveNotes(sessionNotes, setNotes) }) { Text("Save notes") }
+            OutlinedTextField(sessionNotes, { sessionNotes = it }, label = { Text(stringResource(R.string.session_notes)) }, modifier = Modifier.fillMaxWidth())
+            OutlinedTextField(setNotes, { setNotes = it }, label = { Text(stringResource(R.string.set_notes)) }, modifier = Modifier.fillMaxWidth())
+            OutlinedButton(onClick = { sync.saveNotes(sessionNotes, setNotes) }) { Text(stringResource(R.string.save_notes)) }
             sets.forEach { set ->
-                Text("${set.exerciseName} · ${set.load} ${set.unit.lowercase()} × ${set.reps}" + (set.rir?.let { " · RIR $it" } ?: ""))
+                val description = stringResource(R.string.overview_set, set.exerciseName, set.load.toString(), set.unit.lowercase(), set.reps)
+                Text(set.rir?.let { stringResource(R.string.overview_rir, description, it) } ?: description)
             }
             session?.let { row ->
-                Text(when (row.status) {
-                    "conflict" -> "Changed elsewhere · choose which version to keep"
-                    "conflict_deleted" -> "Deleted elsewhere · keep your copy or accept deletion"
-                    "pushed" -> "Uploaded"
-                    "finished" -> "Saved on phone · will upload"
-                    else -> "Ready to finish"
-                })
+                Text(stringResource(when (row.status) {
+                    "conflict" -> R.string.sync_conflict
+                    "conflict_deleted" -> R.string.sync_deleted_conflict
+                    "pushed" -> R.string.sync_uploaded
+                    "finished" -> R.string.sync_pending
+                    else -> R.string.sync_ready
+                }))
+                syncError?.let { Text(stringResource(it), color = MaterialTheme.colorScheme.error) }
                 if (row.status == "conflict" || row.status == "conflict_deleted") {
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Button(onClick = sync::keepMine) { Text("Keep mine") }
-                        OutlinedButton(onClick = sync::takeTheirs) { Text("Take theirs") }
+                        Button(onClick = sync::keepMine) { Text(stringResource(R.string.keep_mine)) }
+                        OutlinedButton(onClick = sync::takeTheirs) { Text(stringResource(R.string.take_theirs)) }
                     }
                 } else if (row.status == "in_progress" || row.status == "finished") {
-                    Button(onClick = sync::finish) { Text(if (row.status == "in_progress") "Confirm and upload" else "Retry upload") }
+                    Button(onClick = sync::finish) { Text(stringResource(if (row.status == "in_progress") R.string.confirm_upload else R.string.retry_upload)) }
                 }
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedButton(onClick = { sync.share { text ->
                     val send = Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, text)
-                    context.startActivity(Intent.createChooser(send, "Share workout"))
-                } }) { Text("Share") }
+                    context.startActivity(Intent.createChooser(send, shareTitle))
+                } }) { Text(stringResource(R.string.share)) }
                 OutlinedButton(onClick = { sync.share { text ->
-                    context.getSystemService(ClipboardManager::class.java).setPrimaryClip(ClipData.newPlainText("Workout", text))
-                } }) { Text("Copy") }
+                    context.getSystemService(ClipboardManager::class.java).setPrimaryClip(ClipData.newPlainText(clipboardLabel, text))
+                } }) { Text(stringResource(R.string.copy)) }
             }
-            OutlinedButton(onClick = { overview = false }) { Text("Back to workout") }
+            OutlinedButton(onClick = { overview = false }) { Text(stringResource(R.string.back_to_workout)) }
         }
     }
 }

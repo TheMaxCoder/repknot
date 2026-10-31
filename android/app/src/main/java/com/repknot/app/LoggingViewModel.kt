@@ -27,7 +27,7 @@ class LoggingViewModel(private val repository: SetRepository, private val sessio
     init {
         viewModelScope.launch {
             try {
-                repository.observeSet(setId).collect {
+                repository.observeFirstSet(sessionId).collect {
                     mutableState.value = mutableState.value.copy(loading = false, saved = it)
                 }
             } catch (e: CancellationException) { throw e }
@@ -48,7 +48,7 @@ class LoggingViewModel(private val repository: SetRepository, private val sessio
         mutableState.value = mutableState.value.copy(saving = true, error = null)
         viewModelScope.launch {
             try {
-                repository.save(setId, sessionId, values)
+                repository.save(state.value.saved?.id ?: setId, sessionId, values)
             } catch (e: CancellationException) { throw e }
             catch (e: Exception) {
                 Log.w("RepknotLogging", "Saving set failed", e)

@@ -26,8 +26,7 @@ and the signed-in user's session; RLS restricts every table to its owner. Schema
 - Persist edits and pending sync together, retain stable IDs, and handle retries without duplicates.
 - Upload acknowledgements must not discard newer local edits, and no writer (Android,
   web, ChatGPT, CLI) may silently overwrite another's change. Revision rules are in
-  ADR 001. Session revisions govern sync; task 001's legacy per-set fields remain in
-  storage for compatibility and are not used to make sync decisions.
+  ADR 001. Session revisions govern sync; individual sets do not have sync revisions.
 - Imports retain source IDs and ambiguous raw values.
 
 Sync model: [ADR 001](decisions/001-sync-model.md) — server data cached and refreshed on
@@ -41,12 +40,14 @@ and access policies come with the first logging slice. Use synthetic dev data;
 review access control and recovery before importing real health records. Record any
 actual temporary policy relaxation here when introduced.
 
-- Push receipts are currently writable by the owning authenticated dev user under RLS,
-  matching the existing broad synthetic-dev table permissions. Harden write access and
-  re-evaluate connector privileges before using real health data.
+- Push receipts are writable only through the owner-scoped `push_session` function;
+  clients can read their own receipts but cannot write them. The function runs with
+  definer privileges and explicitly scopes parent access to `auth.uid()`.
+  Re-evaluate connector privileges before using real health data.
 - Supabase CLI is logged in (`supabase login`) with an account-wide token while dev is the
   only project. Before creating a prod project: log out and use `--db-url`, or keep prod in
   a separate account.
-- Building phase: Room schema changes ship without migrations; local data is disposable
-  (clear app data/reinstall after a schema change). Add real migrations once Android
-  starts logging real workouts.
+- Building phase: Room schema changes ship without migrations. The v3 database can
+  destructively reset the prior synthetic v1/v2 schemas only; the phone's reset was
+  explicitly approved. Future schema changes must not silently discard local data;
+  add real migrations once Android starts logging real workouts.

@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+# Run the opt-in Android/backend integration test against the linked dev project.
+# It creates and removes its own records as test2; no credentials are written to Git.
+set -euo pipefail
+root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$root"
+[ -f .env ] || { echo 'Missing .env' >&2; exit 1; }
+set -a
+. ./.env
+set +a
+: "${SUPABASE_URL:?}" "${SUPABASE_PUBLISHABLE_KEY:?}" "${REPKNOT_TEST2_EMAIL:?}" "${REPKNOT_TEST2_PASSWORD:?}"
+ref="${SUPABASE_URL#https://}"
+ref="${ref%%.supabase.co*}"
+linked="$(cat supabase/.temp/project-ref 2>/dev/null || true)"
+[ "$ref" = "<dev-project-ref>" ] && [ "$ref" = "$linked" ] || { echo 'Linked project does not match the confirmed dev project' >&2; exit 1; }
+b64() { printf %s "$1" | base64 -w0; }
+(cd android && ./gradlew :data:assembleDebugAndroidTest "$@")
+adb install -r android/data/build/outputs/apk/androidTest/debug/data-debug-androidTest.apk
+# Instrumentation arguments are visible to local processes while the test runs;
+# base64 is transport encoding, not encryption. Run only on your own device.
+output="$(adb shell am instrument -w -r \
+  -e class com.repknot.data.SharedSessionIntegrationTest \
+  -e supabase_url "$(b64 "$SUPABASE_URL")" \
+  -e supabase_key "$(b64 "$SUPABASE_PUBLISHABLE_KEY")" \
+  -e test_email "$(b64 "$REPKNOT_TEST2_EMAIL")" \
+  -e test_password "$(b64 "$REPKNOT_TEST2_PASSWORD")" \
+  com.repknot.data.test/androidx.test.runner.AndroidJUnitRunner)"
+printf '%s\n' "$output"
+# adb can exit zero even when instrumentation reports a failed or skipped test.
+grep -q '^OK (1 test)' <<<"$output" && ! grep -q '^INSTRUMENTATION_STATUS_CODE: -3' <<<"$output" || { echo 'Integration test failed or was skipped' >&2; exit 1; }

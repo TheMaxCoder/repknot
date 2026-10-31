@@ -34,6 +34,11 @@ cd android
 The check script builds the debug APK, runs lint, and runs unit tests when present.
 Room tests are instrumented and need a device:
 `cd android && ./gradlew :data:connectedDebugAndroidTest` (first run needs network).
+That plain run skips the credentialed phone/backend test. Run
+`scripts/test-sync-integration --offline` with the linked dev project and connected
+phone to run it with the synthetic test2 account. The test creates and removes its
+own server records; its credentials are passed to the device's instrumentation process
+at runtime and can be visible to local processes during the run.
 Device and visual verification are separate from the build.
 On some vendor Android builds, a fresh install may get its network blocked ("Unable to resolve host"):
 allow Wi-Fi and mobile data under Settings → Apps → Repknot, then restart the app.

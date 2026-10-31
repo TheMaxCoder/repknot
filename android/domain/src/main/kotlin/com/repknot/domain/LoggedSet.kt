@@ -12,9 +12,9 @@ data class SetValues(val load: Double, val unit: LoadUnit, val reps: Int, val ri
     }
 }
 
-data class LoggedSet(val id: String, val sessionId: String, val values: SetValues, val pendingSync: Boolean)
+data class LoggedSet(val id: String, val sessionId: String, val values: SetValues)
 
 interface SetRepository {
-    fun observeSet(id: String): Flow<LoggedSet?>
+    fun observeFirstSet(sessionId: String): Flow<LoggedSet?>
     suspend fun save(id: String, sessionId: String, values: SetValues)
 }

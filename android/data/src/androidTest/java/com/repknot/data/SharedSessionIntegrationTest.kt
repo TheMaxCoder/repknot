@@ -64,7 +64,7 @@ class SharedSessionIntegrationTest {
                     assertNotNull(local.serverSnapshot)
                 } else {
                     assertEquals("server note", local.notes)
-                    assertEquals("set note", db.sets().get(setId)!!.notes)
+                    assertEquals("set note", db.sessions().sets(id).single().notes)
                 }
                 val remote = client.from("workout_sessions").select { filter { eq("id", id) } }.decodeList<ServerSession>()
                 assertEquals(1, remote.size)

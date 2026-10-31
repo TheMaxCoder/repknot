@@ -6,6 +6,8 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.repknot.data.SessionDao
 import com.repknot.data.SessionSync
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -14,6 +16,8 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 class SyncViewModel(private val dao: SessionDao, private val sync: SessionSync, private val sessionId: String, private val setId: String) : ViewModel() {
+    private val mutableError = MutableStateFlow<Int?>(null)
+    val error = mutableError.asStateFlow()
     val sets = dao.observeSets(sessionId).stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
     val session = dao.observe(sessionId).stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
     fun finish() = action { dao.finish(sessionId); sync.refreshAndPush() }
@@ -28,8 +32,12 @@ class SyncViewModel(private val dao: SessionDao, private val sync: SessionSync, 
         deliver(text)
     }
     private fun action(block: suspend () -> Unit) { viewModelScope.launch {
+        mutableError.value = null
         try { block() } catch (e: kotlinx.coroutines.CancellationException) { throw e }
-        catch (e: Exception) { Log.w("RepknotSync", "Sync action failed; local data retained", e) }
+        catch (e: Exception) {
+            Log.w("RepknotSync", "Sync action failed; local data retained", e)
+            mutableError.value = R.string.error_sync_action
+        }
     } }
     class Factory(private val dao: SessionDao, private val sync: SessionSync, private val sessionId: String, private val setId: String) : ViewModelProvider.Factory {
         override fun <T : ViewModel> create(modelClass: Class<T>): T {

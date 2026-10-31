@@ -42,11 +42,12 @@ class RepknotApplication : Application() {
         ids // Decide whether this is an existing installation before Room creates its file.
         scope.launch { cloud.state.collect { if (it is CloudState.SignedIn) refresh() } }
         val connectivity = getSystemService(ConnectivityManager::class.java)
+        val validation = NetworkValidation<Network>()
         connectivity.registerDefaultNetworkCallback(object : ConnectivityManager.NetworkCallback() {
-            override fun onAvailable(network: Network) { requestRefresh() }
             override fun onCapabilitiesChanged(network: Network, capabilities: NetworkCapabilities) {
-                if (capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)) requestRefresh()
+                if (validation.changed(network, capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED))) requestRefresh()
             }
+            override fun onLost(network: Network) { validation.lost(network) }
         })
     }
     fun requestRefresh() { scope.launch { refresh() } }
