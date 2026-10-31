@@ -1,3 +1,5 @@
+> Historical proposal. Superseded by [AGENTS.md](../../AGENTS.md), [architecture](../architecture.md), and [current status](../status.md). Not operational instructions.
+
 # Repknot: Minimal Project Setup Proposal (Claude)
 
 - **Status:** Proposed, not adopted

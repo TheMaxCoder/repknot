@@ -18,24 +18,23 @@ Updated: 2026-10-31
 
 ## Current task
 
-[001 — First persistent workout logging slice](tasks/001-persistent-set-logging.md)
-is ready, not started. Its local persistence work can begin before Supabase details
-are resolved. The task contains acceptance criteria, progress, and the next action.
+[001 — Local set logging](tasks/001-persistent-set-logging.md)
+is in progress. Backend/auth and sync are separate follow-up tasks. The task contains acceptance criteria, progress, and the next action.
 
 ## Next priorities
 
 1. Skeleton device smoke test complete; functional logging tests await implementation.
-2. Implement task 001, resolving hosted dev access and sign-in when needed.
+2. Implement task 001 locally, then [002 backend/auth](tasks/002-dev-backend.md) and
+   [003 sync](tasks/003-session-sync.md).
 3. After the slice, expand session editing, previous-performance suggestions, program
    rotation, check-ins, import/reconciliation, then the web companion per the PRD.
    These are roadmap directions, not claims that their detailed scope is settled.
 
 ## Environment and handoff limitations
 
-- This managed session exposes `.git` as an empty read-only directory; `git status`
-  previously failed with “not a git repository.” Files exist, but commits/history
-  have not been verified here. Check Git in the normal workspace before relying on
-  history; do not replace the managed `.git` directory.
+- Git was initialized on `main` in the normal filesystem view; initial scaffold
+  checkpoint: `9c44212`. The sandbox still masks `.git`; Git operations may require
+  the normal filesystem view. No hooks or remote were configured.
 - `AGENTS.md` exists and `CLAUDE.md` imports it. Fresh-session loading has not been
   tested in Codex, Claude, or Antigravity. Antigravity is not on this session's PATH
   and `.agents` is read-only here. Configure its adapter in an environment that can

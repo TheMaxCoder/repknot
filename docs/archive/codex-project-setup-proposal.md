@@ -1,3 +1,5 @@
+> Historical proposal. Superseded by [AGENTS.md](../../AGENTS.md), [architecture](../architecture.md), and [current status](../status.md). Not operational instructions.
+
 # Repknot — Project Setup and Engineering Workflow Proposal
 
 Status: Proposed foundation; implementation details remain adjustable  
