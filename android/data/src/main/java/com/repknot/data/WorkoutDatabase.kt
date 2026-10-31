@@ -10,6 +10,8 @@ import androidx.room.Query
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.Transaction
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 import com.repknot.domain.LoadUnit
 import com.repknot.domain.LoggedSet
 import com.repknot.domain.SetRepository
@@ -32,6 +34,9 @@ data class SetRow(
     val rir: Int?,
     val localRevision: Long,
     val syncedRevision: Long,
+    @androidx.room.ColumnInfo(defaultValue = "'Dumbbell bench press'") val exerciseName: String = "Dumbbell bench press",
+    val notes: String? = null,
+    @androidx.room.ColumnInfo(defaultValue = "0") val position: Int = 0,
 )
 
 @Dao
@@ -45,6 +50,12 @@ interface SetDao {
     @Insert
     suspend fun insert(row: SetRow)
 
+    @Insert(onConflict = androidx.room.OnConflictStrategy.IGNORE)
+    suspend fun insertSession(row: SessionRow)
+
+    @Query("UPDATE sessions SET localRevision = localRevision + 1, status = CASE WHEN status = 'pushed' THEN 'finished' ELSE status END WHERE id = :id")
+    suspend fun bumpSession(id: String)
+
     @Query(
         """UPDATE logged_sets SET sessionId = :sessionId, load = :load, unit = :unit, reps = :reps,
            rir = :rir, localRevision = localRevision + 1 WHERE id = :id""",
@@ -54,6 +65,8 @@ interface SetDao {
     /** Values and the new revision are written in one transaction. */
     @Transaction
     suspend fun save(id: String, sessionId: String, values: SetValues) {
+        insertSession(newSession(sessionId))
+        bumpSession(sessionId)
         if (get(id) == null) {
             insert(SetRow(id, sessionId, values.load, values.unit.name, values.reps, values.rir, 1, 0))
         } else {
@@ -66,14 +79,23 @@ interface SetDao {
     suspend fun markSynced(id: String, revision: Long)
 }
 
-@Database(entities = [SetRow::class], version = 1, exportSchema = true)
+@Database(entities = [SetRow::class, SessionRow::class], version = 2, exportSchema = true)
 abstract class WorkoutDatabase : RoomDatabase() {
     abstract fun sets(): SetDao
+    abstract fun sessions(): SessionDao
 
     companion object {
         fun open(context: Context): WorkoutDatabase = Room.databaseBuilder(
             context.applicationContext, WorkoutDatabase::class.java, "workouts.db",
-        ).build()
+        ).addMigrations(object : Migration(1, 2) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE logged_sets ADD COLUMN exerciseName TEXT NOT NULL DEFAULT 'Dumbbell bench press'")
+                db.execSQL("ALTER TABLE logged_sets ADD COLUMN notes TEXT")
+                db.execSQL("ALTER TABLE logged_sets ADD COLUMN position INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("""CREATE TABLE IF NOT EXISTS sessions (id TEXT NOT NULL PRIMARY KEY, performedOn TEXT NOT NULL, title TEXT NOT NULL, notes TEXT, status TEXT NOT NULL, localRevision INTEGER NOT NULL, pushedLocalRevision INTEGER NOT NULL, baseRevision INTEGER, sharedLocalRevision INTEGER, number INTEGER, serverSnapshot TEXT)""")
+                db.execSQL("""INSERT INTO sessions (id, performedOn, title, notes, status, localRevision, pushedLocalRevision, baseRevision, sharedLocalRevision, number, serverSnapshot) SELECT sessionId, date('now'), 'Push A', NULL, 'in_progress', MAX(localRevision), 0, NULL, NULL, NULL, NULL FROM logged_sets GROUP BY sessionId""")
+            }
+        }).build()
     }
 }
 

@@ -6,11 +6,9 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.repknot.data.CloudAccount
 import com.repknot.data.CloudState
-import com.repknot.domain.SetRepository
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -18,15 +16,14 @@ data class CloudUiState(
     val cloud: CloudState = CloudState.Loading,
     val busy: Boolean = false,
     val sessionCount: Int? = null,
-    val lastCreatedNumber: Long? = null,
     /** String resource ID of the current error message, if any. */
     val error: Int? = null,
 )
 
 private const val TAG = "RepknotCloud"
 
-/** Task 002 connectivity check: sign in, count sessions, write one synthetic session. */
-class CloudViewModel(private val cloud: CloudAccount, private val sets: SetRepository) : ViewModel() {
+/** Sign-in and the count of sessions visible to the current account. */
+class CloudViewModel(private val cloud: CloudAccount) : ViewModel() {
     private val mutableState = MutableStateFlow(CloudUiState())
     val state = mutableState.asStateFlow()
 
@@ -35,7 +32,7 @@ class CloudViewModel(private val cloud: CloudAccount, private val sets: SetRepos
             cloud.state.collect { cloudState ->
                 mutableState.update { it.copy(cloud = cloudState) }
                 if (cloudState is CloudState.SignedIn) refreshCount()
-                else mutableState.update { it.copy(sessionCount = null, lastCreatedNumber = null) }
+                else mutableState.update { it.copy(sessionCount = null) }
             }
         }
     }
@@ -45,17 +42,6 @@ class CloudViewModel(private val cloud: CloudAccount, private val sets: SetRepos
     }
 
     fun signOut() = run(R.string.error_cloud) { cloud.signOut() }
-
-    fun uploadTestSession() = run(R.string.error_cloud) {
-        val saved = sets.observeSet(DemoSet).first()
-        if (saved == null) {
-            mutableState.update { it.copy(error = R.string.error_no_local_set) }
-            return@run
-        }
-        val number = cloud.writeTestSession(saved.values)
-        mutableState.update { it.copy(lastCreatedNumber = number) }
-        refreshCount()
-    }
 
     private suspend fun refreshCount() {
         try {
@@ -86,11 +72,11 @@ class CloudViewModel(private val cloud: CloudAccount, private val sets: SetRepos
         }
     }
 
-    class Factory(private val cloud: CloudAccount, private val sets: SetRepository) : ViewModelProvider.Factory {
+    class Factory(private val cloud: CloudAccount) : ViewModelProvider.Factory {
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
             require(modelClass.isAssignableFrom(CloudViewModel::class.java))
             @Suppress("UNCHECKED_CAST")
-            return CloudViewModel(cloud, sets) as T
+            return CloudViewModel(cloud) as T
         }
     }
 }

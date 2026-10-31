@@ -5,6 +5,7 @@
 //   scripts/repknot whoami
 //   scripts/repknot list [count]
 //   scripts/repknot show <#number|uuid>
+//   scripts/repknot set-notes <#number|uuid> <notes>
 //   scripts/repknot log-test            # synthetic session + one set, source=cli
 //   scripts/repknot delete <#number|uuid>
 //   add --as test2 to act as the second (test) user
@@ -77,6 +78,18 @@ switch (command) {
     break;
   }
 
+  case "set-notes": {
+    const f = sessionFilter(arg);
+    const notes = args[2];
+    if (notes === undefined) fail("give notes text");
+    const { data, error } = await supabase.from("workout_sessions")
+      .update({ notes, source: "cli" }).eq(f.column, f.value).select("number");
+    if (error) fail(error);
+    if (!data.length) fail("session not found");
+    console.log(`updated #${data[0].number}`);
+    break;
+  }
+
   case "log-test": {
     const today = new Date().toISOString().slice(0, 10);
     const { data: session, error } = await supabase.from("workout_sessions")
@@ -101,6 +114,6 @@ switch (command) {
   }
 
   default:
-    console.log("usage: scripts/repknot [--as test2] whoami | list [n] | show <#n|uuid> | log-test | delete <#n|uuid>");
+    console.log("usage: scripts/repknot [--as test2] whoami | list [n] | show <#n|uuid> | set-notes <#n|uuid> <notes> | log-test | delete <#n|uuid>");
     Deno.exit(command ? 1 : 0);
 }

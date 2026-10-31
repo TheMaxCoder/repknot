@@ -47,6 +47,6 @@ allow Wi-Fi and mobile data under Settings → Apps → Repknot, then restart th
 
 Versions are pinned in `android/gradle/libs.versions.toml` and the Gradle wrapper.
 The initial versions reuse installed compatible tooling rather than chasing latest releases.
-Local logging of one synthetic set (Room) and dev Supabase sign-in/upload work; sync is next.
+The synthetic workout supports local logging, refresh and finish-time sync with retry and conflict handling. ChatGPT connectivity remains a separate unverified integration.
 No CI or restrictive hooks. Private exports belong outside Git (the root
 `private-data/` directory is ignored); never commit credentials or personal records.

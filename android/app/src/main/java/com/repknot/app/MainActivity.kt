@@ -1,6 +1,10 @@
 package com.repknot.app
 
 import android.os.Bundle
+import android.content.Intent
+import android.content.ClipData
+import android.content.ClipboardManager
+import androidx.compose.ui.platform.LocalContext
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
@@ -44,6 +48,10 @@ import com.repknot.data.CloudState
 import com.repknot.domain.LoadUnit
 
 class MainActivity : ComponentActivity() {
+    override fun onStart() {
+        super.onStart()
+        (application as RepknotApplication).requestRefresh()
+    }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge(
@@ -51,16 +59,20 @@ class MainActivity : ComponentActivity() {
             navigationBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT),
         )
         val app = application as RepknotApplication
-        val loggingFactory = LoggingViewModel.Factory(app.repository)
-        val cloudFactory = CloudViewModel.Factory(app.cloud, app.repository)
+        val loggingFactory = LoggingViewModel.Factory(app.repository, app.sessionId, app.setId)
+        val syncFactory = SyncViewModel.Factory(app.database.sessions(), app.sync, app.sessionId, app.setId)
+        val cloudFactory = CloudViewModel.Factory(app.cloud)
         setContent {
             RepknotTheme {
                 val model: LoggingViewModel = viewModel(factory = loggingFactory)
+                val sync: SyncViewModel = viewModel(factory = syncFactory)
+                val session by sync.session.collectAsState()
                 val cloud: CloudViewModel = viewModel(factory = cloudFactory)
                 val state by model.state.collectAsState()
                 val cloudState by cloud.state.collectAsState()
-                LoggingScreen(state, model::save) {
-                    CloudSection(cloudState, cloud::signIn, cloud::signOut, cloud::uploadTestSession)
+                LoggingScreen(state, session, model::save) {
+                    FinishSection(state, session, sync)
+                    CloudSection(cloudState, cloud::signIn, cloud::signOut)
                 }
             }
         }
@@ -70,6 +82,7 @@ class MainActivity : ComponentActivity() {
 @Composable
 private fun LoggingScreen(
     state: LoggingState,
+    session: com.repknot.data.SessionRow?,
     save: (String, LoadUnit, String, String) -> Unit,
     footer: @Composable () -> Unit,
 ) {
@@ -86,7 +99,7 @@ private fun LoggingScreen(
             if (state.loading) {
                 CircularProgressIndicator()
             } else {
-                SetEditor(state, save)
+                SetEditor(state, session, save)
             }
             footer()
         }
@@ -94,12 +107,12 @@ private fun LoggingScreen(
 }
 
 @Composable
-private fun SetEditor(state: LoggingState, save: (String, LoadUnit, String, String) -> Unit) {
+private fun SetEditor(state: LoggingState, session: com.repknot.data.SessionRow?, save: (String, LoadUnit, String, String) -> Unit) {
     // Initial values come from an explicit saved set, never from the previous-value hint.
-    var load by rememberSaveable { mutableStateOf(state.saved?.values?.load?.toString() ?: "") }
-    var reps by rememberSaveable { mutableStateOf(state.saved?.values?.reps?.toString() ?: "") }
-    var rir by rememberSaveable { mutableStateOf(state.saved?.values?.rir?.toString() ?: "") }
-    var unitName by rememberSaveable { mutableStateOf(state.saved?.values?.unit?.name ?: "KG") }
+    var load by rememberSaveable(state.saved?.values) { mutableStateOf(state.saved?.values?.load?.toString() ?: "") }
+    var reps by rememberSaveable(state.saved?.values) { mutableStateOf(state.saved?.values?.reps?.toString() ?: "") }
+    var rir by rememberSaveable(state.saved?.values) { mutableStateOf(state.saved?.values?.rir?.toString() ?: "") }
+    var unitName by rememberSaveable(state.saved?.values) { mutableStateOf(state.saved?.values?.unit?.name ?: "KG") }
     Text(stringResource(R.string.demo_previous_hint), color = MaterialTheme.colorScheme.onSurfaceVariant)
     OutlinedTextField(load, { load = it }, label = { Text(stringResource(R.string.label_load)) }, singleLine = true,
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), modifier = Modifier.fillMaxWidth())
@@ -135,7 +148,7 @@ private fun SetEditor(state: LoggingState, save: (String, LoadUnit, String, Stri
                     pluralStringResource(R.plurals.reps_count, saved.values.reps, saved.values.reps),
                     saved.values.rir?.toString() ?: stringResource(R.string.saved_rir_blank),
                 ))
-                if (saved.pendingSync) {
+                if (session != null && session.localRevision > session.pushedLocalRevision) {
                     Text(stringResource(R.string.pending_sync), color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
@@ -148,7 +161,6 @@ private fun CloudSection(
     state: CloudUiState,
     signIn: (String, String) -> Unit,
     signOut: () -> Unit,
-    uploadTestSession: () -> Unit,
 ) {
     HorizontalDivider()
     Text(stringResource(R.string.cloud_title), style = MaterialTheme.typography.titleLarge)
@@ -176,14 +188,60 @@ private fun CloudSection(
                 Text(pluralStringResource(R.plurals.cloud_session_count, it, it),
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            state.lastCreatedNumber?.let { Text(stringResource(R.string.cloud_created, it)) }
-            Button(onClick = uploadTestSession, enabled = !state.busy, modifier = Modifier.fillMaxWidth()) {
-                Text(stringResource(R.string.action_upload_test))
-            }
             OutlinedButton(onClick = signOut, enabled = !state.busy, modifier = Modifier.fillMaxWidth()) {
                 Text(stringResource(R.string.action_sign_out))
             }
         }
     }
     state.error?.let { Text(stringResource(it), color = MaterialTheme.colorScheme.error) }
+}
+
+@Composable
+private fun FinishSection(state: LoggingState, session: com.repknot.data.SessionRow?, sync: SyncViewModel) {
+    var overview by rememberSaveable { mutableStateOf(false) }
+    val context = LocalContext.current
+    val sets by sync.sets.collectAsState()
+    if (state.saved != null) {
+        HorizontalDivider()
+        if (!overview) {
+            Button(onClick = { overview = true }) { Text("Finish workout") }
+        } else {
+            Text("Workout overview", style = MaterialTheme.typography.titleLarge)
+            Text(session?.title ?: "Push A")
+            var sessionNotes by rememberSaveable(session?.id, session?.notes) { mutableStateOf(session?.notes.orEmpty()) }
+            var setNotes by rememberSaveable(session?.id, sets.firstOrNull()?.notes) { mutableStateOf(sets.firstOrNull()?.notes.orEmpty()) }
+            OutlinedTextField(sessionNotes, { sessionNotes = it }, label = { Text("Session notes") }, modifier = Modifier.fillMaxWidth())
+            OutlinedTextField(setNotes, { setNotes = it }, label = { Text("Set notes") }, modifier = Modifier.fillMaxWidth())
+            OutlinedButton(onClick = { sync.saveNotes(sessionNotes, setNotes) }) { Text("Save notes") }
+            sets.forEach { set ->
+                Text("${set.exerciseName} · ${set.load} ${set.unit.lowercase()} × ${set.reps}" + (set.rir?.let { " · RIR $it" } ?: ""))
+            }
+            session?.let { row ->
+                Text(when (row.status) {
+                    "conflict" -> "Changed elsewhere · choose which version to keep"
+                    "pushed" -> "Uploaded"
+                    "finished" -> "Saved on phone · will upload"
+                    else -> "Ready to finish"
+                })
+                if (row.status == "conflict") {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Button(onClick = sync::keepMine) { Text("Keep mine") }
+                        OutlinedButton(onClick = sync::takeTheirs) { Text("Take theirs") }
+                    }
+                } else if (row.status == "in_progress" || row.status == "finished") {
+                    Button(onClick = sync::finish) { Text(if (row.status == "in_progress") "Confirm and upload" else "Retry upload") }
+                }
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedButton(onClick = { sync.share { text ->
+                    val send = Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, text)
+                    context.startActivity(Intent.createChooser(send, "Share workout"))
+                } }) { Text("Share") }
+                OutlinedButton(onClick = { sync.share { text ->
+                    context.getSystemService(ClipboardManager::class.java).setPrimaryClip(ClipData.newPlainText("Workout", text))
+                } }) { Text("Copy") }
+            }
+            OutlinedButton(onClick = { overview = false }) { Text("Back to workout") }
+        }
+    }
 }

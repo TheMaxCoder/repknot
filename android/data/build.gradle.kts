@@ -18,7 +18,7 @@ android {
 ksp { arg("room.schemaLocation", "$projectDir/schemas") }
 dependencies {
     implementation(project(":domain"))
-    implementation(libs.room.runtime)
+    api(libs.room.runtime)
     implementation(libs.coroutines.core)
     ksp(libs.room.compiler)
     implementation(platform(libs.supabase.bom))

@@ -1,6 +1,6 @@
 # Project status
 
-Updated: 2026-10-31
+Updated: 2026-11-01
 
 ## Current state
 
@@ -15,23 +15,22 @@ Updated: 2026-10-31
 - Task 001 done (2026-10-31): one synthetic set can be logged locally with Room,
   survives force-stop, uses revision-based pending-sync state. Verified by unit tests,
   4 device Room tests, and a manual device run — details in the task.
-- Sync (task 003) is not implemented.
+- Task 003 done: refresh, offline retry, conflict handling, sharing, and authenticated
+  `save_session` tested against the dev backend and Android device. See the task for
+  evidence and the separately deferred ChatGPT integration.
 - Shared startup, task-sizing, and handoff instructions now live in `AGENTS.md`.
 
 ## Current task
 
-[003 — Pull on open, push finished sessions](tasks/003-session-sync.md) is ready, not
-started. Task 002 is done: dev schema + RLS (22/22 tests), CLI, and Android sign-in/upload
-verified end to end.
+No active implementation task. [003 — Pull on open, push finished sessions](tasks/003-session-sync.md)
+is done. The next task is not yet authorized by the backlog alone.
 
 ## Next priorities
 
-1. Task 003: pull on open + push finished sessions, per
-   [ADR 001](decisions/001-sync-model.md) (accounts for ChatGPT/web as other writers).
-2. ChatGPT write access (PRD §4): verify integration options before committing; writes
-   follow ADR 001 revision rules.
-3. After the slice, expand session editing, previous-performance suggestions, program
-   rotation, check-ins, import/reconciliation, then the web companion per the PRD.
+1. Verify a narrowly scoped, authenticated ChatGPT integration before using it to write
+   sessions; see [the draft instructions](chatgpt-session-instructions.md).
+2. Expand session editing, previous-performance suggestions, program rotation,
+   check-ins, import/reconciliation, then the web companion per the PRD.
    These are roadmap directions, not claims that their detailed scope is settled.
 
 ## Environment and handoff limitations

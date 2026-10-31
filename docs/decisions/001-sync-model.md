@@ -89,6 +89,10 @@ at a time on the phone. We need:
 
 1. If `client_revision >= local_revision`, the server already applied this push (a retry
    after the acknowledgement was lost). It returns the current revision and writes nothing.
+   Implementation refinement (2026-11-01): a replay is acknowledged only when the
+   server is still at the exact revision recorded for that phone revision. If another
+   writer changed it after the original push, the server reports a conflict. A receipt
+   records that revision; resolving with keep mine advances the local revision.
 2. If the server's `revision` differs from `base_revision`, another writer changed the
    session. That is a **conflict**: the server returns its copy and writes nothing.
 3. Otherwise it applies the snapshot, increments `revision`, sets

@@ -18,7 +18,7 @@
         <item quantity="other">%d reps</item>
     </plurals>
     <string name="saved_rir_blank">—</string>
-    <string name="pending_sync">Pending sync · cloud sync is not connected</string>
+    <string name="pending_sync">Saved on phone · pending upload</string>
     <string name="error_read">Could not read local workout. Reopen the app to retry.</string>
     <string name="error_invalid_input">Enter a non-negative load, positive whole reps, and optional non-negative whole RIR.</string>
     <string name="error_save">Save failed. Your input is still here; try again.</string>

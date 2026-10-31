@@ -19,11 +19,15 @@ and the signed-in user's session; RLS restricts every table to its owner. Schema
 - Previous values are suggestions, never completed sets.
 - Session prescription snapshots remain independent of later program edits.
 - Session substitutions do not mutate the program.
-- Room is the local read source; Supabase will be the canonical shared store.
+- Room is the local read source; Supabase is the canonical shared store. Sessions are
+  refreshed transactionally after a complete fetch; local drafts and pending edits are
+  retained. The current synthetic workout is the only prescription; program and
+  previous-performance tables are not present yet.
 - Persist edits and pending sync together, retain stable IDs, and handle retries without duplicates.
 - Upload acknowledgements must not discard newer local edits, and no writer (Android,
   web, ChatGPT, CLI) may silently overwrite another's change. Revision rules are in
-  ADR 001; task 001 currently keeps local revisions per set until sessions exist.
+  ADR 001. Session revisions govern sync; task 001's legacy per-set fields remain in
+  storage for compatibility and are not used to make sync decisions.
 - Imports retain source IDs and ambiguous raw values.
 
 Sync model: [ADR 001](decisions/001-sync-model.md) — server data cached and refreshed on
@@ -37,6 +41,9 @@ and access policies come with the first logging slice. Use synthetic dev data;
 review access control and recovery before importing real health records. Record any
 actual temporary policy relaxation here when introduced.
 
+- Push receipts are currently writable by the owning authenticated dev user under RLS,
+  matching the existing broad synthetic-dev table permissions. Harden write access and
+  re-evaluate connector privileges before using real health data.
 - Supabase CLI is logged in (`supabase login`) with an account-wide token while dev is the
   only project. Before creating a prod project: log out and use `--db-url`, or keep prod in
   a separate account.

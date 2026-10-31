@@ -12,10 +12,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-// Stable identifiers for the single synthetic workout. Real session creation comes later.
-internal const val DemoSession = "f7ff8342-691c-47ee-bd9b-c3c0892d9991"
-internal const val DemoSet = "9b776b65-2ab2-4c43-853d-e445428d60c8"
-
 data class LoggingState(
     val loading: Boolean = true,
     val saved: LoggedSet? = null,
@@ -24,14 +20,14 @@ data class LoggingState(
     val error: Int? = null,
 )
 
-class LoggingViewModel(private val repository: SetRepository) : ViewModel() {
+class LoggingViewModel(private val repository: SetRepository, private val sessionId: String, private val setId: String) : ViewModel() {
     private val mutableState = MutableStateFlow(LoggingState())
     val state = mutableState.asStateFlow()
 
     init {
         viewModelScope.launch {
             try {
-                repository.observeSet(DemoSet).collect {
+                repository.observeSet(setId).collect {
                     mutableState.value = mutableState.value.copy(loading = false, saved = it)
                 }
             } catch (e: CancellationException) { throw e }
@@ -52,7 +48,7 @@ class LoggingViewModel(private val repository: SetRepository) : ViewModel() {
         mutableState.value = mutableState.value.copy(saving = true, error = null)
         viewModelScope.launch {
             try {
-                repository.save(DemoSet, DemoSession, values)
+                repository.save(setId, sessionId, values)
             } catch (e: CancellationException) { throw e }
             catch (e: Exception) {
                 Log.w("RepknotLogging", "Saving set failed", e)
@@ -63,11 +59,11 @@ class LoggingViewModel(private val repository: SetRepository) : ViewModel() {
         }
     }
 
-    class Factory(private val repository: SetRepository) : ViewModelProvider.Factory {
+    class Factory(private val repository: SetRepository, private val sessionId: String, private val setId: String) : ViewModelProvider.Factory {
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
             require(modelClass.isAssignableFrom(LoggingViewModel::class.java))
             @Suppress("UNCHECKED_CAST")
-            return LoggingViewModel(repository) as T
+            return LoggingViewModel(repository, sessionId, setId) as T
         }
     }
 }
