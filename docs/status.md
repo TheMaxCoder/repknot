@@ -15,14 +15,14 @@ Updated: 2026-10-31
 - Task 001 done (2026-10-31): one synthetic set can be logged locally with Room,
   survives force-stop, uses revision-based pending-sync state. Verified by unit tests,
   4 device Room tests, and a manual device run — details in the task.
-- Authentication, Supabase configuration, and sync are not implemented.
+- Sync (task 003) is not implemented.
 - Shared startup, task-sizing, and handoff instructions now live in `AGENTS.md`.
 
 ## Current task
 
-[002 — Dev backend and authenticated access](tasks/002-dev-backend.md) is ready,
-not started. Needs the owner's hosted dev project and sign-in choice. Then
-[003 — sync](tasks/003-session-sync.md).
+[002 — Dev backend and authenticated access](tasks/002-dev-backend.md): schema, RLS,
+tests (22/22), and CLI verified on the dev project; on-device sign-in/upload check is
+pending. Then [003 — sync](tasks/003-session-sync.md).
 
 ## Next priorities
 

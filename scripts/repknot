@@ -1,0 +1,106 @@
+#!/usr/bin/env -S deno run --ext=ts --allow-net --allow-env --allow-read
+// Repknot CLI: reads/writes Supabase as a normal signed-in user (RLS applies).
+// Never uses a service-role/secret key. Config comes from the repo's untracked .env.
+//
+//   scripts/repknot whoami
+//   scripts/repknot list [count]
+//   scripts/repknot show <#number|uuid>
+//   scripts/repknot log-test            # synthetic session + one set, source=cli
+//   scripts/repknot delete <#number|uuid>
+//   add --as test2 to act as the second (test) user
+import { createClient } from "npm:@supabase/supabase-js@2";
+
+const root = new URL("..", import.meta.url).pathname;
+const env: Record<string, string> = {};
+for (const line of (await Deno.readTextFile(`${root}.env`)).split("\n")) {
+  const m = line.match(/^([A-Za-z0-9_]+)=(.*)$/);
+  if (m) env[m[1]] = m[2].trim();
+}
+
+const args = [...Deno.args];
+const asIndex = args.indexOf("--as");
+const asTest2 = asIndex >= 0 && args[asIndex + 1] === "test2";
+if (asIndex >= 0) args.splice(asIndex, 2);
+const [command, arg] = args;
+
+function need(name: string): string {
+  if (!env[name]) throw new Error(`${name} is empty in .env`);
+  return env[name];
+}
+
+const supabase = createClient(need("SUPABASE_URL"), need("SUPABASE_PUBLISHABLE_KEY"), {
+  auth: { persistSession: false },
+});
+const { data: auth, error: authError } = await supabase.auth.signInWithPassword({
+  email: need(asTest2 ? "REPKNOT_TEST2_EMAIL" : "REPKNOT_EMAIL"),
+  password: need(asTest2 ? "REPKNOT_TEST2_PASSWORD" : "REPKNOT_PASSWORD"),
+});
+if (authError) throw authError;
+
+function sessionFilter(ref: string | undefined) {
+  if (!ref) throw new Error("give a session #number or uuid");
+  return ref.startsWith("#") ? { column: "number", value: ref.slice(1) } : { column: "id", value: ref };
+}
+
+function fail(error: unknown): never {
+  console.error(error);
+  Deno.exit(1);
+}
+
+switch (command) {
+  case "whoami":
+    console.log(`${auth.user.email} (${auth.user.id})`);
+    break;
+
+  case "list": {
+    const { data, error } = await supabase.from("workout_sessions")
+      .select("id, number, performed_on, title, revision, source, session_sets(count)")
+      .order("performed_on", { ascending: false }).order("number", { ascending: false })
+      .limit(Number(arg ?? 10));
+    if (error) fail(error);
+    if (data.length === 0) console.log("(no sessions)");
+    for (const s of data) {
+      const sets = (s.session_sets as { count: number }[])[0]?.count ?? 0;
+      console.log(`#${s.number}  ${s.performed_on}  ${s.title ?? "(untitled)"}  · ${sets} set${sets === 1 ? "" : "s"} · rev ${s.revision} · ${s.source}  ${s.id}`);
+    }
+    break;
+  }
+
+  case "show": {
+    const f = sessionFilter(arg);
+    const { data, error } = await supabase.from("workout_sessions")
+      .select("*, session_sets(*)").eq(f.column, f.value).maybeSingle();
+    if (error) fail(error);
+    if (!data) fail(`no session ${arg} visible to ${auth.user.email}`);
+    data.session_sets.sort((a: { position: number }, b: { position: number }) => a.position - b.position);
+    console.log(JSON.stringify(data, null, 2));
+    break;
+  }
+
+  case "log-test": {
+    const today = new Date().toISOString().slice(0, 10);
+    const { data: session, error } = await supabase.from("workout_sessions")
+      .insert({ performed_on: today, title: "CLI connectivity check (synthetic)", source: "cli" })
+      .select().single();
+    if (error) fail(error);
+    const { error: setError } = await supabase.from("session_sets").insert({
+      session_id: session.id, position: 0, exercise_name: "Dumbbell bench press",
+      load: 32.5, unit: "kg", reps: 7, rir: 3,
+    });
+    if (setError) fail(setError);
+    console.log(`created #${session.number} ${session.id}`);
+    break;
+  }
+
+  case "delete": {
+    const f = sessionFilter(arg);
+    const { data, error } = await supabase.from("workout_sessions").delete().eq(f.column, f.value).select("number");
+    if (error) fail(error);
+    console.log(data.length ? `deleted #${data[0].number}` : `nothing deleted (not found or not yours)`);
+    break;
+  }
+
+  default:
+    console.log("usage: scripts/repknot [--as test2] whoami | list [n] | show <#n|uuid> | log-test | delete <#n|uuid>");
+    Deno.exit(command ? 1 : 0);
+}

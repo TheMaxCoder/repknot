@@ -1,0 +1,46 @@
+#!/usr/bin/env bash
+# Dev database helper. Usage: scripts/db push | scripts/db test
+# Uses the Supabase CLI login and the linked project (no DB password stored). Refuses to run
+# unless the linked project is the one in SUPABASE_URL (.env), i.e. the dev project.
+set -euo pipefail
+root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
+
+fail() { echo "scripts/db: $*" >&2; exit 1; }
+command -v supabase >/dev/null || fail "supabase CLI not installed"
+command -v jq >/dev/null || fail "jq not installed"
+[ -f "$root/.env" ] || fail ".env missing (copy .env.example)"
+set -a; . "$root/.env"; set +a
+: "${SUPABASE_URL:?SUPABASE_URL is empty in .env}"
+
+ref="$(sed -E 's#^https://([a-z0-9]+)\.supabase\.co/?$#\1#' <<<"$SUPABASE_URL")"
+linked="$(cat "$root/supabase/.temp/project-ref" 2>/dev/null || true)"
+[ -n "$linked" ] || fail "no linked project; run: supabase link --project-ref $ref"
+[ "$linked" = "$ref" ] || fail "linked project $linked is not the dev project $ref; refusing"
+
+cd "$root"
+case "${1:-}" in
+  push)
+    echo "Applying migrations to dev project $ref"
+    supabase db push --linked </dev/null
+    ;;
+  test)
+    shopt -s nullglob
+    files=(supabase/tests/*.sql)
+    [ ${#files[@]} -gt 0 ] || fail "no tests in supabase/tests"
+    status=0
+    for f in "${files[@]}"; do
+      echo "== $f"
+      # Each test file rolls back its own transaction and returns its TAP output as `tap`.
+      if ! json="$(supabase db query --linked -f "$f" --output-format json </dev/null 2>/dev/null)"; then
+        supabase db query --linked -f "$f" </dev/null || true
+        status=1; continue
+      fi
+      tap="$(jq -r '.rows[0].tap // empty' <<<"$json")"
+      [ -n "$tap" ] || { echo "no TAP output"; status=1; continue; }
+      echo "$tap"
+      grep -qE '^not ok|^# Looks like' <<<"$tap" && status=1
+    done
+    exit $status
+    ;;
+  *) fail "usage: scripts/db push|test" ;;
+esac

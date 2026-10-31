@@ -46,6 +46,9 @@ Native Kotlin/Compose workout logger. Read `Repknot-PRD.md` for product scope,
 ## Commands
 - `scripts/check` — debug build, Android lint, and available unit tests.
 - `cd android && ./gradlew :app:installDebug` — install on a connected device.
+- `scripts/db push` / `scripts/db test` — apply migrations / run pgTAP tests on the linked
+  dev project (refuses any other project). Tests must roll back; see existing test layout.
+- `scripts/repknot …` — CLI as the signed-in user (`--as test2` for the second user).
 
 ## Boundaries
 - Dark-only UI, including launch background and system bars. No theme toggle or dynamic colors.

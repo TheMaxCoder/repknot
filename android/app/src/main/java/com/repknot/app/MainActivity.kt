@@ -20,7 +20,9 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -34,9 +36,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.repknot.app.ui.theme.RepknotTheme
+import com.repknot.data.CloudState
 import com.repknot.domain.LoadUnit
 
 class MainActivity : ComponentActivity() {
@@ -46,19 +50,29 @@ class MainActivity : ComponentActivity() {
             statusBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT),
             navigationBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT),
         )
-        val factory = LoggingViewModel.Factory((application as RepknotApplication).repository)
+        val app = application as RepknotApplication
+        val loggingFactory = LoggingViewModel.Factory(app.repository)
+        val cloudFactory = CloudViewModel.Factory(app.cloud, app.repository)
         setContent {
             RepknotTheme {
-                val model: LoggingViewModel = viewModel(factory = factory)
+                val model: LoggingViewModel = viewModel(factory = loggingFactory)
+                val cloud: CloudViewModel = viewModel(factory = cloudFactory)
                 val state by model.state.collectAsState()
-                LoggingScreen(state, model::save)
+                val cloudState by cloud.state.collectAsState()
+                LoggingScreen(state, model::save) {
+                    CloudSection(cloudState, cloud::signIn, cloud::signOut, cloud::uploadTestSession)
+                }
             }
         }
     }
 }
 
 @Composable
-private fun LoggingScreen(state: LoggingState, save: (String, LoadUnit, String, String) -> Unit) {
+private fun LoggingScreen(
+    state: LoggingState,
+    save: (String, LoadUnit, String, String) -> Unit,
+    footer: @Composable () -> Unit,
+) {
     Scaffold { padding ->
         Column(
             Modifier.fillMaxSize().padding(padding).imePadding()
@@ -74,6 +88,7 @@ private fun LoggingScreen(state: LoggingState, save: (String, LoadUnit, String, 
             } else {
                 SetEditor(state, save)
             }
+            footer()
         }
     }
 }
@@ -126,4 +141,49 @@ private fun SetEditor(state: LoggingState, save: (String, LoadUnit, String, Stri
             }
         }
     }
+}
+
+@Composable
+private fun CloudSection(
+    state: CloudUiState,
+    signIn: (String, String) -> Unit,
+    signOut: () -> Unit,
+    uploadTestSession: () -> Unit,
+) {
+    HorizontalDivider()
+    Text(stringResource(R.string.cloud_title), style = MaterialTheme.typography.titleLarge)
+    when (val cloud = state.cloud) {
+        CloudState.NotConfigured ->
+            Text(stringResource(R.string.cloud_not_configured), color = MaterialTheme.colorScheme.onSurfaceVariant)
+        CloudState.Loading -> CircularProgressIndicator()
+        CloudState.SignedOut -> {
+            var email by rememberSaveable { mutableStateOf("") }
+            var password by rememberSaveable { mutableStateOf("") }
+            OutlinedTextField(email, { email = it }, label = { Text(stringResource(R.string.label_email)) },
+                singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                modifier = Modifier.fillMaxWidth())
+            OutlinedTextField(password, { password = it }, label = { Text(stringResource(R.string.label_password)) },
+                singleLine = true, visualTransformation = PasswordVisualTransformation(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                modifier = Modifier.fillMaxWidth())
+            Button(onClick = { signIn(email, password) }, enabled = !state.busy, modifier = Modifier.fillMaxWidth()) {
+                Text(stringResource(R.string.action_sign_in))
+            }
+        }
+        is CloudState.SignedIn -> {
+            Text(stringResource(R.string.cloud_signed_in_as, cloud.email))
+            state.sessionCount?.let {
+                Text(pluralStringResource(R.plurals.cloud_session_count, it, it),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            state.lastCreatedNumber?.let { Text(stringResource(R.string.cloud_created, it)) }
+            Button(onClick = uploadTestSession, enabled = !state.busy, modifier = Modifier.fillMaxWidth()) {
+                Text(stringResource(R.string.action_upload_test))
+            }
+            OutlinedButton(onClick = signOut, enabled = !state.busy, modifier = Modifier.fillMaxWidth()) {
+                Text(stringResource(R.string.action_sign_out))
+            }
+        }
+    }
+    state.error?.let { Text(stringResource(it), color = MaterialTheme.colorScheme.error) }
 }

@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.ksp)
+    alias(libs.plugins.kotlin.serialization)
 }
 android {
     namespace = "com.repknot.data"
@@ -20,6 +21,10 @@ dependencies {
     implementation(libs.room.runtime)
     implementation(libs.coroutines.core)
     ksp(libs.room.compiler)
+    implementation(platform(libs.supabase.bom))
+    implementation(libs.supabase.auth)
+    implementation(libs.supabase.postgrest)
+    implementation(libs.ktor.client.okhttp)
     androidTestImplementation(libs.androidx.test.runner)
     androidTestImplementation(libs.androidx.test.ext)
     androidTestImplementation(libs.junit)

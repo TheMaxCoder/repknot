@@ -12,8 +12,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 // Stable identifiers for the single synthetic workout. Real session creation comes later.
-private const val DemoSession = "f7ff8342-691c-47ee-bd9b-c3c0892d9991"
-private const val DemoSet = "9b776b65-2ab2-4c43-853d-e445428d60c8"
+internal const val DemoSession = "f7ff8342-691c-47ee-bd9b-c3c0892d9991"
+internal const val DemoSet = "9b776b65-2ab2-4c43-853d-e445428d60c8"
 
 data class LoggingState(
     val loading: Boolean = true,

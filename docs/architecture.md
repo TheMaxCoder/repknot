@@ -10,7 +10,9 @@ App owns Compose, ViewModels, navigation, and wiring. Data will own Room, Supaba
 and sync. Repositories separate UI from storage; no direct DAO/network calls in UI.
 Domain holds `SetValues`/`LoggedSet` and the `SetRepository` contract; data implements it
 with Room (`WorkoutDatabase`, exported schema in `android/data/schemas/`). Manual DI via
-`RepknotApplication`. No backend connection, credentials, or Supabase dependency exists yet.
+`RepknotApplication`. `CloudAccount` (data) talks to Supabase with the publishable key
+and the signed-in user's session; RLS restricts every table to its owner. Schema lives in
+`supabase/migrations`, tests in `supabase/tests`.
 
 ## Rules for the first logging slice
 
@@ -35,6 +37,9 @@ and access policies come with the first logging slice. Use synthetic dev data;
 review access control and recovery before importing real health records. Record any
 actual temporary policy relaxation here when introduced.
 
+- Supabase CLI is logged in (`supabase login`) with an account-wide token while dev is the
+  only project. Before creating a prod project: log out and use `--db-url`, or keep prod in
+  a separate account.
 - Building phase: Room schema changes ship without migrations; local data is disposable
   (clear app data/reinstall after a schema change). Add real migrations once Android
   starts logging real workouts.
