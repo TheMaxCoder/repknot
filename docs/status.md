@@ -20,18 +20,17 @@ Updated: 2026-10-31
 
 ## Current task
 
-[002 — Dev backend and authenticated access](tasks/002-dev-backend.md): schema, RLS,
-tests (22/22), and CLI verified on the dev project; on-device sign-in/upload check is
-pending. Then [003 — sync](tasks/003-session-sync.md).
+[003 — Pull on open, push finished sessions](tasks/003-session-sync.md) is ready, not
+started. Task 002 is done: dev schema + RLS (22/22 tests), CLI, and Android sign-in/upload
+verified end to end.
 
 ## Next priorities
 
-1. Task 002: dev backend, sign-in, ownership policies, second-user denial test.
-2. Task 003: pull on open + push finished sessions, per
+1. Task 003: pull on open + push finished sessions, per
    [ADR 001](decisions/001-sync-model.md) (accounts for ChatGPT/web as other writers).
-3. ChatGPT write access (PRD §4): verify integration options before committing; writes
+2. ChatGPT write access (PRD §4): verify integration options before committing; writes
    follow ADR 001 revision rules.
-4. After the slice, expand session editing, previous-performance suggestions, program
+3. After the slice, expand session editing, previous-performance suggestions, program
    rotation, check-ins, import/reconciliation, then the web companion per the PRD.
    These are roadmap directions, not claims that their detailed scope is settled.
 

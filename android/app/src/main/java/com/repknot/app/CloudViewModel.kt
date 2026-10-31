@@ -1,5 +1,6 @@
 package com.repknot.app
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -21,6 +22,8 @@ data class CloudUiState(
     /** String resource ID of the current error message, if any. */
     val error: Int? = null,
 )
+
+private const val TAG = "RepknotCloud"
 
 /** Task 002 connectivity check: sign in, count sessions, write one synthetic session. */
 class CloudViewModel(private val cloud: CloudAccount, private val sets: SetRepository) : ViewModel() {
@@ -61,6 +64,7 @@ class CloudViewModel(private val cloud: CloudAccount, private val sets: SetRepos
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
+            Log.w(TAG, "Session count failed", e)
             mutableState.update { it.copy(error = R.string.error_cloud) }
         }
     }
@@ -74,6 +78,7 @@ class CloudViewModel(private val cloud: CloudAccount, private val sets: SetRepos
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
+                Log.w(TAG, "Cloud action failed", e)
                 mutableState.update { it.copy(error = errorMessage) }
             } finally {
                 mutableState.update { it.copy(busy = false) }

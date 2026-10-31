@@ -35,6 +35,8 @@ The check script builds the debug APK, runs lint, and runs unit tests when prese
 Room tests are instrumented and need a device:
 `cd android && ./gradlew :data:connectedDebugAndroidTest` (first run needs network).
 Device and visual verification are separate from the build.
+On some vendor Android builds, a fresh install may get its network blocked ("Unable to resolve host"):
+allow Wi-Fi and mobile data under Settings → Apps → Repknot, then restart the app.
 
 ## Structure
 
@@ -45,6 +47,6 @@ Device and visual verification are separate from the build.
 
 Versions are pinned in `android/gradle/libs.versions.toml` and the Gradle wrapper.
 The initial versions reuse installed compatible tooling rather than chasing latest releases.
-Local logging of one synthetic set (Room) works; Supabase, sign-in, and sync come next.
+Local logging of one synthetic set (Room) and dev Supabase sign-in/upload work; sync is next.
 No CI or restrictive hooks. Private exports belong outside Git (the root
 `private-data/` directory is ignored); never commit credentials or personal records.

@@ -1,5 +1,6 @@
 package com.repknot.app
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -35,6 +36,7 @@ class LoggingViewModel(private val repository: SetRepository) : ViewModel() {
                 }
             } catch (e: CancellationException) { throw e }
             catch (e: Exception) {
+                Log.w("RepknotLogging", "Reading local set failed", e)
                 mutableState.value = mutableState.value.copy(loading = false, error = R.string.error_read)
             }
         }
@@ -53,6 +55,7 @@ class LoggingViewModel(private val repository: SetRepository) : ViewModel() {
                 repository.save(DemoSet, DemoSession, values)
             } catch (e: CancellationException) { throw e }
             catch (e: Exception) {
+                Log.w("RepknotLogging", "Saving set failed", e)
                 mutableState.value = mutableState.value.copy(error = R.string.error_save)
             } finally {
                 mutableState.value = mutableState.value.copy(saving = false)

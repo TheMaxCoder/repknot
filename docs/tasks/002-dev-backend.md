@@ -1,6 +1,6 @@
 # 002 — Dev backend and authenticated access
 
-Status: in progress (device check pending)
+Status: done
 Updated: 2026-10-31
 
 ## Outcome and acceptance
@@ -47,10 +47,16 @@ dev target before operations; keep secrets outside Git. No production setup requ
 - CLI: owner `log-test` created #10 and `show` read back exact values; `--as test2`
   sees no sessions, cannot show or delete #10.
 - `scripts/check`: build + lint clean (only pre-existing version notices).
-- **Pending:** on-device sign-in, session persistence across restart, and upload of the
-  logged set with CLI read-back. The phone was disconnected when this was reached.
+- Device (test phone, API 36): owner signed in in the app and uploaded the logged set →
+  `scripts/repknot list` shows #11, `source=android`, owner's user id, exactly
+  32.5 kg × 7, RIR 3. `--as test2` cannot list or show #11.
+- Not verified by an agent: staying signed in after force-stop (supabase-kt persists the
+  session by default; the phone disconnected before this check). Confirm in passing.
+- The phone's OS had set the app's network policy to REJECT_ALL after install, which surfaced as
+  "Unable to resolve host" even though INTERNET was granted. Fixed in phone settings
+  (Apps → Repknot → restrict data usage → allow Wi-Fi + mobile); restart the app after.
+  ViewModels now log failures under tags `RepknotCloud` / `RepknotLogging`.
 
 ## Handoff
-Next: connect the phone, `cd android && ./gradlew :app:installDebug`, sign in as the owner,
-log a set, tap "Upload logged set as test session", confirm with `scripts/repknot list`,
-force-stop/relaunch to confirm the sign-in persists. Then mark done and start 003.
+Done. Next: [003](003-session-sync.md). The "Cloud (dev)" section and `writeTestSession`
+are connectivity scaffolding; replace them with the real finish/push flow in 003.
