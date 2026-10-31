@@ -19,6 +19,11 @@ Implement [ADR 001](../decisions/001-sync-model.md) end to end against the dev b
   after the phone's base revision, the push reports a conflict and overwrites nothing.
   "Keep mine" and "take theirs" both work.
 - Android and the CLI read back the same session, including sets and notes.
+- Share / Copy from the finish overview produces the ADR §7 text, including `ref`.
+- When a shared, unpushed session is saved through `save_session` (simulating ChatGPT),
+  the phone adopts the server copy without a prompt if it hasn't been edited since
+  sharing. If it has been edited, the phone raises a conflict. Either way, exactly one
+  record exists.
 
 ## Scope and plan
 - Room: add a session table with status and revisions, per the ADR. Move task 001's
@@ -27,7 +32,9 @@ Implement [ADR 001](../decisions/001-sync-model.md) end to end against the dev b
   SQL-level tests for replay, conflict, and apply, run as an authenticated user.
 - Pull: the minimum cache needed for one synthetic program workout.
 - Retry on app open and when the network returns. Keep the mechanism simple.
-- A minimal finish/overview screen and a minimal conflict prompt.
+- A minimal finish/overview screen with Share / Copy, and a minimal conflict prompt.
+- `save_session(payload jsonb)` for ChatGPT, plus a short ChatGPT-instructions snippet
+  in `docs/` (ADR §6). Verify what the connector can actually access before relying on it.
 
 Defer: real ChatGPT integration (a separate task: verify connectivity per PRD §4),
 program versions and rotation, dashboards, multi-device drafts.

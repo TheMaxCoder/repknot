@@ -11,7 +11,8 @@ normal signed-in user can read/write their records. A second user cannot access 
 - Inspect available dev configuration; resolve sign-in method when necessary.
 - Add minimum migrations, ownership policies, and synthetic seed matching task 001.
   Session schema follows [ADR 001](../decisions/001-sync-model.md) from the first
-  migration: UUID ids, `performed_on`, `revision` + `client_revision` + `source`, and
+  migration: UUID `id` (default `gen_random_uuid()`), identity `number`, `performed_on`,
+  `revision` + `client_revision` + `source`, and
   the trigger that bumps `revision` on any change to a session or its children.
 - Verify authenticated Android and CLI writes/read-back and negative user access.
 - Record dev credential handling and any intentional temporary security relaxation.

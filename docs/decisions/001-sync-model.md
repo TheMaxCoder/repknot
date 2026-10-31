@@ -38,12 +38,26 @@ at a time on the phone. We need:
 
 ### 3. IDs
 
-- The phone generates a UUID when it creates a session, a session exercise, or a set.
-  The UUID never changes, and it is the key that makes retries safe.
-- `performed_on` (date) is an ordinary column and is not unique. Several sessions can
-  share a date: restarts, two sessions in a day, workouts that cross midnight, imported
-  history, or sessions ChatGPT creates.
-- "You already have a workout today" is a prompt in the UI, not a database constraint.
+- **Session `id`:** a UUID, the hidden key that prevents duplicates.
+  - The phone generates it when a session starts, before any push, so a session that
+    has never been pushed already has one.
+  - Writers with nothing to copy (e.g. ChatGPT logging a workout from scratch) leave it
+    out, and the database default `gen_random_uuid()` supplies it.
+- **Session `number`:** a friendly identity column assigned by the server (`#42`), for
+  humans and chat ("update workout #42"). It is assigned on the first save to Supabase
+  and is never used as the sync key.
+- **Children (session exercises, sets):** UUIDs. Server writes replace a session's
+  children wholesale, so child IDs never have to match across writers.
+- **`performed_on`:** an ordinary date column, not unique. Several sessions can share a
+  date: restarts, two sessions in a day, workouts that cross midnight, imported history.
+  "You already have a workout today" is a prompt in the UI, not a database constraint.
+- **Why not auto-increment or date + content as the key:**
+  - A server-assigned number doesn't exist while the phone is offline or before the
+    first push.
+  - A lost acknowledgement, or a paste to ChatGPT before pushing, would then create a
+    duplicate.
+  - Content changes whenever ChatGPT or the user corrects something, so content can't
+    identify a session.
 
 ### 4. Push
 
@@ -95,12 +109,54 @@ at a time on the phone. We need:
 
 ### 6. Other writers
 
-- Web, ChatGPT, and CLI clients write as the signed-in user, through RLS-protected tables
-  or functions. They never use a service-role key.
-- ChatGPT gets narrowly scoped actions authenticated as the user. Whether it can connect
-  at all still has to be verified (PRD §4).
+- **Web and CLI** write as the signed-in user, through RLS-protected tables or functions.
+  They never use a service-role key.
+- **ChatGPT** (via the Supabase connector in ChatGPT web) saves sessions only through
+  `save_session(payload jsonb)`. In one transaction, that function:
+  - uses the payload's `ref` session ID, or generates one if there is none;
+  - validates the payload;
+  - replaces the session's children;
+  - sets `source = 'chatgpt'`;
+  - bumps `revision` (through the trigger).
+
+  ChatGPT project instructions must say:
+  - Save sessions only with `save_session`.
+  - Always reuse the `ref` from pasted text, and never invent IDs.
+  - Read the current session before updating it.
+- **Connector risk (unverified):** the connector likely runs SQL with owner privileges.
+  That would bypass RLS, and depending on authorization it could reach every project on
+  the account, prod included. Before relying on it:
+  - restrict it to one project, if the connector supports that;
+  - enable backups or point-in-time recovery;
+  - verify its actual scope.
+
+  The revision trigger still fires for owner-privileged writes, so conflict detection holds.
 - Changes ChatGPT makes at the user's request are normal writes. Autonomous AI
   suggestions still need the user's approval before they change programs or logs (PRD §5).
+
+### 7. Sharing a session with ChatGPT
+
+- The finish overview has **Share / Copy**. It produces plain text through the Android
+  share sheet, and always includes the session `ref` (UUID). Once a `number` exists, it
+  is included too:
+
+  ```
+  Workout #42 · Sat 2026-10-31 · Push A
+  ref: 7f3c2a1e-9b4d-4c1a-8e2f-0d6b5a7c3e91
+  Dumbbell bench press
+    1. 32.5 kg × 7 · RIR 3
+    2. 32.5 kg × 6 · RIR 2 — grip slipping
+  Session notes: short on time
+  ```
+
+- Sharing records the session's `local_revision` at that moment as `shared_local_revision`.
+- **If ChatGPT saves the session before the phone pushes it,** the next pull or push finds
+  the session's own ID already on the server:
+  - Local unchanged since sharing (`local_revision == shared_local_revision`): the phone
+    adopts the server copy and marks the session pushed. No prompt.
+  - Local edited since sharing: a normal conflict (keep mine / take theirs).
+- **If the phone pushed first,** ChatGPT's later save is an ordinary update by ID. The
+  phone picks it up on its next pull, because its local copy has no unpushed edits.
 
 ## Alternatives considered
 
@@ -116,10 +172,12 @@ at a time on the phone. We need:
 
 ## Consequences
 
-- **Supabase schema (task 002):** the first migration includes `revision`,
-  `client_revision`, `performed_on`, and `source`, plus the revision trigger.
+- **Supabase schema (task 002):** the first migration includes `id` (uuid, default
+  `gen_random_uuid()`), `number` (identity), `revision`, `client_revision`,
+  `performed_on`, and `source`, plus the revision trigger. `save_session` arrives with
+  task 003.
 - **Room:** the session table gets `status`, `local_revision`, `pushed_local_revision`,
-  and `base_revision`. Task 001's per-set revision fields move to the session level when
+  `base_revision`, `shared_local_revision`, and the server `number` once known. Task 001's per-set revision fields move to the session level when
   the session table is added.
 - **Today's workout:** rotation is a pure function in `domain`. Its inputs are server
   history plus finished sessions that are not pushed yet, so an offline gym day doesn't
