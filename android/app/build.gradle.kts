@@ -19,6 +19,8 @@ android {
     buildFeatures { compose = true }
 }
 dependencies {
+    implementation(libs.lifecycle.viewmodel.compose)
+    implementation(libs.coroutines.core)
     implementation(project(":domain"))
     implementation(project(":data"))
     implementation(platform(libs.androidx.compose.bom))
@@ -26,4 +28,5 @@ dependencies {
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.compose.ui.tooling.preview)
     debugImplementation(libs.androidx.compose.ui.tooling)
+    testImplementation(libs.junit)
 }

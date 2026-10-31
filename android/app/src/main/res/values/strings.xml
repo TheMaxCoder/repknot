@@ -1,7 +1,25 @@
 <resources>
     <string name="app_name">Repknot</string>
-    <string name="welcome_title">Make every rep count.</string>
-    <string name="welcome_body">Your workouts, at your pace.</string>
-    <string name="empty_title">A fresh start</string>
-    <string name="empty_body">Your training program and workouts will appear here.</string>
+    <string name="demo_workout_title">Demo workout</string>
+    <string name="demo_exercise_title">Dumbbell bench press · Set 1</string>
+    <string name="demo_disclaimer">Synthetic practice workout. No cloud sync yet.</string>
+    <string name="demo_previous_hint">Example previous performance: 20 kg × 8 (suggestion only)</string>
+    <string name="label_load">Load</string>
+    <string name="label_reps">Reps</string>
+    <string name="label_rir">RIR (optional)</string>
+    <string name="action_log_set">Log set</string>
+    <string name="action_update_set">Update set</string>
+    <string name="action_saving">Saving…</string>
+    <string name="no_set_logged">No set logged yet.</string>
+    <string name="saved_title">Saved on this device</string>
+    <string name="saved_summary">%1$s %2$s × %3$s · RIR %4$s</string>
+    <plurals name="reps_count">
+        <item quantity="one">%d rep</item>
+        <item quantity="other">%d reps</item>
+    </plurals>
+    <string name="saved_rir_blank">—</string>
+    <string name="pending_sync">Pending sync · cloud sync is not connected</string>
+    <string name="error_read">Could not read local workout. Reopen the app to retry.</string>
+    <string name="error_invalid_input">Enter a non-negative load, positive whole reps, and optional non-negative whole RIR.</string>
+    <string name="error_save">Save failed. Your input is still here; try again.</string>
 </resources>

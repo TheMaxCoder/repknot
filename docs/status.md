@@ -4,28 +4,30 @@ Updated: 2026-10-31
 
 ## Current state
 
-- Android skeleton exists: dark-only Compose launch screen; app/domain/data modules.
-- Last build verification (2026-10-31): `scripts/check --offline` passed after a
-  theme API compatibility fix. Lint has non-blocking version/backup warnings.
-  Unit-test tasks reported NO-SOURCE; no behavior tests exist yet.
+- Android app/domain/data modules; dark-only Compose logging screen for one synthetic set.
+- Last build verification (2026-10-31): `scripts/check --offline` passed with 4 unit
+  tests. Lint has only non-blocking version/backup warnings.
 - Device smoke test (2026-10-31): installed the existing debug APK on the test phone
   (API 36). Cold launch and force-stop/relaunch succeeded. Screenshots confirmed
   readable content, unobstructed system-bar insets, and dark appearance with both
   light and dark system settings. Original system dark mode was restored. No
   Repknot entries appeared in the crash buffer. No app code changed during testing.
-- Room, authentication, Supabase configuration, and workout logging are not implemented.
+- Task 001 done (2026-10-31): one synthetic set can be logged locally with Room,
+  survives force-stop, uses revision-based pending-sync state. Verified by unit tests,
+  4 device Room tests, and a manual device run — details in the task.
+- Authentication, Supabase configuration, and sync are not implemented.
 - Shared startup, task-sizing, and handoff instructions now live in `AGENTS.md`.
 
 ## Current task
 
-[001 — Local set logging](tasks/001-persistent-set-logging.md)
-is in progress. Backend/auth and sync are separate follow-up tasks. The task contains acceptance criteria, progress, and the next action.
+[002 — Dev backend and authenticated access](tasks/002-dev-backend.md) is ready,
+not started. Needs the owner's hosted dev project and sign-in choice. Then
+[003 — sync](tasks/003-session-sync.md).
 
 ## Next priorities
 
-1. Skeleton device smoke test complete; functional logging tests await implementation.
-2. Implement task 001 locally, then [002 backend/auth](tasks/002-dev-backend.md) and
-   [003 sync](tasks/003-session-sync.md).
+1. Task 002: dev backend, sign-in, ownership policies, second-user denial test.
+2. Task 003: session sync using the local revision fields.
 3. After the slice, expand session editing, previous-performance suggestions, program
    rotation, check-ins, import/reconciliation, then the web companion per the PRD.
    These are roadmap directions, not claims that their detailed scope is settled.

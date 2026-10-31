@@ -7,19 +7,37 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.repknot.app.ui.theme.RepknotTheme
+import com.repknot.domain.LoadUnit
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -28,35 +46,84 @@ class MainActivity : ComponentActivity() {
             statusBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT),
             navigationBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT),
         )
-        setContent { RepknotTheme { RepknotHome() } }
-    }
-}
-
-@Composable
-private fun RepknotHome() {
-    Scaffold { contentPadding ->
-        Column(
-            modifier = Modifier.fillMaxSize().padding(contentPadding).padding(24.dp),
-            verticalArrangement = Arrangement.spacedBy(24.dp),
-        ) {
-            Text(stringResource(R.string.app_name), color = MaterialTheme.colorScheme.primary,
-                style = MaterialTheme.typography.titleMedium)
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(stringResource(R.string.welcome_title), style = MaterialTheme.typography.headlineLarge)
-                Text(stringResource(R.string.welcome_body), color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-            Card(modifier = Modifier.fillMaxWidth()) {
-                Column(Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(stringResource(R.string.empty_title), style = MaterialTheme.typography.titleLarge)
-                    Text(stringResource(R.string.empty_body), color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
+        val factory = LoggingViewModel.Factory((application as RepknotApplication).repository)
+        setContent {
+            RepknotTheme {
+                val model: LoggingViewModel = viewModel(factory = factory)
+                val state by model.state.collectAsState()
+                LoggingScreen(state, model::save)
             }
         }
     }
 }
 
-@Preview(showBackground = true)
 @Composable
-private fun RepknotPreview() {
-    RepknotTheme { RepknotHome() }
+private fun LoggingScreen(state: LoggingState, save: (String, LoadUnit, String, String) -> Unit) {
+    Scaffold { padding ->
+        Column(
+            Modifier.fillMaxSize().padding(padding).imePadding()
+                .verticalScroll(rememberScrollState()).padding(24.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            Text(stringResource(R.string.app_name), color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.titleMedium)
+            Text(stringResource(R.string.demo_workout_title), style = MaterialTheme.typography.headlineLarge)
+            Text(stringResource(R.string.demo_exercise_title), style = MaterialTheme.typography.titleLarge)
+            Text(stringResource(R.string.demo_disclaimer), color = MaterialTheme.colorScheme.onSurfaceVariant)
+            if (state.loading) {
+                CircularProgressIndicator()
+            } else {
+                SetEditor(state, save)
+            }
+        }
+    }
+}
+
+@Composable
+private fun SetEditor(state: LoggingState, save: (String, LoadUnit, String, String) -> Unit) {
+    // Initial values come from an explicit saved set, never from the previous-value hint.
+    var load by rememberSaveable { mutableStateOf(state.saved?.values?.load?.toString() ?: "") }
+    var reps by rememberSaveable { mutableStateOf(state.saved?.values?.reps?.toString() ?: "") }
+    var rir by rememberSaveable { mutableStateOf(state.saved?.values?.rir?.toString() ?: "") }
+    var unitName by rememberSaveable { mutableStateOf(state.saved?.values?.unit?.name ?: "KG") }
+    Text(stringResource(R.string.demo_previous_hint), color = MaterialTheme.colorScheme.onSurfaceVariant)
+    OutlinedTextField(load, { load = it }, label = { Text(stringResource(R.string.label_load)) }, singleLine = true,
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), modifier = Modifier.fillMaxWidth())
+    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        LoadUnit.entries.forEach { unit ->
+            FilterChip(selected = unitName == unit.name, onClick = { unitName = unit.name }, label = { Text(unit.name.lowercase()) })
+        }
+    }
+    OutlinedTextField(reps, { reps = it }, label = { Text(stringResource(R.string.label_reps)) }, singleLine = true,
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), modifier = Modifier.fillMaxWidth())
+    OutlinedTextField(rir, { rir = it }, label = { Text(stringResource(R.string.label_rir)) }, singleLine = true,
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), modifier = Modifier.fillMaxWidth())
+    state.error?.let { Text(stringResource(it), color = MaterialTheme.colorScheme.error) }
+    Button(onClick = { save(load, LoadUnit.valueOf(unitName), reps, rir) }, enabled = !state.saving,
+        modifier = Modifier.fillMaxWidth()) {
+        Text(stringResource(when {
+            state.saving -> R.string.action_saving
+            state.saved == null -> R.string.action_log_set
+            else -> R.string.action_update_set
+        }))
+    }
+    val saved = state.saved
+    if (saved == null) {
+        Text(stringResource(R.string.no_set_logged), color = MaterialTheme.colorScheme.onSurfaceVariant)
+    } else {
+        Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
+            Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(stringResource(R.string.saved_title), style = MaterialTheme.typography.titleMedium)
+                Text(stringResource(
+                    R.string.saved_summary,
+                    saved.values.load.toString(),
+                    saved.values.unit.name.lowercase(),
+                    pluralStringResource(R.plurals.reps_count, saved.values.reps, saved.values.reps),
+                    saved.values.rir?.toString() ?: stringResource(R.string.saved_rir_blank),
+                ))
+                if (saved.pendingSync) {
+                    Text(stringResource(R.string.pending_sync), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+        }
+    }
 }

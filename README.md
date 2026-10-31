@@ -32,18 +32,19 @@ cd android
 ```
 
 The check script builds the debug APK, runs lint, and runs unit tests when present.
-The skeleton has no business logic/tests yet; NO-SOURCE is not test coverage.
+Room tests are instrumented and need a device:
+`cd android && ./gradlew :data:connectedDebugAndroidTest` (first run needs network).
 Device and visual verification are separate from the build.
 
 ## Structure
 
 - `android/app`: launch screen, theme, and future feature UI.
-- `android/domain`: pure Kotlin business rules, initially empty.
-- `android/data`: Android storage/integration module, initially empty.
+- `android/domain`: pure Kotlin business rules and repository contracts.
+- `android/data`: Room persistence; later Supabase and sync.
 - `AGENTS.md`: shared agent guidance; `CLAUDE.md` imports it.
 
 Versions are pinned in `android/gradle/libs.versions.toml` and the Gradle wrapper.
 The initial versions reuse installed compatible tooling rather than chasing latest releases.
-Room, Supabase, sign-in, and workout logging are the next slice, not implemented yet.
+Local logging of one synthetic set (Room) works; Supabase, sign-in, and sync come next.
 No CI or restrictive hooks. Private exports belong outside Git (the root
 `private-data/` directory is ignored); never commit credentials or personal records.
