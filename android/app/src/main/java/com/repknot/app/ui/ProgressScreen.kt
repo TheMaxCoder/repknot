@@ -1,6 +1,8 @@
 package com.repknot.app.ui
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -15,6 +17,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.text.input.KeyboardType
 import com.repknot.app.*
@@ -38,11 +41,21 @@ fun ProgressScreen(state: ProgressUiState, back: () -> Unit, openBody: () -> Uni
         when {
             state.loading -> Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
             else -> {
-                Card(Modifier.fillMaxWidth().clickable(role = Role.Button, onClick = openBody)) {
-                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Text(stringResource(R.string.body), style = MaterialTheme.typography.titleMedium)
-                        BodyLines(state)
-                        TextButton(onClick = { showDialog = true }) { Text(stringResource(R.string.add_check_in)) }
+                Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
+                    Column {
+                        Column(Modifier.fillMaxWidth().clickable(role = Role.Button, onClick = openBody).padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                                Text(stringResource(R.string.body), Modifier.weight(1f),
+                                    style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+                                Text("›", Modifier.clearAndSetSemantics {}, style = MaterialTheme.typography.titleLarge)
+                            }
+                            BodyLines(state, prominentWeight = true)
+                        }
+                        TextButton(onClick = { showDialog = true }, modifier = Modifier.padding(start = 8.dp, bottom = 8.dp)) {
+                            Text(stringResource(R.string.add_check_in))
+                        }
                     }
                 }
                 if (state.items.isEmpty()) Text(stringResource(R.string.no_finished_workouts))
@@ -52,25 +65,38 @@ fun ProgressScreen(state: ProgressUiState, back: () -> Unit, openBody: () -> Uni
                         Text(dipText(dip, state.names), Modifier.padding(16.dp))
                     }
                 }
-                var previousGroup: String? = null
-                state.items.forEach { item ->
+                if (state.items.isNotEmpty()) {
+                    Text(stringResource(R.string.training), style = MaterialTheme.typography.titleMedium)
+                }
+                state.items.forEachIndexed { index, item ->
                     val group = groupLabel(item)
-                    if (group != previousGroup) {
-                        Text(group, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
-                        previousGroup = group
+                    if (index == 0 || groupLabel(state.items[index - 1]) != group) {
+                        val count = state.items.drop(index).takeWhile { groupLabel(it) == group }.size
+                        val marker = when (group) {
+                            "Needs a look" -> MaterialTheme.colorScheme.error
+                            "Ready to move up", "Improving" -> MaterialTheme.colorScheme.primary
+                            else -> MaterialTheme.colorScheme.onSurfaceVariant
+                        }
+                        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Box(Modifier.size(8.dp).background(marker, CircleShape).clearAndSetSemantics {})
+                            Text(group, Modifier.weight(1f), style = MaterialTheme.typography.labelLarge)
+                            Text(count.toString(), style = MaterialTheme.typography.labelLarge)
+                        }
                     }
                     Card(Modifier.fillMaxWidth().clickable(role = Role.Button) { openExercise(item.exerciseId) }) {
-                        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Text(item.name, style = MaterialTheme.typography.titleMedium)
+                        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                                Text(item.name, Modifier.weight(1f), style = MaterialTheme.typography.titleMedium)
+                                Text("›", Modifier.clearAndSetSemantics {}, style = MaterialTheme.typography.titleLarge)
+                            }
                             Text(reasonText(item.reason), style = MaterialTheme.typography.bodyMedium,
-                                color = when (group) {
-                                    "Needs a look" -> MaterialTheme.colorScheme.error
-                                    "Improving" -> MaterialTheme.colorScheme.primary
-                                    else -> MaterialTheme.colorScheme.onSurfaceVariant
-                                })
+                                color = MaterialTheme.colorScheme.onSurfaceVariant)
                             Flags(item)
                             item.exposures.takeLast(3).asReversed().forEach { exposure ->
-                                Text(exposureLine(exposure), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                                Text(exposureLine(exposure), style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                         }
                     }
@@ -96,15 +122,18 @@ fun BodyScreen(state: ProgressUiState, back: () -> Unit, addCheckIn: (String, St
 }
 
 @Composable
-private fun BodyLines(state: ProgressUiState) {
+private fun BodyLines(state: ProgressUiState, prominentWeight: Boolean = false) {
     val body = state.body
     if (body == null) {
         Text(stringResource(R.string.no_check_ins), style = MaterialTheme.typography.titleLarge)
         return
     }
     Text(waistLine(body), style = MaterialTheme.typography.titleLarge)
+    if (prominentWeight) {
+        weightLine(body).takeIf { it.isNotEmpty() }?.let { Text(it, style = MaterialTheme.typography.titleMedium) }
+    }
     rateLine(body).takeIf { it.isNotEmpty() }?.let { Text(it) }
-    weightLine(body).takeIf { it.isNotEmpty() }?.let { Text(it) }
+    if (!prominentWeight) weightLine(body).takeIf { it.isNotEmpty() }?.let { Text(it) }
     state.checkIns.firstOrNull()?.let {
         Text(lastCheckInLine(java.time.LocalDate.parse(it.checkedOn), state.today),
             style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
