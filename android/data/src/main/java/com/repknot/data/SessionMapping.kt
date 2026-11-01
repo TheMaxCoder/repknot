@@ -50,6 +50,7 @@ data class ServerSession(
     @SerialName("client_revision") val clientRevision: Long? = null,
     @SerialName("program_id") val programId: String? = null,
     @SerialName("program_workout_key") val programWorkoutKey: String? = null,
+    val light: Boolean = false,
     val exercises: List<ServerSessionExercise> = emptyList(),
 ) {
     fun json(): String = codec.encodeToString(this)
@@ -80,6 +81,7 @@ data class PushPayload(
     val title: String, val notes: String?,
     @SerialName("program_id") val programId: String?,
     @SerialName("program_workout_key") val programWorkoutKey: String?,
+    val light: Boolean,
     val exercises: List<PushExercise>,
 )
 
@@ -97,7 +99,7 @@ fun ServerSession.setRows(): List<SetRow> = exercises.flatMap { e ->
 
 fun SessionSnapshot.pushPayload(): PushPayload {
     val setsByExercise = sets.groupBy { it.sessionExerciseId }
-    return PushPayload(row.id, row.performedOn, row.title, row.notes, row.programId, row.programWorkoutKey,
+    return PushPayload(row.id, row.performedOn, row.title, row.notes, row.programId, row.programWorkoutKey, row.light,
         exercises.sortedBy { it.position }.map { e ->
             PushExercise(e.id, e.exerciseId, e.exerciseName, e.plannedSets, e.plannedRepMin, e.plannedRepMax,
                 e.plannedRirMin, e.plannedRirMax, e.plannedLoad, e.plannedUnit, e.substitutedFor, e.notes,
@@ -138,6 +140,6 @@ fun pastSessions(rows: List<SessionRow>, exercises: List<SessionExerciseRow>, se
                 PastExercise(e.position, e.exerciseId, setsByExercise[e.id].orEmpty().mapNotNull { s ->
                     s.unit?.let { PastSet(s.position, s.load, parseUnit(it), s.reps, s.durationS, s.rir) }
                 }, exerciseName = e.exerciseName, plannedSets = e.plannedSets)
-            })
+            }, light = row.light)
     }
 }

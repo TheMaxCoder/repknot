@@ -158,6 +158,14 @@ private fun SessionActions(session: WorkoutUiState.Session, vm: WorkoutViewModel
                 TextButton(onClick = { picker = true }, modifier = Modifier.weight(1f)) { Text(stringResource(R.string.add_exercise)) }
                 TextButton(onClick = { notes = session.row.notes.orEmpty(); notesOpen = true }, modifier = Modifier.weight(1f)) { Text(stringResource(R.string.session_notes)) }
             }
+            Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text(stringResource(R.string.light_day))
+                    Text(stringResource(R.string.light_day_hint), style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                Switch(checked = session.row.light, onCheckedChange = vm::setLight)
+            }
             FinishSection(session.row.status, vm)
         }
     }

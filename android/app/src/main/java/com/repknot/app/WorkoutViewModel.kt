@@ -175,6 +175,8 @@ class WorkoutViewModel(
     fun saveExerciseNotes(id: String, notes: String) = exerciseAction(id) {
         sessions.saveExerciseNotes(id, notes.trim().ifEmpty { null })
     }
+    /** Marks the current workout as a light / modified day; progress statuses ignore it. */
+    fun setLight(light: Boolean) = action { current.get()?.let { sessions.setLight(it, light) } }
     fun saveSessionNotes(notes: String) = action {
         current.get()?.let { sessions.saveSessionNotes(it, notes.trim().ifEmpty { null }) }
     }

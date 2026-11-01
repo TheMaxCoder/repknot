@@ -1,5 +1,6 @@
 package com.repknot.data
 
+import androidx.room.ColumnInfo
 import androidx.room.Dao
 import androidx.room.Entity
 import androidx.room.Insert
@@ -26,6 +27,8 @@ data class SessionRow(
     val serverSnapshot: String?,
     val programId: String? = null,
     val programWorkoutKey: String? = null,
+    /** Intentionally light / modified day: excluded from progress statuses (task 019). */
+    @ColumnInfo(defaultValue = "0") val light: Boolean = false,
 )
 
 /** One exercise in a session, with the prescription snapshot it was started from (ADR 002). */
@@ -156,6 +159,13 @@ interface SessionDao {
         setSessionNotes(id, notes)
         bump(id)
     }
+    @Query("UPDATE sessions SET light = :light WHERE id = :id")
+    suspend fun setLightRow(id: String, light: Boolean)
+    @Transaction
+    suspend fun setLight(id: String, light: Boolean) {
+        setLightRow(id, light)
+        bump(id)
+    }
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun putExercises(rows: List<SessionExerciseRow>)
@@ -280,7 +290,7 @@ interface SessionDao {
         val acknowledged = maxOf(revision, remote.clientRevision ?: 0)
         put(SessionRow(remote.id, remote.performedOn, remote.title ?: "Workout", remote.notes,
             "pushed", acknowledged, acknowledged, remote.revision, null, remote.number, null,
-            remote.programId, remote.programWorkoutKey))
+            remote.programId, remote.programWorkoutKey, remote.light))
         putExercises(remote.exerciseRows())
         putSets(remote.setRows())
     }

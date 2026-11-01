@@ -56,6 +56,8 @@ class SessionMappingTest {
         assertEquals(listOf("b"), payload.exercises[1].sets.map { it.id })
         val json = codec.encodeToJsonElement(payload).jsonObject
         assertEquals("p1", json["program_id"]!!.jsonPrimitive.content)
+        assertEquals("false", json["light"]!!.jsonPrimitive.content)
+        assertEquals("true", codec.encodeToJsonElement(SessionSnapshot(row.copy(light = true), emptyList(), emptyList()).pushPayload()).jsonObject["light"]!!.jsonPrimitive.content)
         val firstExercise = json["exercises"]!!.jsonArray[0].jsonObject
         assertEquals("press-id", firstExercise["exercise"]!!.jsonPrimitive.content)
         assertEquals("10.0", firstExercise["sets"]!!.jsonArray[0].jsonObject["reps"]!!.jsonPrimitive.content)
@@ -94,6 +96,7 @@ class SessionMappingTest {
         val history = pastSessions(rows, emptyList(), emptyList())
         assertEquals(listOf("older", "early-same-day", "late-same-day", "unpushed", "draft"), history.map { it.id })
         assertNull(history.last().finishedAtMillis)
+        assertEquals(listOf(true), pastSessions(listOf(rows.first().copy(light = true)), emptyList(), emptyList()).map { it.light })
         // Unpushed same-day session counts as latest; the in-progress draft does not.
         assertEquals("pull-1", todaysWorkout(program, history).key)
         assertEquals("push-1", todaysWorkout(program, history.filter { it.id != "unpushed" }).key)
