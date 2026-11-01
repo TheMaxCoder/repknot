@@ -1,6 +1,6 @@
 # 011 — Workout logic: session editing, set input, workout ViewModel
 
-Status: blocked
+Status: in progress
 Updated: 2026-11-01
 Starting commit: `4123c56`
 Parent: [006](006-training-data-model.md) step 8 (logic half; the Compose screen is task 012)
@@ -12,7 +12,9 @@ exercises, parsing of set input in the new measures, and a `WorkoutViewModel` ex
 UI state plus actions. Product rules: `Repknot-PRD.md` §3 items 1–6, `docs/architecture.md`
 "Rules for the first logging slice". Accepted when:
 - The API below exists with these names and semantics.
-- JVM tests cover rules 1–14 (pure functions; no new test libraries).
+- JVM tests cover rules 1–4 and 7–9 (pure functions; no new test libraries). Rules 5, 6
+  and 10–14 live in the ViewModel and are verified on device by the lead (clarified
+  2026-11-01 after the worker's question; this line previously said 1–14).
 - `scripts/check --offline` passes and `cd android && ./gradlew --offline :data:compileDebugAndroidTestKotlin` compiles.
 
 ## Scope

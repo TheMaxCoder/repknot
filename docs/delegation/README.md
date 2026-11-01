@@ -26,6 +26,8 @@ Keep it with the lead:
 ## Loop
 1. Lead writes or updates `docs/tasks/NNN-*.md` for the delegated step: scope with an
    explicit "Out of scope", file pointers, acceptance, exact verification commands.
+   Pin versions of any new dependency, and keep acceptance and plan consistent: each
+   rule is assigned to exactly one verifier (worker JVM test or lead device check).
 2. `scripts/delegate docs/tasks/NNN-*.md` (run one task per worktree if parallel).
 3. Lead re-runs the checks and reads the diff; never accept on the report alone.
 4. On a miss: one retry with specific feedback
@@ -47,7 +49,9 @@ is reviewable.
 ## Miss log
 One line each: date · task · category (1–4) · what happened · action.
 
-(none yet)
+- 2026-11-01 · 008 · 1 · new dependency unpinned; spec named no version · lead pinned; Loop rule added.
+- 2026-11-01 · 011 · 1 · acceptance said JVM tests for rules 1–14, plan gave 5/6/10–14 to
+  device; worker stopped and asked (correct behavior) · spec fixed, resumed with feedback; Loop rule added.
 
 ## Kept with the lead
 (none beyond the defaults above)
