@@ -102,7 +102,7 @@ private fun PreviewScreen(preview: WorkoutUiState.Preview, vm: WorkoutViewModel)
             val last = previewLast(exercise.previous)
             val date = previewDate(exercise.previousOn, LocalDate.now())
             BoxWithConstraints {
-                val stacked = maxWidth < 330.dp || LocalDensity.current.fontScale > 1.3f
+                val stacked = maxWidth.value / LocalDensity.current.fontScale < 250f
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     if (!stacked) PreviewTableRow("", PreviewValues(stringResource(R.string.preview_sets_reps), stringResource(R.string.label_rir), stringResource(R.string.label_load)), "", header = true)
                     PreviewTableRow(stringResource(R.string.preview_plan), previewPlan(exercise.prescription), "", stacked = stacked)

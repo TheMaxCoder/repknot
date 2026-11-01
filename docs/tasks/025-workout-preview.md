@@ -1,6 +1,6 @@
 # 025 — Compact workout preview
 
-Status: blocked
+Status: in progress
 Starting commit: a7ff9ee
 
 ## Outcome / acceptance
@@ -17,20 +17,20 @@ Lead device: verify full list scroll, Start remains visible, no overlap system b
 ## Plan / progress
 - [x] Implement preview layout and formatting for the existing Prefill; remove target presentation.
 - [x] Worker run scripts/check --offline and commit verified step(s).
-- [ ] Resolve mixed-unit history filtering described under Handoff before declaring acceptance.
+- [x] Apply review clarification: preserve existing prefill/history selection; acceptance applies to the Prefill passed to the presentation helper.
+- [x] Adjust responsive threshold and run checks.
 - [ ] Lead inspect diff and re-run checks, install and device-check.
 
 ## Decisions / discoveries
 - Design only was iterated until explicit implementation approval; full previous performance including RIR and units must survive compaction.
 - Existing scripts/delegate workflow applies. No ADR required for this presentation change.
-- The presentation preserves every set and field supplied in Prefill, including mixed units. However, domain `prefill()` filters historical sets to the prescription's unit before supplying them, so actual mixed-unit history can be omitted. Domain changes are explicitly out of scope; see Handoff. Review this limitation against the acceptance criteria.
+- Review clarification: acceptance for preserving all sets and mixed units applies to the Prefill passed to the presentation helper, which already preserves them. Existing `prefill()` history selection and unit filtering remain unchanged; this is not a blocker.
+- Use effective width (available dp divided by font scale) below 250 for the stacked layout, retaining wrapping table cells at ordinary phone widths.
 
 ## Verification
 - `scripts/check --offline` passed twice: debug build, lint and available JVM tests, including new preview formatting tests. Gradle reported deprecation warnings.
-- Device/visual checks and lead diff review are pending. Implementation commit: `c3894d7`.
+- Review fix: `scripts/check --offline` passed (debug build, lint and available JVM tests; Gradle deprecation warning). Device/visual checks and lead diff review remain pending. Implementation commit: `c3894d7`.
 - Commit message correction: a shell line break dropped the intended `Not verified` and `Review` paragraphs from `c3894d7`; they are recorded in the following handoff commit and above/below.
 
 ## Handoff
-Question for lead/owner: `prefill()` selects and filters past sets by the prescription unit, but acceptance requires no silent omission of sets and mixed units to remain aligned, while domain/data calculations are out of scope. Should preview use an unfiltered previous-session history source, and which session should it select when the latest exercise history has no sets in the prescribed unit? Existing calculation remains unchanged pending direction.
-
-Next: resolve that question and implement any authorized follow-up; then inspect the diff, re-run checks, install and perform the lead device checks (scroll, fixed Start/insets, local start/discard, system back, target absence). Lead updates status/architecture. No device actions performed by worker. Preserve unrelated `work/`.
+Next: lead inspect the diff, re-run checks, install and perform the lead device checks (scroll, fixed Start/insets, local start/discard, system back, target absence, ordinary/narrow widths and large font). Lead updates status/architecture. No device actions performed by worker. Preserve unrelated `work/` and lead changes to `docs/status.md`.
