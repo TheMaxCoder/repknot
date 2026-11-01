@@ -31,6 +31,7 @@ import com.repknot.app.reasonText
 import com.repknot.domain.ExerciseProgress
 import com.repknot.domain.BodyVerdict
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun ProgressScreen(state: ProgressUiState, back: () -> Unit, openBody: () -> Unit,
                    addCheckIn: (String, String, String, String) -> Boolean, openExercise: (String) -> Unit) {
@@ -55,7 +56,9 @@ fun ProgressScreen(state: ProgressUiState, back: () -> Unit, openBody: () -> Uni
                             BodySummaryCardLines(state)
                         }
                         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                        Column(Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 8.dp)) {
+                        FlowRow(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 8.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween, verticalArrangement = Arrangement.Center,
+                            itemVerticalAlignment = Alignment.CenterVertically) {
                             state.checkIns.firstOrNull()?.let {
                                 Text(lastCheckInLine(java.time.LocalDate.parse(it.checkedOn), state.today),
                                     style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -157,8 +160,6 @@ private fun BodySummaryCardLines(state: ProgressUiState) {
                 waistCaption(body).takeUnless { caption -> caption == "Waist" }?.let { caption ->
                     Text(caption.removePrefix("Waist · "), style = MaterialTheme.typography.bodySmall)
                 }
-                Text("Last 4 weeks", style = MaterialTheme.typography.labelSmall)
-                Text(summaryRate(it.perWeek, "cm"), style = MaterialTheme.typography.bodySmall)
             } ?: Text("No waist measurement yet", style = MaterialTheme.typography.bodySmall)
         }
     }
@@ -167,20 +168,43 @@ private fun BodySummaryCardLines(state: ProgressUiState) {
             Text("Weight", style = MaterialTheme.typography.labelLarge)
             body.weight?.let {
                 Text(bodyMeasurement(it.latest, "kg"), style = MaterialTheme.typography.headlineSmall)
+            } ?: Text("No weight measurement yet", style = MaterialTheme.typography.bodySmall)
+        }
+    }
+    val waistRate: @Composable () -> Unit = {
+        body.waist?.let {
+            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text("Last 4 weeks", style = MaterialTheme.typography.labelSmall)
+                Text(summaryRate(it.perWeek, "cm"), style = MaterialTheme.typography.bodySmall)
+            }
+        }
+    }
+    val weightRate: @Composable () -> Unit = {
+        body.weight?.let {
+            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text("Last 4 weeks", style = MaterialTheme.typography.labelSmall)
                 Text(summaryRate(it.perWeek, "kg"), style = MaterialTheme.typography.bodySmall)
-            } ?: Text("No weight measurement yet", style = MaterialTheme.typography.bodySmall)
+            }
         }
     }
     BoxWithConstraints(Modifier.fillMaxWidth()) {
         val fontScale = LocalDensity.current.fontScale
         if (maxWidth.value / fontScale >= 250f) {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                Box(Modifier.weight(1f)) { waist() }
-                Box(Modifier.weight(1f)) { weight() }
+            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Box(Modifier.weight(1f)) { waist() }
+                    Box(Modifier.weight(1f)) { weight() }
+                }
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Box(Modifier.weight(1f)) { waistRate() }
+                    Box(Modifier.weight(1f)) { weightRate() }
+                }
             }
         } else {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) { waist(); weight() }
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) { waist(); waistRate() }
+                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) { weight(); weightRate() }
+            }
         }
     }
     goalEstimate(body).takeIf { it.isNotEmpty() }?.let {

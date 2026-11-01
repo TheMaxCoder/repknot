@@ -18,7 +18,8 @@ Implement in `android/app/src/main/java/com/repknot/app/ui/ProgressScreen.kt` an
 - [x] Run `scripts/check --offline`; record results and commit verified changes under AGENTS.md.
 - [x] Address review feedback: responsive side-by-side body metrics, preserving existing body detail and actions.
 - [x] Lead reviewed the implementation and repeated offline checks.
-- [ ] Verify the installed screen visually on the phone, including scaled text and actions.
+- [x] Address further review feedback: align rate rows and make the footer responsive.
+- [ ] Verify the latest screen visually on the phone, including scaled text and actions.
 
 ## Decisions / discoveries
 - The user selected the body card from the first concept and grouped training history from the second, then removed all introductory copy.
@@ -28,7 +29,7 @@ Implement in `android/app/src/main/java/com/repknot/app/ui/ProgressScreen.kt` an
 `scripts/check --offline` passed for the original implementation and again for the follow-up (debug build, lint, and unit tests); Gradle reported deprecated features. The first follow-up run failed on a Kotlin cross-module smart cast; corrected before the passing run. Added formatting tests for metric precision, configured goal and weight trend. Lead reran `scripts/check --offline` successfully and `git diff 6d0fcb7..HEAD --check` passed. `cd android && ./gradlew :app:installDebug --offline` installed successfully on the test phone. The phone was locked; no visual or interaction verification was performed.
 
 ## Handoff
-The initial screen was inspected and prompted the follow-up below. Follow-up implementation and offline checks are complete; lead review and follow-up device visual and interaction verification remain pending. Unrelated untracked `work/` was left untouched.
+The latest alignment follow-up is implemented and offline checks pass. Next: lead review, install the latest build if the phone is available, and visually check both column and stacked layouts, long stale dates, scaled text, and independent actions. Device visual, accessibility and interaction verification remain pending. Unrelated untracked `work/` was left untouched.
 
 ## Body card follow-up — owner feedback
 
@@ -39,15 +40,17 @@ The lead inspected the installed screen on the unlocked phone on 2026-11-01: the
 - No changes to domain calculations, sync, training alerts, exercise cards, or other screens. No new dependencies. Scope: ProgressScreen.kt, body presentation helpers/resources and focused tests, task notes only.
 - Worker: run `scripts/check --offline`, commit verified implementation and update this handoff. Lead: review diff, re-run check, install on connected phone if available, and inspect screenshot without interacting with personal data. Record remaining manual checks. Do not declare device interaction checks passed from a screenshot.
 
-Progress: [x] implement and test; [ ] lead review and phone visual check.
+Progress: [x] implement and test; [x] address further alignment feedback; [ ] lead review and phone visual check.
 
 ### Decisions and discoveries
 - Each measurement has its own four-week rate; missing measurements are labeled explicitly and missing rates say there is not enough data. A real zero rate remains zero. The estimate uses the configured goal at measurement precision and is omitted without a forecast. Body details and its percentage text are unchanged.
 - The verdict remains in the history navigation target, separated by a divider; the dated footer and check-in action are outside that target. The existing responsive width/font-scale threshold also applies when a measurement is missing.
+- In two-column layouts the measurement blocks share a row and the rate blocks share a separate row, so the waist goal caption does not offset the weight rate. In stacked layouts each rate remains with its measurement. The footer uses a wrapping row so the date and action share space when they fit and stack when they do not.
 
 ### Verification
 - `scripts/check --offline` passed (debug build, lint, unit tests; Gradle deprecation warning). Focused tests cover signed and missing rates, zero, estimate precision/absence, and unchanged percentage in Body details.
-- No device installation, visual inspection, accessibility or interaction checks performed for this follow-up.
+- After the further alignment feedback, `scripts/check --offline` passed again (debug build, lint, unit tests; Gradle deprecation warning).
+- No device installation, visual inspection, accessibility or interaction checks performed for the latest alignment follow-up.
 
 ### Handoff
-Lead: review the follow-up diff and rerun `scripts/check --offline`, install on the connected phone if available, and inspect a screenshot without interacting with personal data. Then arrange manual checks of scaled/narrow layout, missing data, stale guidance, scrolling and both independent actions; a screenshot alone does not verify interaction. Review: no known requirement guesses or plan deviations. Unrelated untracked `work/` remains untouched.
+Lead: review the latest alignment diff and rerun `scripts/check --offline`, install on the connected phone if available, and inspect a screenshot without interacting with personal data. Then arrange manual checks of scaled/narrow layout, missing data, long stale guidance, scrolling and both independent actions; a screenshot alone does not verify interaction. Review: no known requirement guesses or plan deviations. Unrelated untracked `work/` remains untouched.
