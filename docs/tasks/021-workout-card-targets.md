@@ -1,8 +1,8 @@
 # 021 — Workout card: today's target, per-set ▲/=/▼, planned vs done
 
-Status: ready
+Status: blocked
 Updated: 2026-11-01
-Starting commit: (worker: record `git rev-parse --short HEAD` when you start)
+Starting commit: 499d8c6
 Parent: [019](019-progress-milestone.md) step 2 · Delegated: yes (see
 [delegation](../delegation/README.md))
 
@@ -67,6 +67,26 @@ logged set; preview target present. `ExerciseSelectionTest` compiles after the r
 
 ## Decisions and discoveries
 
+- `TodayTarget.Repeat` permits `rirMin == null` with a non-null `rirMax`; session
+  prescription snapshots also permit these independently. The specified RIR wording
+  does not cover this case.
+- `todayTarget` can produce a null top load for KG, LB, or PLATES when historical
+  sets have null loads. Both `Repeat(load = null)` and `MoveUp(from = null)` can
+  therefore represent an unknown load rather than bodyweight. The specified wording
+  only describes null loads as bodyweight.
+- Pre-existing untracked `work/` was left untouched. No implementation changes made.
+
 ## Verification
 
+- Inspected task, state mapping, UI, domain target engine and data models.
+- `scripts/check --offline` not run: implementation has not started.
+
 ## Handoff
+
+Blocked on target wording before implementing step 1:
+1. How should `Repeat` display RIR when only `rirMax` is non-null?
+2. How should `Repeat` and `MoveUp` display a null load for non-bodyweight units
+   (unknown recorded load rather than bodyweight)?
+
+Next: clarify both cases, then implement plan step 1 and its tests. Lead device check
+and all implementation verification remain pending.
