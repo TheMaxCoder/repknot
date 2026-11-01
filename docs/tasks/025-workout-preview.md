@@ -27,7 +27,8 @@ Lead device: verify full list scroll, Start remains visible, no overlap system b
 
 ## Verification
 - `scripts/check --offline` passed twice: debug build, lint and available JVM tests, including new preview formatting tests. Gradle reported deprecation warnings.
-- Device/visual checks and lead diff review are pending.
+- Device/visual checks and lead diff review are pending. Implementation commit: `c3894d7`.
+- Commit message correction: a shell line break dropped the intended `Not verified` and `Review` paragraphs from `c3894d7`; they are recorded in the following handoff commit and above/below.
 
 ## Handoff
 Question for lead/owner: `prefill()` selects and filters past sets by the prescription unit, but acceptance requires no silent omission of sets and mixed units to remain aligned, while domain/data calculations are out of scope. Should preview use an unfiltered previous-session history source, and which session should it select when the latest exercise history has no sets in the prescribed unit? Existing calculation remains unchanged pending direction.
