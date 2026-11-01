@@ -1,17 +1,12 @@
 package com.repknot.app
 
 import android.os.Bundle
-import android.content.Intent
-import android.content.ClipData
-import android.content.ClipboardManager
-import androidx.compose.ui.platform.LocalContext
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
@@ -20,10 +15,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -45,7 +37,6 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.repknot.app.ui.theme.RepknotTheme
 import com.repknot.data.CloudState
-import com.repknot.domain.LoadUnit
 
 class MainActivity : ComponentActivity() {
     override fun onStart() {
@@ -59,19 +50,12 @@ class MainActivity : ComponentActivity() {
             navigationBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT),
         )
         val app = application as RepknotApplication
-        val loggingFactory = LoggingViewModel.Factory(app.repository, app.sessionId, app.setId)
-        val syncFactory = SyncViewModel.Factory(app.database.sessions(), app.sync, app.sessionId, app.setId)
         val cloudFactory = CloudViewModel.Factory(app.cloud)
         setContent {
             RepknotTheme {
-                val model: LoggingViewModel = viewModel(factory = loggingFactory)
-                val sync: SyncViewModel = viewModel(factory = syncFactory)
-                val session by sync.session.collectAsState()
                 val cloud: CloudViewModel = viewModel(factory = cloudFactory)
-                val state by model.state.collectAsState()
                 val cloudState by cloud.state.collectAsState()
-                LoggingScreen(state, session, model::save) {
-                    FinishSection(state, session, sync)
+                HomeScreen {
                     CloudSection(cloudState, cloud::signIn, cloud::signOut)
                 }
             }
@@ -79,13 +63,9 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+/** Interim screen: the program-driven workout screen replaces it in task 006 step 8. */
 @Composable
-private fun LoggingScreen(
-    state: LoggingState,
-    session: com.repknot.data.SessionRow?,
-    save: (String, LoadUnit, String, String) -> Unit,
-    footer: @Composable () -> Unit,
-) {
+private fun HomeScreen(footer: @Composable () -> Unit) {
     Scaffold { padding ->
         Column(
             Modifier.fillMaxSize().padding(padding).imePadding()
@@ -93,65 +73,8 @@ private fun LoggingScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             Text(stringResource(R.string.app_name), color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.titleMedium)
-            Text(stringResource(R.string.demo_workout_title), style = MaterialTheme.typography.headlineLarge)
-            Text(stringResource(R.string.demo_exercise_title), style = MaterialTheme.typography.titleLarge)
-            Text(stringResource(R.string.demo_disclaimer), color = MaterialTheme.colorScheme.onSurfaceVariant)
-            if (state.loading) {
-                CircularProgressIndicator()
-            } else {
-                SetEditor(state, session, save)
-            }
+            Text(stringResource(R.string.logging_rebuilding), color = MaterialTheme.colorScheme.onSurfaceVariant)
             footer()
-        }
-    }
-}
-
-@Composable
-private fun SetEditor(state: LoggingState, session: com.repknot.data.SessionRow?, save: (String, LoadUnit, String, String) -> Unit) {
-    // Initial values come from an explicit saved set, never from the previous-value hint.
-    var load by rememberSaveable(state.saved?.values) { mutableStateOf(state.saved?.values?.load?.toString() ?: "") }
-    var reps by rememberSaveable(state.saved?.values) { mutableStateOf(state.saved?.values?.reps?.toString() ?: "") }
-    var rir by rememberSaveable(state.saved?.values) { mutableStateOf(state.saved?.values?.rir?.toString() ?: "") }
-    var unitName by rememberSaveable(state.saved?.values) { mutableStateOf(state.saved?.values?.unit?.name ?: "KG") }
-    Text(stringResource(R.string.demo_previous_hint), color = MaterialTheme.colorScheme.onSurfaceVariant)
-    OutlinedTextField(load, { load = it }, label = { Text(stringResource(R.string.label_load)) }, singleLine = true,
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), modifier = Modifier.fillMaxWidth())
-    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        listOf(LoadUnit.KG, LoadUnit.LB).forEach { unit ->
-            FilterChip(selected = unitName == unit.name, onClick = { unitName = unit.name }, label = { Text(unit.name.lowercase()) })
-        }
-    }
-    OutlinedTextField(reps, { reps = it }, label = { Text(stringResource(R.string.label_reps)) }, singleLine = true,
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), modifier = Modifier.fillMaxWidth())
-    OutlinedTextField(rir, { rir = it }, label = { Text(stringResource(R.string.label_rir)) }, singleLine = true,
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), modifier = Modifier.fillMaxWidth())
-    state.error?.let { Text(stringResource(it), color = MaterialTheme.colorScheme.error) }
-    Button(onClick = { save(load, LoadUnit.valueOf(unitName), reps, rir) }, enabled = !state.saving,
-        modifier = Modifier.fillMaxWidth()) {
-        Text(stringResource(when {
-            state.saving -> R.string.action_saving
-            state.saved == null -> R.string.action_log_set
-            else -> R.string.action_update_set
-        }))
-    }
-    val saved = state.saved
-    if (saved == null) {
-        Text(stringResource(R.string.no_set_logged), color = MaterialTheme.colorScheme.onSurfaceVariant)
-    } else {
-        Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
-            Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(stringResource(R.string.saved_title), style = MaterialTheme.typography.titleMedium)
-                Text(stringResource(
-                    R.string.saved_summary,
-                    saved.values.load.toString(),
-                    saved.values.unit.name.lowercase(),
-                    pluralStringResource(R.plurals.reps_count, saved.values.reps, saved.values.reps),
-                    saved.values.rir?.toString() ?: stringResource(R.string.saved_rir_blank),
-                ))
-                if (session != null && session.localRevision > session.pushedLocalRevision) {
-                    Text(stringResource(R.string.pending_sync), color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-            }
         }
     }
 }
@@ -194,60 +117,4 @@ private fun CloudSection(
         }
     }
     state.error?.let { Text(stringResource(it), color = MaterialTheme.colorScheme.error) }
-}
-
-@Composable
-private fun FinishSection(state: LoggingState, session: com.repknot.data.SessionRow?, sync: SyncViewModel) {
-    var overview by rememberSaveable { mutableStateOf(false) }
-    val context = LocalContext.current
-    val sets by sync.sets.collectAsState()
-    val syncError by sync.error.collectAsState()
-    val shareTitle = stringResource(R.string.share_workout)
-    val clipboardLabel = stringResource(R.string.clipboard_workout)
-    if (state.saved != null) {
-        HorizontalDivider()
-        if (!overview) {
-            Button(onClick = { overview = true }) { Text(stringResource(R.string.finish_workout)) }
-        } else {
-            Text(stringResource(R.string.workout_overview), style = MaterialTheme.typography.titleLarge)
-            Text(session?.title ?: stringResource(R.string.demo_session_title))
-            var sessionNotes by rememberSaveable(session?.id, session?.notes) { mutableStateOf(session?.notes.orEmpty()) }
-            var setNotes by rememberSaveable(session?.id, sets.firstOrNull()?.notes) { mutableStateOf(sets.firstOrNull()?.notes.orEmpty()) }
-            OutlinedTextField(sessionNotes, { sessionNotes = it }, label = { Text(stringResource(R.string.session_notes)) }, modifier = Modifier.fillMaxWidth())
-            OutlinedTextField(setNotes, { setNotes = it }, label = { Text(stringResource(R.string.set_notes)) }, modifier = Modifier.fillMaxWidth())
-            OutlinedButton(onClick = { sync.saveNotes(sessionNotes, setNotes) }) { Text(stringResource(R.string.save_notes)) }
-            sets.forEach { set ->
-                val description = stringResource(R.string.overview_set, set.exerciseName, set.load.toString(), set.unit.lowercase(), set.reps)
-                Text(set.rir?.let { stringResource(R.string.overview_rir, description, it) } ?: description)
-            }
-            session?.let { row ->
-                Text(stringResource(when (row.status) {
-                    "conflict" -> R.string.sync_conflict
-                    "conflict_deleted" -> R.string.sync_deleted_conflict
-                    "pushed" -> R.string.sync_uploaded
-                    "finished" -> R.string.sync_pending
-                    else -> R.string.sync_ready
-                }))
-                syncError?.let { Text(stringResource(it), color = MaterialTheme.colorScheme.error) }
-                if (row.status == "conflict" || row.status == "conflict_deleted") {
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Button(onClick = sync::keepMine) { Text(stringResource(R.string.keep_mine)) }
-                        OutlinedButton(onClick = sync::takeTheirs) { Text(stringResource(R.string.take_theirs)) }
-                    }
-                } else if (row.status == "in_progress" || row.status == "finished") {
-                    Button(onClick = sync::finish) { Text(stringResource(if (row.status == "in_progress") R.string.confirm_upload else R.string.retry_upload)) }
-                }
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedButton(onClick = { sync.share { text ->
-                    val send = Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, text)
-                    context.startActivity(Intent.createChooser(send, shareTitle))
-                } }) { Text(stringResource(R.string.share)) }
-                OutlinedButton(onClick = { sync.share { text ->
-                    context.getSystemService(ClipboardManager::class.java).setPrimaryClip(ClipData.newPlainText(clipboardLabel, text))
-                } }) { Text(stringResource(R.string.copy)) }
-            }
-            OutlinedButton(onClick = { overview = false }) { Text(stringResource(R.string.back_to_workout)) }
-        }
-    }
 }

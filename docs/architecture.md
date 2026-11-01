@@ -8,8 +8,10 @@ Native Kotlin + Compose, dark-only regardless of system appearance. App ID curre
 Dependencies: `app → domain`, `app → data → domain`. Domain is pure Kotlin/JVM.
 App owns Compose, ViewModels, navigation, and wiring. Data will own Room, Supabase,
 and sync. Repositories separate UI from storage; no direct DAO/network calls in UI.
-Domain holds `SetValues`/`LoggedSet` and the `SetRepository` contract; data implements it
-with Room (`WorkoutDatabase`, exported schema in `android/data/schemas/`). Manual DI via
+Domain holds pure rules (`todaysWorkout`, `prefill`, set value validation). Data owns Room
+(`WorkoutDatabase`, exported schema in `android/data/schemas/`): sessions → session
+exercises → sets, plus a read-only cache of exercises and programs replaced wholesale on
+each refresh. Manual DI via
 `RepknotApplication`. `CloudAccount` (data) talks to Supabase with the publishable key
 and the signed-in user's session; RLS restricts every table to its owner. Schema lives in
 `supabase/migrations`, tests in `supabase/tests`.
@@ -21,10 +23,10 @@ and the signed-in user's session; RLS restricts every table to its owner. Schema
 - Session substitutions do not mutate the program.
 - Room is the local read source; Supabase is the canonical shared store. Sessions are
   refreshed transactionally after a complete fetch; local drafts and pending edits are
-  retained. The server has the ADR 002 model (exercises, immutable program versions
-  via `publish_program`, sessions → session exercises → sets); the Android cache and
-  sync still use the flat v1 shape until task 006 step 7, so phone sync against the
-  current dev schema is broken in the meantime.
+  retained. Server and phone share the ADR 002 shape (sessions → session exercises →
+  sets, exercises referenced by uuid on push). Programs and exercises are read-only on
+  the phone and refreshed before sessions. Until task 006 step 8 the app has no logging
+  screen (account/sync only).
 - Persist edits and pending sync together, retain stable IDs, and handle retries without duplicates.
 - Upload acknowledgements must not discard newer local edits, and no writer (Android,
   web, ChatGPT, CLI) may silently overwrite another's change. Revision rules are in
@@ -52,9 +54,9 @@ actual temporary policy relaxation here when introduced.
 - Supabase CLI is logged in (`supabase login`) with an account-wide token while dev is the
   only project. Before creating a prod project: log out and use `--db-url`, or keep prod in
   a separate account.
-- Building phase: Room schema changes ship without migrations. The v3 database can
-  destructively reset the prior synthetic v1/v2 schemas only; the phone's reset was
-  explicitly approved. Future schema changes must not silently discard local data;
+- Building phase: Room schema changes ship without migrations. The v4 database
+  destructively resets synthetic v1–v3 databases (approved 2026-11-01 with the training
+  model; earlier v3 reset also approved). Future schema changes must not silently discard local data;
   add real migrations once Android starts logging real workouts.
 - Building phase (server): the training-model migration dropped and recreated the
   synthetic dev session tables instead of migrating rows (approved 2026-11-01). Once

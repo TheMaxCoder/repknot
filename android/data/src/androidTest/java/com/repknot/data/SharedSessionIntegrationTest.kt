@@ -2,8 +2,6 @@ package com.repknot.data
 
 import androidx.room.Room
 import androidx.test.platform.app.InstrumentationRegistry
-import com.repknot.domain.LoadUnit
-import com.repknot.domain.SetValues
 import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.postgrest
 import kotlinx.coroutines.flow.first
@@ -13,6 +11,7 @@ import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonArray
 import kotlinx.serialization.json.putJsonObject
+import kotlinx.serialization.Serializable
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
@@ -20,6 +19,8 @@ import org.junit.Assert.assertTrue
 import org.junit.Assume.assumeTrue
 import org.junit.Test
 import java.util.UUID
+
+@Serializable private data class ExerciseId(val id: String)
 
 /** Opt-in test with the synthetic test account; credentials are supplied at runtime. */
 class SharedSessionIntegrationTest {
@@ -38,29 +39,38 @@ class SharedSessionIntegrationTest {
         withTimeout(30000) { cloud.state.first { it is CloudState.SignedIn } }
         val client = cloud.requireClient()
         val db = Room.inMemoryDatabaseBuilder(InstrumentationRegistry.getInstrumentation().targetContext, WorkoutDatabase::class.java).build()
+        // Sessions reference the account's own exercises; keep one synthetic exercise around.
+        client.from("exercises").upsert(buildJsonObject { put("slug", "integration-bench"); put("name", "Bench (integration)"); put("default_unit", "kg") }) {
+            onConflict = "user_id,slug"; ignoreDuplicates = true
+        }
+        val bench = client.from("exercises").select { filter { eq("slug", "integration-bench") } }.decodeSingle<ExerciseId>().id
+        suspend fun log(sessionId: String, setId: String, load: Double) = db.logSet(sessionId, setId, load, exerciseId = bench)
         val ids = mutableListOf<String>()
         try {
             for (edited in listOf(false, true)) {
                 val id = UUID.randomUUID().toString(); val setId = UUID.randomUUID().toString(); ids += id
-                db.sets().save(setId, id, SetValues(32.5, LoadUnit.KG, 7, 3))
+                log(id, setId, 32.5)
                 db.sessions().shareSnapshot(id)
-                if (edited) db.sets().save(setId, id, SetValues(35.0, LoadUnit.KG, 7, 3))
+                if (edited) log(id, setId, 35.0)
                 db.sessions().finish(id)
                 val params = buildJsonObject {
                     putJsonObject("payload") {
                         put("ref", id); put("performed_on", "2026-10-31"); put("title", "Shared integration test")
                         put("notes", "server note")
-                        putJsonArray("sets") { add(buildJsonObject {
-                            put("exercise_name", "Bench"); put("load", 32.5); put("unit", "kg"); put("reps", 7); put("rir", 3); put("notes", "set note")
+                        putJsonArray("exercises") { add(buildJsonObject {
+                            put("exercise", "integration-bench")
+                            putJsonArray("sets") { add(buildJsonObject {
+                                put("load", 32.5); put("unit", "kg"); put("reps", 7); put("rir", 3); put("notes", "set note")
+                            }) }
                         }) }
                     }
                 }
                 client.postgrest.rpc("save_session", params)
-                SessionSync(cloud, db.sessions()).refreshAndPush()
+                SessionSync(cloud, db.sessions(), db.reference()).refreshAndPush()
                 val local = db.sessions().get(id)!!
                 assertEquals(if (edited) "conflict" else "pushed", local.status)
                 if (edited) {
-                    assertEquals(35.0, db.sets().get(setId)!!.load, 0.0)
+                    assertEquals(35.0, db.sessions().getSet(setId)!!.load!!, 0.0)
                     assertNotNull(local.serverSnapshot)
                 } else {
                     assertEquals("server note", local.notes)
@@ -72,19 +82,19 @@ class SharedSessionIntegrationTest {
             // A server deletion must not stop unrelated pending uploads, even when
             // a different session's payload is rejected by the server.
             val deletedId = UUID.randomUUID().toString(); val deletedSet = UUID.randomUUID().toString(); ids += deletedId
-            db.sets().save(deletedSet, deletedId, SetValues(10.0, LoadUnit.KG, 5, null))
+            log(deletedId, deletedSet, 10.0)
             db.sessions().finish(deletedId)
-            val sync = SessionSync(cloud, db.sessions())
+            val sync = SessionSync(cloud, db.sessions(), db.reference())
             sync.refreshAndPush()
             client.from("workout_sessions").delete { filter { eq("id", deletedId) } }
-            db.sets().save(deletedSet, deletedId, SetValues(12.0, LoadUnit.KG, 5, null))
+            log(deletedId, deletedSet, 12.0)
             val badId = UUID.randomUUID().toString(); val goodId = UUID.randomUUID().toString()
             val badSet = UUID.randomUUID().toString(); val goodSet = UUID.randomUUID().toString()
             ids += badId; ids += goodId
-            db.sets().save(badSet, badId, SetValues(1.0, LoadUnit.KG, 5, null)); db.sessions().finish(badId)
+            log(badId, badSet, 1.0); db.sessions().finish(badId)
             val badRow = db.sessions().sets(badId).single()
-            db.sessions().putSets(listOf(badRow.copy(unit = "INVALID")))
-            db.sets().save(goodSet, goodId, SetValues(2.0, LoadUnit.KG, 5, null)); db.sessions().finish(goodId)
+            db.sessions().putSets(listOf(badRow.copy(unit = "INVALID")))  // rejected by the server's unit domain
+            log(goodId, goodSet, 2.0); db.sessions().finish(goodId)
             val order = db.sessions().pending().map { it.id }
             assertTrue(order.indexOf(badId) < order.indexOf(goodId))
             assertTrue(runCatching { sync.refreshAndPush() }.isFailure)
@@ -96,7 +106,7 @@ class SharedSessionIntegrationTest {
             runCatching { sync.keepMine(deletedId) }
             assertEquals("pushed", db.sessions().get(deletedId)!!.status)
             client.from("workout_sessions").delete { filter { eq("id", deletedId) } }
-            db.sets().save(deletedSet, deletedId, SetValues(14.0, LoadUnit.KG, 5, null))
+            log(deletedId, deletedSet, 14.0)
             runCatching { sync.refreshAndPush() }
             assertEquals("conflict_deleted", db.sessions().get(deletedId)!!.status)
             sync.takeTheirs(deletedId)

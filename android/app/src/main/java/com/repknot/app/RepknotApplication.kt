@@ -7,7 +7,6 @@ import android.net.NetworkCapabilities
 import android.util.Log
 import com.repknot.data.CloudAccount
 import com.repknot.data.CloudState
-import com.repknot.data.RoomSetRepository
 import com.repknot.data.SessionSync
 import com.repknot.data.WorkoutDatabase
 import kotlinx.coroutines.CoroutineScope
@@ -17,20 +16,17 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 class RepknotApplication : Application() {
+    /** The single working session until the workout screen (task 006 step 8) manages sessions. */
     private val ids by lazy {
         val prefs = getSharedPreferences("workout_ids", MODE_PRIVATE)
-        val previous = getDatabasePath("workouts.db").exists()
-        val session = prefs.getString("session", null) ?: if (previous) "f7ff8342-691c-47ee-bd9b-c3c0892d9991" else java.util.UUID.randomUUID().toString()
-        val set = prefs.getString("set", null) ?: if (previous) "9b776b65-2ab2-4c43-853d-e445428d60c8" else java.util.UUID.randomUUID().toString()
-        check(prefs.edit().putString("session", session).putString("set", set).commit())
-        session to set
+        val session = prefs.getString("session", null) ?: java.util.UUID.randomUUID().toString()
+        check(prefs.edit().putString("session", session).commit())
+        session
     }
-    val sessionId get() = ids.first
-    val setId get() = ids.second
+    val sessionId get() = ids
     val database by lazy { WorkoutDatabase.open(this) }
-    val repository by lazy { RoomSetRepository(database.sets()) }
     val cloud by lazy { CloudAccount(BuildConfig.SUPABASE_URL, BuildConfig.SUPABASE_PUBLISHABLE_KEY) }
-    val sync by lazy { SessionSync(cloud, database.sessions()) { userId ->
+    val sync by lazy { SessionSync(cloud, database.sessions(), database.reference()) { userId ->
         val prefs = getSharedPreferences("sync_account", MODE_PRIVATE)
         val owner = prefs.getString("user_id", null)
         if (owner == null) prefs.edit().putString("user_id", userId).commit() else owner == userId
@@ -39,7 +35,6 @@ class RepknotApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
-        ids // Decide whether this is an existing installation before Room creates its file.
         scope.launch { cloud.state.collect { if (it is CloudState.SignedIn) refresh() } }
         val connectivity = getSystemService(ConnectivityManager::class.java)
         val validation = NetworkValidation<Network>()

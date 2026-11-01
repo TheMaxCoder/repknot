@@ -24,13 +24,13 @@ Updated: 2026-11-01
 
 [006 — Training data model and program-driven workouts](tasks/006-training-data-model.md)
 (in progress; design in [ADR 002](decisions/002-training-data-model.md)). Tasks 003–005 are done.
-Steps 4–6 done (5 and 6 delegated: [008](tasks/008-cli-seed-and-publish.md),
+Steps 4–7 done (5 and 6 delegated: [008](tasks/008-cli-seed-and-publish.md),
 [007](tasks/007-domain-today-and-prefill.md)); PPL v1 is published on dev. Implementation
 work may be delegated per [docs/delegation](delegation/README.md).
 
 ## Next priorities
 
-1. Task 006: Room cache + nested sync (step 7) → logging screen → import.
+1. Task 006: workout screen (step 8) → import (step 9). Device tests for 010 pending.
 2. Verify a narrowly scoped, authenticated ChatGPT integration before using it to write
    sessions; see [the draft instructions](chatgpt-session-instructions.md).
 3. Check-ins UI, prod project + real import, then the web companion per the PRD.

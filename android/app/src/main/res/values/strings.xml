@@ -1,27 +1,12 @@
 <resources>
+    <string name="logging_rebuilding">Workout logging is being rebuilt for program-driven workouts. Sign in to sync your programs.</string>
     <string name="app_name">Repknot</string>
-    <string name="demo_workout_title">Demo workout</string>
-    <string name="demo_exercise_title">Dumbbell bench press · Set 1</string>
-    <string name="demo_disclaimer">Synthetic practice workout. Sets are saved on this device.</string>
-    <string name="demo_previous_hint">Example previous performance: 20 kg × 8 (suggestion only)</string>
     <string name="label_load">Load</string>
     <string name="label_reps">Reps</string>
     <string name="label_rir">RIR (optional)</string>
-    <string name="action_log_set">Log set</string>
-    <string name="action_update_set">Update set</string>
     <string name="action_saving">Saving…</string>
-    <string name="no_set_logged">No set logged yet.</string>
-    <string name="saved_title">Saved on this device</string>
-    <string name="saved_summary">%1$s %2$s × %3$s · RIR %4$s</string>
-    <plurals name="reps_count">
-        <item quantity="one">%d rep</item>
-        <item quantity="other">%d reps</item>
-    </plurals>
-    <string name="saved_rir_blank">—</string>
     <string name="pending_sync">Saved on phone · pending upload</string>
-    <string name="error_read">Could not read local workout. Reopen the app to retry.</string>
     <string name="error_invalid_input">Enter a non-negative load, positive whole reps, and optional non-negative whole RIR.</string>
-    <string name="error_save">Save failed. Your input is still here; try again.</string>
     <string name="cloud_title">Cloud (dev)</string>
     <string name="cloud_not_configured">Supabase is not configured for this build (.env missing).</string>
     <string name="label_email">Email</string>
@@ -40,12 +25,8 @@
     <string name="error_no_local_set">Log a set first; it is uploaded as the test session.</string>
     <string name="finish_workout">Finish workout</string>
     <string name="workout_overview">Workout overview</string>
-    <string name="demo_session_title">Push A</string>
     <string name="session_notes">Session notes</string>
-    <string name="set_notes">Set notes</string>
     <string name="save_notes">Save notes</string>
-    <string name="overview_set">%1$s · %2$s %3$s × %4$d</string>
-    <string name="overview_rir">%1$s · RIR %2$d</string>
     <string name="sync_conflict">Changed elsewhere · choose which version to keep</string>
     <string name="sync_deleted_conflict">Deleted elsewhere · keep your copy or accept deletion</string>
     <string name="sync_uploaded">Uploaded</string>
