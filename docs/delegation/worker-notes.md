@@ -9,6 +9,7 @@ when full, merge or replace an existing rule. Change only per the triage in
 
 1. Small gaps: when an ambiguity cannot change data, sync, security, or user-visible
    product behavior a reviewer would care about (a nullable default, a helper's name, a
-   formatting detail), pick the most conservative reasonable option, write it under the
+   formatting detail, a tie-break in a sort order), pick the most conservative reasonable option, write it under the
    task's "Decisions and discoveries", and keep going. Stop and ask only for gaps that
-   do affect those things. (Task 011: stopped twice; the second was a null default.)
+   do affect those things. (Task 011: stopped twice; the second was a null default. Task 020: stopped on a
+   same-date sort tie.)

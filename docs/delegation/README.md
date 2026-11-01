@@ -71,3 +71,5 @@ One line each: date · task · category (1–4) · what happened · action.
 (none beyond the defaults above)
 - 2026-11-01 · 020 · 1 · lineage unit undefined when the latest session lists the exercise
   with no sets; worker stopped and asked (affects statuses, correct stop) · spec fixed, resumed.
+- 2026-11-01 · 020 · 3 · second stop in the task, over a same-date sort tie that rule 1
+  already covers · rule 1 sharpened with this example; spec clarified; resumed.
