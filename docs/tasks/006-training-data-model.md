@@ -30,7 +30,8 @@ importer. Out: check-in UI, web companion, ChatGPT connector identity (1a), anal
 4. [x] Migration: exercises, programs/workouts/exercises, `publish_program`, session_exercises,
    set unit/measure changes, `source_ref`/`raw`, checkins; update `session_snapshot`,
    `replace_session_sets`, `push_session`, `save_session` for nested payloads. Tests.
-5. [ ] `scripts/repknot` (or sibling) commands: `seed-exercises`, `publish-program <json>`.
+5. [ ] `scripts/repknot` commands: `seed-exercises`, `publish-program <json>` — delegated as
+   [008](008-cli-seed-and-publish.md).
 6. [x] Domain: today's-workout selection and prefill as pure Kotlin with unit tests —
    delegated as [007](007-domain-today-and-prefill.md) (done).
 7. [ ] Data/Room: cache programs/exercises; session_exercises; nested push/pull.
