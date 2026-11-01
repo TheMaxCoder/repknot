@@ -24,10 +24,12 @@ Updated: 2026-11-01
 
 [006 — Training data model and program-driven workouts](tasks/006-training-data-model.md)
 (in progress; design in [ADR 002](decisions/002-training-data-model.md)). Tasks 003–005 are done.
+Step 6 was delegated as [007](tasks/007-domain-today-and-prefill.md) (done). Implementation
+work may be delegated per [docs/delegation](delegation/README.md).
 
 ## Next priorities
 
-1. Task 006: schema → program publish → today's workout + prefill → logging screen → import.
+1. Task 006: schema (step 4, lead) → program publish → Room cache → logging screen → import.
 2. Verify a narrowly scoped, authenticated ChatGPT integration before using it to write
    sessions; see [the draft instructions](chatgpt-session-instructions.md).
 3. Check-ins UI, prod project + real import, then the web companion per the PRD.

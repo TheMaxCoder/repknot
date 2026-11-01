@@ -96,3 +96,9 @@ fun prefill(prescription: Prescription, sessions: List<PastSession>): Prefill
 
 ## Handoff
 Implemented the domain API and rule tests; units added and existing picker restricted to KG/LB. No unresolved questions. Next: return to parent task 006 to integrate the domain logic; device UI verification was not in scope.
+
+## Lead review (2026-11-01)
+Accepted without retry. Re-ran `scripts/check --offline` (passed) and
+`./gradlew --offline :domain:test --rerun` (ProgramTest 7/7, SetValuesTest 2/2). Diff read
+against rules 1–9: all implemented and tested; scope respected. Cosmetic only: redundant
+spread (`*arrayOf`) warnings in `ProgramTest.kt`. No miss logged.
