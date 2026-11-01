@@ -1,6 +1,6 @@
 # 013 — Airtable history importer (synthetic-verified on dev)
 
-Status: ready (starts after 012 is delegated; independent files)
+Status: ready
 Updated: 2026-11-01
 Starting commit: (worker: record `git rev-parse --short HEAD` when you start)
 Parent: [006](006-training-data-model.md) step 9 · Delegated: yes (see
