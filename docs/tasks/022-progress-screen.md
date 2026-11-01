@@ -1,6 +1,6 @@
 # 022 — Progress screen and exercise history
 
-Status: ready (after 021)
+Status: ready
 Updated: 2026-11-01
 Starting commit: (worker: record `git rev-parse --short HEAD` when you start)
 Parent: [019](019-progress-milestone.md) step 3 · Delegated: yes (see
