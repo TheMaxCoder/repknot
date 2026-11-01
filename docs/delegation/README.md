@@ -77,3 +77,5 @@ One line each: date · task · category (1–4) · what happened · action.
 - 2026-11-01 · 021 · 1 · target text had no wording for rirMax-only and null loads; worker
   stopped (third stop over formatting-level gaps) · spec fixed; Loop rule: catch-all for
   text functions.
+- 2026-11-01 · 023 · 1 · spec asked a synchronous Boolean after a suspending write; worker
+  stopped (correct) · clarified: validate sync, write async.

@@ -111,6 +111,10 @@ loss and declines/dip), `goalDate` (computed, null when rising, null beyond 365 
 `toGoalCm`, `weightPctPerWeek`. `BodyTextTest`: every branch in item 3. ViewModel
 `addCheckIn` parsing is a pure helper you may extract and test (recommended).
 
+Clarification (lead, 2026-11-01): `addCheckIn` validates synchronously and returns the
+validity; on true it launches the write in `viewModelScope` (`checkIns.add(...)`, then
+`onCheckInAdded()`). Projection cutoff measured from today: fine.
+
 ## Plan / progress
 1. [x] `Body.kt` + `BodyTest`.
 2. [ ] Settings goal, ViewModel, `BodyText` + tests.
