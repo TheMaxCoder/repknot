@@ -11,6 +11,9 @@
     <string name="start_workout">Start workout</string>
     <string name="other_workouts">Other workouts</string>
     <string name="add_exercise">Add exercise</string>
+    <string name="up_next">UP NEXT</string>
+    <string name="view_all_exercises">View all exercises</string>
+    <string name="hide_exercises">Hide exercises</string>
     <string name="instead_of">instead of %1$s</string>
     <string name="prescribed_exercise">prescribed exercise</string>
     <plurals name="prescription_sets">

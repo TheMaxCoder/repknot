@@ -1,6 +1,6 @@
 # 017 — Workout redesign
 
-Status: blocked
+Status: in progress
 Starting commit: 024ddf2
 Updated: 2026-11-01
 
@@ -61,21 +61,32 @@ finish/discard actual session during smoke test. Device tests pending until reco
 ## Progress / discoveries
 - Starting worktree contains only untracked work/ from earlier visual exploration; preserve.
 - Connected wireless device available. Existing code uses snapshot unit then catalog default.
-- No implementation started. `SetRow.unit` is nullable, including for imported sets;
-  `SetInput` falls back to the suggested unit when editing a null-unit set, and
-  `WorkoutViewModel.logSet` requires a concrete `LoadUnit` and writes it to the row.
-  Removing the unit picker without a decision risks relabeling an unknown recorded unit.
+- Implemented dynamic dark theme, selected exercise card and saved selection/field state,
+  Up next/list, separated actions, RIR stepper, configured-unit input, and notes dialog.
+- Following lead clarification, existing set edits retain their recorded unit, including
+  null; null edits validate using the resolved fallback without recording that fallback.
+  New sets still use the resolved unit. Review: this changes how existing row copies are
+  constructed and must not relabel recorded values.
 
 ## Verification
 - `scripts/check --offline` passed on the unchanged implementation (106 tasks: 2 executed,
   104 up-to-date). This is a baseline, not verification of the redesign.
-- Redesign JVM tests, lead review, device installation and UI acceptance remain pending.
+- `scripts/check --offline` passed after implementation (106 tasks: 25 executed,
+  81 up-to-date): debug build, lint, and JVM tests, including selection and unit tests.
+- Lead review, independent check, device installation and UI acceptance remain pending.
 
 ## Handoff
-Blocked on owner/lead answer: when editing an existing set whose recorded unit is null,
-should the app preserve the null unit (and how should its load be labeled and validated),
-prevent editing that set, or intentionally assign the resolved exercise unit? The last
-option would relabel previously unknown data. This decision affects saved data and the
-requirement to preserve recorded units; do not guess. After clarification, implement plan
-step 1 and rerun the checks. No implementation changes are uncommitted; untracked `work/`
-is unrelated and must remain untouched. No destructive actions or backend work.
+Next: lead review the implementation and rerun `scripts/check --offline`, then install
+and perform the non-destructive device checks listed above. Verify keyboard/insets and
+selection state on device, and inspect preservation of existing recorded units. Device
+verification is pending; task remains in progress. Lead's unstaged `AGENTS.md`,
+`docs/architecture.md`, `docs/status.md`, and untracked `work/` remain untouched.
+No destructive actions or backend work.
+
+## Lead clarification
+For legacy null-unit set edits, preserve the null unit in the saved row (never infer a
+recorded unit). Label load simply Load for these edits. Keep existing parse/validation
+using the resolved fallback; only preserve existing.unit when copying an existing row in
+WorkoutViewModel.logSet. Concrete saved units stay unchanged. New sets use configured
+units. This narrow ViewModel edit is in scope; test the pure unit-preservation helper.
+No schema or domain changes. Proceed with the UI implementation.

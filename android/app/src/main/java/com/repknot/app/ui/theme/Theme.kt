@@ -1,5 +1,8 @@
 package com.repknot.app.ui.theme
 
+import android.os.Build
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
@@ -16,8 +19,9 @@ private val RepknotColors = darkColorScheme(
     onSurfaceVariant = Color(0xFFC5C5BA),
 )
 
-/** Intentionally dark-only, independent of system appearance and wallpaper. */
+/** Always dark; use wallpaper colors where available. */
 @Composable
 fun RepknotTheme(content: @Composable () -> Unit) {
-    MaterialTheme(colorScheme = RepknotColors, content = content)
+    val colors = if (Build.VERSION.SDK_INT >= 31) dynamicDarkColorScheme(LocalContext.current) else RepknotColors
+    MaterialTheme(colorScheme = colors, content = content)
 }

@@ -144,7 +144,7 @@ class WorkoutViewModel(
             // max + 1, not count: after deleting a middle set, count could repeat a position.
             val position = existing?.position
                 ?: ((sessions.sets(id).filter { it.sessionExerciseId == exerciseId }.maxOfOrNull { it.position } ?: -1) + 1)
-            sessions.saveSet(existing?.copy(load = input.load, unit = input.unit.name.lowercase(), reps = input.reps, rir = input.rir)
+            sessions.saveSet(existing?.copy(load = input.load, unit = recordedUnit(existing.unit), reps = input.reps, rir = input.rir)
                 ?: SetRow(uuid(), id, exerciseId, position, input.load, input.unit.name.lowercase(), input.reps, rir = input.rir))
         }
     }

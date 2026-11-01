@@ -4,7 +4,6 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Intent
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
@@ -12,9 +11,13 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.text.input.KeyboardType
@@ -25,16 +28,20 @@ import com.repknot.data.SetRow
 import com.repknot.domain.LoadUnit
 import com.repknot.domain.Prefill
 import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
 
 @Composable
 fun WorkoutScreen(vm: WorkoutViewModel, openSettings: () -> Unit) {
     val state by vm.state.collectAsState()
     val error by vm.error.collectAsState()
-    Scaffold { padding ->
+    val session = state as? WorkoutUiState.Session
+    Scaffold(bottomBar = { if (session != null) SessionActions(session, vm) }) { padding ->
         Column(Modifier.fillMaxSize().padding(padding).imePadding().verticalScroll(rememberScrollState()).padding(24.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Text(stringResource(R.string.app_name), color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.titleSmall)
+                if (session != null) Text(runCatching { LocalDate.parse(session.row.performedOn).format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)) }.getOrDefault(session.row.performedOn), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                else Spacer(Modifier.weight(1f))
                 TextButton(onClick = openSettings) { Text(stringResource(R.string.settings)) }
             }
             error?.let { Text(stringResource(it), color = MaterialTheme.colorScheme.error) }
@@ -86,26 +93,57 @@ private fun PreviewScreen(preview: WorkoutUiState.Preview, vm: WorkoutViewModel)
 @Composable
 private fun SessionScreen(session: WorkoutUiState.Session, vm: WorkoutViewModel) {
     var picker by rememberSaveable(session.row.id) { mutableStateOf<String?>(null) }
+    var selected by rememberSaveable(session.row.id) { mutableStateOf<String?>(null) }
+    var showAll by rememberSaveable(session.row.id) { mutableStateOf(false) }
+    val holder = rememberSaveableStateHolder()
+    val selectedId = selectedExerciseId(selected, session.exercises.map { ExerciseProgress(it.row.id, it.row.plannedSets, it.sets.size) })
+    LaunchedEffect(selectedId) { selected = selectedId }
+    val index = session.exercises.indexOfFirst { it.row.id == selectedId }
     Text(session.row.title, style = MaterialTheme.typography.headlineMedium)
-    Text(session.row.performedOn)
-    session.exercises.forEachIndexed { index, exercise ->
-        key(exercise.row.id) {
+    if (index >= 0) {
+        val exercise = session.exercises[index]
+        holder.SaveableStateProvider(exercise.row.id) {
             ExerciseCard(exercise, session.choices, index, session.exercises.size, vm) { picker = exercise.row.id }
         }
+        session.exercises.getOrNull(index + 1)?.let { next ->
+            Text(stringResource(R.string.up_next), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(next.row.exerciseName, style = MaterialTheme.typography.titleMedium)
+            Prescription(next.row)
+            PreviousHint(next.previous, next.previousOn)
+        }
     }
-    OutlinedButton(onClick = { picker = "add" }) { Text(stringResource(R.string.add_exercise)) }
-    var notes by rememberSaveable(session.row.id) { mutableStateOf(session.row.notes.orEmpty()) }
-    var notesExpanded by rememberSaveable(session.row.id) { mutableStateOf(false) }
-    TextButton(onClick = { notesExpanded = !notesExpanded }) { Text(notesLabel(session.row.notes)) }
-    if (notesExpanded) {
-        OutlinedTextField(notes, { notes = it }, label = { Text(stringResource(R.string.session_notes)) }, modifier = Modifier.fillMaxWidth())
-        OutlinedButton(onClick = { vm.saveSessionNotes(notes) }) { Text(stringResource(R.string.save_notes)) }
+    TextButton(onClick = { showAll = !showAll }) { Text(stringResource(if (showAll) R.string.hide_exercises else R.string.view_all_exercises)) }
+    if (showAll) session.exercises.forEach { exercise ->
+        TextButton(onClick = { selected = exercise.row.id; showAll = false }, modifier = Modifier.fillMaxWidth()) {
+            Text("${exercise.row.exerciseName} · ${exercise.sets.size}${exercise.row.plannedSets?.let { " / $it" } ?: ""}")
+        }
     }
-    FinishSection(session.row.status, vm)
     if (picker != null) ExercisePicker(session.choices, onDismiss = { picker = null }) { id ->
-        if (picker == "add") vm.addExercise(id) else picker?.let { vm.substitute(it, id) }
+        picker?.let { vm.substitute(it, id) }
         picker = null
     }
+}
+
+@Composable
+private fun SessionActions(session: WorkoutUiState.Session, vm: WorkoutViewModel) {
+    var picker by rememberSaveable(session.row.id) { mutableStateOf(false) }
+    var notesOpen by rememberSaveable(session.row.id) { mutableStateOf(false) }
+    var notes by rememberSaveable(session.row.id) { mutableStateOf(session.row.notes.orEmpty()) }
+    val keyboardOpen = WindowInsets.ime.getBottom(LocalDensity.current) > 0
+    if (!keyboardOpen) Surface(color = MaterialTheme.colorScheme.surfaceContainer, tonalElevation = 3.dp) {
+        Column(Modifier.fillMaxWidth().navigationBarsPadding().imePadding().padding(horizontal = 16.dp, vertical = 8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Row(Modifier.fillMaxWidth()) {
+                TextButton(onClick = { picker = true }, modifier = Modifier.weight(1f)) { Text(stringResource(R.string.add_exercise)) }
+                TextButton(onClick = { notes = session.row.notes.orEmpty(); notesOpen = true }, modifier = Modifier.weight(1f)) { Text(stringResource(R.string.session_notes)) }
+            }
+            FinishSection(session.row.status, vm)
+        }
+    }
+    if (picker) ExercisePicker(session.choices, onDismiss = { picker = false }) { vm.addExercise(it); picker = false }
+    if (notesOpen) AlertDialog(onDismissRequest = { notesOpen = false }, title = { Text(stringResource(R.string.session_notes)) },
+        text = { OutlinedTextField(notes, { notes = it }, modifier = Modifier.fillMaxWidth()) },
+        confirmButton = { TextButton(onClick = { vm.saveSessionNotes(notes); notesOpen = false }) { Text(stringResource(R.string.save_notes)) } },
+        dismissButton = { TextButton(onClick = { notesOpen = false }) { Text(stringResource(R.string.cancel)) } })
 }
 
 @Composable
@@ -217,29 +255,20 @@ private fun SetInput(exercise: ExerciseUi, set: SetRow?, vm: WorkoutViewModel, c
     var reps by rememberSaveable(*keys) { mutableStateOf(number(set?.reps ?: if (set == null) suggestion.reps else null)) }
     var rir by rememberSaveable(*keys) { mutableIntStateOf(set?.rir ?: 1) }
     val rirMax = maxOf(10, set?.rir ?: 1)
-    var unit by rememberSaveable(*keys) { mutableStateOf(set?.unit?.uppercase() ?: suggestion.unit.name) }
+    val unit = set?.unit?.uppercase()?.let(LoadUnit::valueOf) ?: suggestion.unit
     if (set == null && exercise.previous is Prefill.Previous) Text(stringResource(R.string.suggested_previous), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-        if (unit != LoadUnit.BODYWEIGHT.name) OutlinedTextField(load, { load = it }, modifier = Modifier.weight(1f), label = { Text(stringResource(R.string.label_load)) }, singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal))
+        if (unit != LoadUnit.BODYWEIGHT) OutlinedTextField(load, { load = it }, modifier = Modifier.weight(1f), label = { Text(if (set != null && set.unit == null) stringResource(R.string.label_load) else "${stringResource(R.string.label_load)} · ${unit.name.lowercase()}") }, singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal))
         OutlinedTextField(reps, { reps = it }, modifier = Modifier.weight(1f), label = { Text(stringResource(R.string.label_reps)) }, singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal))
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(stringResource(R.string.label_rir), style = MaterialTheme.typography.labelSmall)
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                FilledTonalIconButton(onClick = { rir-- }, enabled = rir > 0, modifier = Modifier.size(40.dp)) { Text("−") }
-                Text(rir.toString(), modifier = Modifier.padding(horizontal = 4.dp))
-                FilledTonalIconButton(onClick = { rir++ }, enabled = rir < rirMax, modifier = Modifier.size(40.dp)) { Text("+") }
-            }
-        }
     }
-    Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-        listOf(LoadUnit.KG to R.string.unit_kg, LoadUnit.LB to R.string.unit_lb, LoadUnit.PLATES to R.string.unit_plates, LoadUnit.BODYWEIGHT to R.string.unit_bodyweight).forEach { (choice, label) ->
-            FilterChip(selected = unit == choice.name, onClick = { unit = choice.name }, label = { Text(stringResource(label), style = MaterialTheme.typography.labelSmall) })
-        }
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Text(stringResource(R.string.label_rir), modifier = Modifier.weight(1f))
+        FilledTonalIconButton(onClick = { rir-- }, enabled = rir > 0, modifier = Modifier.size(48.dp).semantics { contentDescription = "Decrease RIR" }) { Text("−") }
+        Text(rir.toString(), modifier = Modifier.padding(horizontal = 12.dp))
+        FilledTonalIconButton(onClick = { rir++ }, enabled = rir < rirMax, modifier = Modifier.size(48.dp).semantics { contentDescription = "Increase RIR" }) { Text("+") }
     }
-    Row {
-        Button(onClick = { vm.logSet(exercise.row.id, set?.id, load, LoadUnit.valueOf(unit), reps, rir.toString()) }) { Text(stringResource(if (set == null) R.string.log_set else R.string.update_set)) }
-        if (set != null) TextButton(onClick = cancel) { Text(stringResource(R.string.cancel)) }
-    }
+    Button(onClick = { vm.logSet(exercise.row.id, set?.id, load, unit, reps, rir.toString()) }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(if (set == null) R.string.log_set else R.string.update_set)) }
+    if (set != null) TextButton(onClick = cancel) { Text(stringResource(R.string.cancel)) }
 }
 
 @Composable
@@ -266,8 +295,8 @@ private fun FinishSection(status: String, vm: WorkoutViewModel) {
     var confirmDiscard by rememberSaveable { mutableStateOf(false) }
     when (status) {
         "in_progress" -> {
-            Button(onClick = vm::finish) { Text(stringResource(R.string.finish_workout)) }
-            OutlinedButton(onClick = { confirmDiscard = true }) { Text(stringResource(R.string.discard_workout)) }
+            Button(onClick = vm::finish, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.finish_workout)) }
+            TextButton(onClick = { confirmDiscard = true }) { Text(stringResource(R.string.discard_workout)) }
         }
         "finished" -> {
             if (uploadEnabled) {
