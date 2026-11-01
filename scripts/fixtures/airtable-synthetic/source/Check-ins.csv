@@ -1,0 +1,3 @@
+__airtable_record_id,__airtable_created_time,Check-in,Date,Weight kg,Waist cm,Chest cm,Arms cm,Notes,Arms Flexed cm,Height cm,Legs cm
+syn-check-1,2025-01-01T00:00:00.000Z,,2025-01-01,75,,,,Synthetic only,,,
+syn-check-2,2025-01-01T00:00:00.000Z,,2025-01-02,76,,,,,,,

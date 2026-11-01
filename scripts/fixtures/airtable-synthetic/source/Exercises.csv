@@ -1,0 +1,4 @@
+__airtable_record_id,__airtable_created_time,Exercise,Active,Workout,Order,Target Sets,Rep Min,Rep Max,Current Load,Load Unit,Progression Rule,Notes,Exercise Logs
+syn-ex-1,2025-01-01T00:00:00.000Z,Synthetic press,true,,,,,,,"{""name"": ""kg""}",,,
+syn-ex-2,2025-01-01T00:00:00.000Z,Synthetic carry,true,,,,,,,"{""name"": ""kg""}",,,
+syn-ex-3,2025-01-01T00:00:00.000Z,Pull-Up,true,,,,,,,,,,

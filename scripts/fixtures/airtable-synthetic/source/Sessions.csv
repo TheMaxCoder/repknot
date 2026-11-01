@@ -1,0 +1,3 @@
+__airtable_record_id,__airtable_created_time,Session,Date,Workout,Readiness,Soreness / Stiffness,Session Notes,Exercise Logs,Training Habits Log
+syn-session-1,2025-01-01T00:00:00.000Z,Synthetic session A,2025-01-01,Synthetic A,"{""name"": ""Ready""}",Synthetic soreness,,,
+syn-session-2,2025-01-01T00:00:00.000Z,Synthetic session B,2025-01-02,Synthetic B,,,,,

@@ -1,0 +1,2 @@
+__airtable_record_id,__airtable_created_time,Habit Event,Date,Session,Behavior,Direction,Impact,Evidence,Next-session rule
+syn-habit-1,2025-01-01T00:00:00.000Z,Synthetic habit,2025-01-01,"[{""id"": ""syn-session-1"", ""name"": ""Synthetic session A""}]",Synthetic behavior,"{""name"": ""Positive""}","{""name"": ""Low""}",Synthetic evidence,Synthetic rule

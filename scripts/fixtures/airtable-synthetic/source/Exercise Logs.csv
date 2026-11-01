@@ -1,0 +1,5 @@
+__airtable_record_id,__airtable_created_time,Log,Load,Load Unit,Reps,RIR,Notes,Session,Exercise
+syn-log-1,2025-01-01T00:00:00.000Z,Synthetic log,10,"{""name"": ""kg""}",5.5,1-2,,"[{""id"": ""syn-session-1"", ""name"": ""Synthetic session""}]","[{""id"": ""syn-ex-1"", ""name"": ""Synthetic exercise""}]"
+syn-log-2,2025-01-01T00:00:00.000Z,Synthetic log,8,"{""name"": ""kg""}",30 sec,,,"[{""id"": ""syn-session-1"", ""name"": ""Synthetic session""}]","[{""id"": ""syn-ex-2"", ""name"": ""Synthetic exercise""}]"
+syn-log-3,2025-01-01T00:00:00.000Z,Synthetic log,,,6,,,"[{""id"": ""syn-session-2"", ""name"": ""Synthetic session""}]","[{""id"": ""syn-ex-3"", ""name"": ""Synthetic exercise""}]"
+syn-log-4,2025-01-01T00:00:00.000Z,Synthetic log,10,,8,,,"[{""id"": ""syn-session-2"", ""name"": ""Synthetic session""}]","[{""id"": ""syn-ex-1"", ""name"": ""Synthetic exercise""}]"

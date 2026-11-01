@@ -201,23 +201,23 @@ def main(base):
     write(out, "sets", list(sets[0]), sets)
 
     log_count = Counter(links(r["Session"])[0] for r in logs)
-    write(out, "sessions", ["date", "session_ref", "title", "workout", "soreness", "notes", "exercise_logs"], [{
+    write(out, "sessions", ["date", "session_ref", "title", "workout", "soreness", "readiness", "notes", "exercise_logs"], [{
         "date": r["Date"], "session_ref": r["__airtable_record_id"], "title": r["Session"], "workout": r["Workout"],
-        "soreness": r["Soreness / Stiffness"], "notes": r["Session Notes"], "exercise_logs": log_count[r["__airtable_record_id"]],
+        "soreness": r["Soreness / Stiffness"], "readiness": select(r["Readiness"]), "notes": r["Session Notes"], "exercise_logs": log_count[r["__airtable_record_id"]],
     } for r in sorted(sessions, key=lambda r: r["Date"])])
 
-    write(out, "checkins", ["date", "weight_kg", "waist_cm", "chest_cm", "arms_cm", "arms_flexed_cm", "legs_cm", "height_cm", "notes"], [{
-        "date": r["Date"], "weight_kg": r["Weight kg"], "waist_cm": r["Waist cm"], "chest_cm": r["Chest cm"], "arms_cm": r["Arms cm"],
+    write(out, "checkins", ["ref", "date", "weight_kg", "waist_cm", "chest_cm", "arms_cm", "arms_flexed_cm", "legs_cm", "height_cm", "notes"], [{
+        "ref": r["__airtable_record_id"], "date": r["Date"], "weight_kg": r["Weight kg"], "waist_cm": r["Waist cm"], "chest_cm": r["Chest cm"], "arms_cm": r["Arms cm"],
         "arms_flexed_cm": r["Arms Flexed cm"], "legs_cm": r["Legs cm"], "height_cm": r["Height cm"], "notes": r["Notes"],
     } for r in sorted(read(src, "Check-ins"), key=lambda r: r["Date"])])
 
-    write(out, "health_state", ["name", "type", "status", "effective_from", "value", "rationale"], [{
-        "name": r["Name"], "type": select(r["Type"]), "status": select(r["Status"]), "effective_from": r["Effective From"],
+    write(out, "health_state", ["ref", "name", "type", "status", "effective_from", "value", "rationale"], [{
+        "ref": r["__airtable_record_id"], "name": r["Name"], "type": select(r["Type"]), "status": select(r["Status"]), "effective_from": r["Effective From"],
         "value": r["Value"], "rationale": r["Notes / Rationale"],
     } for r in sorted(read(src, "Health State"), key=lambda r: (select(r["Status"]) != "Active", select(r["Type"]), r["Name"]))])
 
-    write(out, "training_habits", ["date", "event", "session", "behavior", "direction", "impact", "evidence", "next_session_rule"], [{
-        "date": r["Date"], "event": r["Habit Event"], "session": link_names(r["Session"]), "behavior": r["Behavior"],
+    write(out, "training_habits", ["ref", "date", "event", "session", "session_ref", "behavior", "direction", "impact", "evidence", "next_session_rule"], [{
+        "ref": r["__airtable_record_id"], "date": r["Date"], "event": r["Habit Event"], "session": link_names(r["Session"]), "session_ref": next(iter(links(r["Session"])), ""), "behavior": r["Behavior"],
         "direction": select(r["Direction"]), "impact": select(r["Impact"]), "evidence": r["Evidence"], "next_session_rule": r["Next-session rule"],
     } for r in sorted(read(src, "Training Habits Log"), key=lambda r: r["Date"])])
 

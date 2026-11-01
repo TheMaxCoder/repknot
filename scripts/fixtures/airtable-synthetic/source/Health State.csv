@@ -1,0 +1,2 @@
+__airtable_record_id,__airtable_created_time,Name,Type,Value,Status,Effective From,Notes / Rationale
+syn-health-1,2025-01-01T00:00:00.000Z,Synthetic state,"{""name"": ""Synthetic""}",Synthetic value,"{""name"": ""Active""}",2025-01-01,Synthetic rationale

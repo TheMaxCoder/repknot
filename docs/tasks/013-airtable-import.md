@@ -84,14 +84,14 @@ batched (≤ 500 rows per call):
     (count existing refs before inserting). Exit 1 on any error with the message.
 
 ## Plan / progress
-Blocked before step 1 on the scope clarification in Handoff; no implementation started.
+Scope clarification received: reading migrations is allowed; private-data remains off-limits.
 
-1. [ ] Normalizer changes (1–3); fixture (4); normalizer runs on a temp copy.
+1. [x] Normalizer changes (1–3); fixture (4); normalizer runs on a temp copy.
 2. [ ] Importer (5–11).
 3. [ ] Verification (below); commit(s) with task 013 in the subject.
 
 ## Verification (worker: run, record actual output)
-- Not run: implementation has not started pending the scope clarification below.
+- Step 1: temp-copy normalization succeeded: 2 sessions, 4 logs, 4 sets, 1 flagged. Headers: `date,session_ref,title,workout,soreness,readiness,notes,exercise_logs`; `date,session_ref,log_ref,exercise,set,load,unit,reps,duration_s,rir,rir_raw,notes,review`; `ref,date,weight_kg,waist_cm,chest_cm,arms_cm,arms_flexed_cm,legs_cm,height_cm,notes`; `ref,name,type,status,effective_from,value,rationale`; `ref,date,event,session,session_ref,behavior,direction,impact,evidence,next_session_rule`.
 1. `d=$(mktemp -d) && cp -r scripts/fixtures/airtable-synthetic $d/ && scripts/airtable-normalize $d/airtable-synthetic`
    → succeeds; show the normalized headers of the five changed/used files.
 2. `scripts/airtable-import --as test2 $d/airtable-synthetic/normalized` → all `X new`.
@@ -106,8 +106,4 @@ Synthetic test2 rows stay on dev.
   loads go to `raw` rather than guessing "added weight" semantics.
 
 ## Handoff
-- Blocked before implementation: the scope says not to read anything under `supabase/`,
-  but Context to read explicitly requires reading two files under `supabase/migrations/`.
-  May the worker read those two migrations, or should the lead supply the relevant schema
-  outside that directory? After clarification, begin plan step 1; no implementation changes
-  or verification commands have been made.
+- Step 1 verified; next implement importer and execute dev/test2 verification.
