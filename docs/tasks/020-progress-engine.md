@@ -195,3 +195,9 @@ sessionDips emit and not-emit (2 of 3 below; 3 of 7 below).
 ## Handoff
 
 Step 1 was committed as `4acc5f8`. Engine and tests are complete after the same-date clarification. No blockers or unfinished task changes. Next: lead review of task 020 and proceed with milestone 019's dependent UI work. Unrelated untracked files remain untouched.
+
+## Lead review (2026-11-01)
+Accepted (after two clarification stops, see the delegation miss log). Code read against
+every rule; `scripts/check --offline` passed (11 ProgressTest tests). Scratch run on the
+real history (private export + PPL rx, throwaway test, not committed): declines,
+improvements, the broad dip and the targets all matched the raw sets. Behaviour matches the agreed plan.

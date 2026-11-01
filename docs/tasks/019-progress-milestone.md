@@ -22,7 +22,7 @@ checked the screens on the phone against the real history.
   flat — treat as one lineage, no data fix.
 
 ## Plan / progress
-1. [ ] Status engine in `domain` — [020](020-progress-engine.md) (delegated).
+1. [x] Status engine in `domain` — [020](020-progress-engine.md) (delegated).
 2. [ ] Workout card: today's target, ▲/=/▼ per set vs the matching set last time, planned vs
    done sets (delegated after 1).
 3. [ ] Progress screen: exercises sorted by attention, status + reason + flags, broad-dip
@@ -30,7 +30,8 @@ checked the screens on the phone against the real history.
 4. [ ] Light / modified day flag on a session, excluded from statuses. Needs a non-destructive
    server migration, `push_session` support, and the **first real Room migration** (v4→v5:
    from 2026-11-02 the phone holds unuploaded real workouts, so no destructive fallback).
-   Lead does migration + sync; UI toggle may be delegated.
+   Lead does migration + sync; UI toggle may be delegated. Server side done (742ed5c:
+   `light` column, push/save keep it when omitted; pgTAP 007).
 5. [ ] Body card: check-ins to the phone (sync + entry form), waist now / cm to goal /
    14-day rate and projected date, weight via 14-day medians (≥3 check-ins per window);
    prompt to review the cut when weight loss > ~1 %/week *and* broad strength declines.
@@ -59,4 +60,5 @@ checked the screens on the phone against the real history.
   (pushing an imported incomplete set without `raw` would fail `session_sets_complete`).
 
 ## Handoff
-Next: delegate [020](020-progress-engine.md); review; then write step 2/3 task files.
+020 accepted. Next: [021](021-workout-card-targets.md) delegated; then step 3 task file
+(progress screen) and the phone side of step 4 (Room v5 migration — lead).
