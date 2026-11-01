@@ -1,6 +1,6 @@
 # 021 — Workout card: today's target, per-set ▲/=/▼, planned vs done
 
-Status: blocked
+Status: in progress
 Updated: 2026-11-01
 Starting commit: 499d8c6
 Parent: [019](019-progress-milestone.md) step 2 · Delegated: yes (see
@@ -66,7 +66,7 @@ history, null for a substituted row; deltas length equals logged sets and UP for
 logged set; preview target present. `ExerciseSelectionTest` compiles after the rename.
 
 ## Plan / progress
-1. [ ] Rename (0), state (1), `TargetText.kt` (2) + tests.
+1. [x] Rename (0), state (1), `TargetText.kt` (2) + tests.
 2. [ ] UI items 3–5.
 3. [ ] `scripts/check --offline`; commit(s) with task 021 in the subject.
 
@@ -79,19 +79,14 @@ logged set; preview target present. `ExerciseSelectionTest` compiles after the r
   sets have null loads. Both `Repeat(load = null)` and `MoveUp(from = null)` can
   therefore represent an unknown load rather than bodyweight. The specified wording
   only describes null loads as bodyweight.
-- Pre-existing untracked `work/` was left untouched. No implementation changes made.
+- Pre-existing untracked `work/` is left untouched.
+- Catch-all: if a bodyweight target contains a numeric load, show bodyweight rather than inventing a load unit. Review this conservative formatting choice.
 
 ## Verification
 
 - Inspected task, state mapping, UI, domain target engine and data models.
-- `scripts/check --offline` not run: implementation has not started.
+- `scripts/check --offline`: first run failed on cross-module Kotlin smart casts; corrected. Second run passed (build, lint, unit tests).
 
 ## Handoff
 
-Blocked on target wording before implementing step 1:
-1. How should `Repeat` display RIR when only `rirMax` is non-null?
-2. How should `Repeat` and `MoveUp` display a null load for non-bodyweight units
-   (unknown recorded load rather than bodyweight)?
-
-Next: clarify both cases, then implement plan step 1 and its tests. Lead device check
-and all implementation verification remain pending.
+Clarifications are in item 2. Next: implement UI plan step 2 and rerun checks; lead device check remains pending.

@@ -28,9 +28,9 @@ sealed interface WorkoutUiState {
     data class Preview(val programName: String, val workout: ProgramWorkout, val suggested: Boolean,
                        val exercises: List<PreviewExerciseUi>) : WorkoutUiState
 }
-data class ExerciseUi(val row: SessionExerciseRow, val sets: List<SetRow>, val previous: Prefill, val suggestion: SetSuggestion, val previousOn: LocalDate?)
+data class ExerciseUi(val row: SessionExerciseRow, val sets: List<SetRow>, val previous: Prefill, val suggestion: SetSuggestion, val previousOn: LocalDate?, val target: TodayTarget?, val deltas: List<SetDelta>)
 data class SetSuggestion(val load: Double?, val unit: LoadUnit, val reps: Double?)
-data class PreviewExerciseUi(val prescription: Prescription, val previous: Prefill, val previousOn: LocalDate?)
+data class PreviewExerciseUi(val prescription: Prescription, val previous: Prefill, val previousOn: LocalDate?, val target: TodayTarget?)
 
 private fun previousDate(previous: Prefill, history: List<PastSession>): LocalDate? =
     (previous as? Prefill.Previous)?.let { p -> history.firstOrNull { it.id == p.sessionId }?.finishedAtMillis }
@@ -42,7 +42,7 @@ fun previewState(program: Program, programName: String?, workoutKey: String, his
     return WorkoutUiState.Preview(programName ?: "Program", workout, todaysWorkout(program, history).key == workoutKey,
         workout.exercises.sortedBy { it.position }.map {
             val previous = prefill(it, history)
-            PreviewExerciseUi(it, previous, previousDate(previous, history))
+            PreviewExerciseUi(it, previous, previousDate(previous, history), todayTarget(it, history))
         })
 }
 
@@ -79,7 +79,12 @@ fun sessionState(snapshot: SessionSnapshot, history: List<PastSession>, exercise
         val inputRow = if (row.substitutedFor != null) row.copy(plannedUnit = unit.name.lowercase(), plannedLoad = null) else row
         val logged = sets[row.id].orEmpty().sortedBy { it.position }
         val previous = prefill(prescriptionFor(inputRow, unit), previousHistory)
-        ExerciseUi(row, logged, previous, suggestionFor(previous, logged.size, inputRow, unit), previousDate(previous, previousHistory))
+        val target = if (row.substitutedFor != null) null else todayTarget(prescriptionFor(inputRow, unit), previousHistory)
+        val deltas = logged.mapIndexed { index, set ->
+            set.unit?.let { setDelta(PastSet(set.position, set.load, parseUnit(it), set.reps, set.durationS, set.rir), index, row.exerciseId, previousHistory) }
+                ?: SetDelta.NONE
+        }
+        ExerciseUi(row, logged, previous, suggestionFor(previous, logged.size, inputRow, unit), previousDate(previous, previousHistory), target, deltas)
     }, exercises)
 }
 

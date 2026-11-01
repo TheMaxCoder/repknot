@@ -29,6 +29,7 @@ class WorkoutStateTest {
         assertFalse(preview.suggested)  // "a" was done last, so "b" is suggested
         assertEquals(listOf("Deck", "Press"), preview.exercises.map { it.prescription.exerciseName })
         assertEquals(Prefill.Previous("old", listOf(pastSet)), preview.exercises[1].previous)
+        assertNotNull(preview.exercises[1].target)
         assertEquals(Prefill.StartLoad(12.0, LoadUnit.PLATES), preview.exercises[0].previous)
         assertNull(preview.exercises[0].previousOn)
         assertEquals(java.time.LocalDate.of(1970, 1, 1), preview.exercises[1].previousOn)
@@ -60,6 +61,19 @@ class WorkoutStateTest {
         assertEquals(java.time.LocalDate.of(1970, 1, 1), state.exercises[1].previousOn)
         assertEquals(LoadUnit.KG, state.exercises[0].suggestion.unit)
         assertEquals(choices, state.choices)
+    }
+    @Test fun targetsAndDeltasUsePreviousHistoryAndRecordedUnits() {
+        val previousSet = pastSet.copy(rir = 1)
+        val history = listOf(past.copy(exercises = listOf(PastExercise(0, "x", listOf(previousSet)))))
+        val logged = listOf(SetRow("1", "s", "e", 0, 35.0, "lb", 8.5, rir = 1),
+            SetRow("2", "s", "e", 1, 35.0, null, 8.5, rir = 1))
+        val choices = listOf(ExerciseRow("x", "x", "Press", "lb", false))
+        fun state(e: SessionExerciseRow) = sessionState(SessionSnapshot(row, listOf(e), logged), history, choices).exercises.single()
+        val prescribed = state(exercise)
+        assertNotNull(prescribed.target)
+        assertEquals(listOf(SetDelta.UP, SetDelta.NONE), prescribed.deltas)
+        assertEquals(prescribed.sets.size, prescribed.deltas.size)
+        assertNull(state(exercise.copy(substitutedFor = "original")).target)
     }
     @Test fun configuredUnitsAndSubstitutionsDoNotRelabelLoads() {
         val catalog = listOf(ExerciseRow("x", "x", "Press", "plates", false))
