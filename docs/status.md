@@ -22,7 +22,7 @@ Updated: 2026-11-01
 
 ## Current task
 
-[024 — Progress screen redesign](tasks/024-progress-redesign.md) is implemented, checked, and installed; visual and interaction verification on the unlocked phone remains pending.
+[024 — Progress screen redesign](tasks/024-progress-redesign.md) is implemented, checked, installed, and visually inspected at the phone’s current size; owner feedback and interaction/edge-case checks remain pending.
 
 [017 — Workout redesign](tasks/017-workout-redesign.md) is implemented and device-smoke-tested: compact
 exercise card, Up next, separated actions, dynamic dark colors, and configured load units.

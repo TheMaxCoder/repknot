@@ -40,7 +40,7 @@ The lead inspected the installed screen on the unlocked phone on 2026-11-01: the
 - No changes to domain calculations, sync, training alerts, exercise cards, or other screens. No new dependencies. Scope: ProgressScreen.kt, body presentation helpers/resources and focused tests, task notes only.
 - Worker: run `scripts/check --offline`, commit verified implementation and update this handoff. Lead: review diff, re-run check, install on connected phone if available, and inspect screenshot without interacting with personal data. Record remaining manual checks. Do not declare device interaction checks passed from a screenshot.
 
-Progress: [x] implement and test; [x] address further alignment feedback; [ ] lead review and phone visual check.
+Progress: [x] implement and test; [x] address further alignment feedback; [x] lead review and phone visual check; [ ] owner feedback and remaining interaction/edge-case checks.
 
 ### Decisions and discoveries
 - Each measurement has its own four-week rate; missing measurements are labeled explicitly and missing rates say there is not enough data. A real zero rate remains zero. The estimate uses the configured goal at measurement precision and is omitted without a forecast. Body details and its percentage text are unchanged.
@@ -50,7 +50,7 @@ Progress: [x] implement and test; [x] address further alignment feedback; [ ] le
 ### Verification
 - `scripts/check --offline` passed (debug build, lint, unit tests; Gradle deprecation warning). Focused tests cover signed and missing rates, zero, estimate precision/absence, and unchanged percentage in Body details.
 - After the further alignment feedback, `scripts/check --offline` passed again (debug build, lint, unit tests; Gradle deprecation warning).
-- No device installation, visual inspection, accessibility or interaction checks performed for the latest alignment follow-up. Commit `c66231e` omitted its intended `Not verified:` trailer because the commit command split incorrectly; the missing limitation is recorded here and in the subsequent handoff commit.
+- Lead reran `scripts/check --offline` and `git diff e815089..HEAD --check` successfully; `cd android && ./gradlew :app:installDebug --offline` installed on the test phone. A screenshot of the real Progress screen showed aligned four-week rates, labeled estimate, separated verdict and date/action footer without visible clipping at the phone’s current size. No accessibility or interaction checks were performed. Commit `c66231e` omitted its intended `Not verified:` trailer because the commit command split incorrectly; the missing limitation is recorded here and in the subsequent handoff commit.
 
 ### Handoff
-Lead: review the latest alignment diff and rerun `scripts/check --offline`, install on the connected phone if available, and inspect a screenshot without interacting with personal data. Then arrange manual checks of scaled/narrow layout, missing data, long stale guidance, scrolling and both independent actions; a screenshot alone does not verify interaction. Review: no known requirement guesses or plan deviations. Unrelated untracked `work/` remains untouched.
+Obtain owner feedback and arrange manual checks of scaled/narrow layout, missing data, long stale guidance, scrolling and both independent actions; the current-size screenshot alone does not verify interaction. Review: no known requirement guesses or plan deviations. Unrelated untracked `work/` remains untouched.
