@@ -54,8 +54,15 @@ fun ProgressScreen(state: ProgressUiState, back: () -> Unit, openBody: () -> Uni
                             }
                             BodySummaryCardLines(state)
                         }
-                        TextButton(onClick = { showDialog = true }, modifier = Modifier.padding(start = 8.dp, bottom = 8.dp)) {
-                            Text(stringResource(R.string.add_check_in))
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                        Column(Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 8.dp)) {
+                            state.checkIns.firstOrNull()?.let {
+                                Text(lastCheckInLine(java.time.LocalDate.parse(it.checkedOn), state.today),
+                                    style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                            TextButton(onClick = { showDialog = true }) {
+                                Text(stringResource(R.string.add_check_in))
+                            }
                         }
                     }
                 }
@@ -143,25 +150,31 @@ private fun BodySummaryCardLines(state: ProgressUiState) {
         return
     }
     val waist: @Composable () -> Unit = {
-        val measurement = body.waist
-        if (measurement == null) Text(waistLine(body)) else Column {
-            Text(bodyMeasurement(measurement.latest, "cm"), style = MaterialTheme.typography.headlineSmall)
-            Text(waistCaption(body), style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text("Waist", style = MaterialTheme.typography.labelLarge)
+            body.waist?.let {
+                Text(bodyMeasurement(it.latest, "cm"), style = MaterialTheme.typography.headlineSmall)
+                waistCaption(body).takeUnless { caption -> caption == "Waist" }?.let { caption ->
+                    Text(caption.removePrefix("Waist · "), style = MaterialTheme.typography.bodySmall)
+                }
+                Text("Last 4 weeks", style = MaterialTheme.typography.labelSmall)
+                Text(summaryRate(it.perWeek, "cm"), style = MaterialTheme.typography.bodySmall)
+            } ?: Text("No waist measurement yet", style = MaterialTheme.typography.bodySmall)
         }
     }
     val weight: @Composable () -> Unit = {
-        body.weight?.let {
-            Column {
+        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text("Weight", style = MaterialTheme.typography.labelLarge)
+            body.weight?.let {
                 Text(bodyMeasurement(it.latest, "kg"), style = MaterialTheme.typography.headlineSmall)
-                Text("Weight", style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
+                Text("Last 4 weeks", style = MaterialTheme.typography.labelSmall)
+                Text(summaryRate(it.perWeek, "kg"), style = MaterialTheme.typography.bodySmall)
+            } ?: Text("No weight measurement yet", style = MaterialTheme.typography.bodySmall)
         }
     }
     BoxWithConstraints(Modifier.fillMaxWidth()) {
         val fontScale = LocalDensity.current.fontScale
-        if (body.waist != null && body.weight != null && maxWidth.value / fontScale >= 250f) {
+        if (maxWidth.value / fontScale >= 250f) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Box(Modifier.weight(1f)) { waist() }
                 Box(Modifier.weight(1f)) { weight() }
@@ -170,9 +183,17 @@ private fun BodySummaryCardLines(state: ProgressUiState) {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) { waist(); weight() }
         }
     }
-    rateLine(body).takeIf { it.isNotEmpty() }?.let { Text(it) }
-    weightTrendLine(body).takeIf { it.isNotEmpty() }?.let { Text(it) }
-    BodyDetails(state)
+    goalEstimate(body).takeIf { it.isNotEmpty() }?.let {
+        Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+    verdictLine(body, state.declines, state.recentDip).takeIf { it.isNotEmpty() }?.let {
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+        Text(it, style = MaterialTheme.typography.bodyMedium, color = when (body.verdict) {
+            BodyVerdict.TOO_FAST, BodyVerdict.STALLED -> MaterialTheme.colorScheme.error
+            BodyVerdict.ON_TRACK, BodyVerdict.GOAL_REACHED -> MaterialTheme.colorScheme.primary
+            else -> MaterialTheme.colorScheme.onSurface
+        })
+    }
 }
 
 @Composable

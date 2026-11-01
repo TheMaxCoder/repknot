@@ -28,4 +28,26 @@ Implement in `android/app/src/main/java/com/repknot/app/ui/ProgressScreen.kt` an
 `scripts/check --offline` passed for the original implementation and again for the follow-up (debug build, lint, and unit tests); Gradle reported deprecated features. The first follow-up run failed on a Kotlin cross-module smart cast; corrected before the passing run. Added formatting tests for metric precision, configured goal and weight trend. Lead reran `scripts/check --offline` successfully and `git diff 6d0fcb7..HEAD --check` passed. `cd android && ./gradlew :app:installDebug --offline` installed successfully on the test phone. The phone was locked; no visual or interaction verification was performed.
 
 ## Handoff
-Open Progress on the unlocked phone and verify the layout, scrolling, scaled text, missing metrics, body-history navigation, check-in action, and exercise navigation; obtain owner feedback. Implementation and offline checks are complete; device visual verification remains pending. Unrelated untracked `work/` was left untouched.
+The initial screen was inspected and prompted the follow-up below. Follow-up implementation and offline checks are complete; lead review and follow-up device visual and interaction verification remain pending. Unrelated untracked `work/` was left untouched.
+
+## Body card follow-up — owner feedback
+
+The lead inspected the installed screen on the unlocked phone on 2026-11-01: the body card is noisy because waist and weight rates, goal forecast, date, verdict and action are successive lines. The owner wants the 4-week rates and goal forecast visible, arranged by measurement. Implement this focused follow-up:
+
+- In the Progress body card show waist and weight as two clearly labeled columns (stack on narrow/large-text layouts), each with measurement and its own rate under a `Last 4 weeks` label. Waist shows its goal distance. When available, show the goal forecast separately and explicitly as an estimate (e.g. `Estimated 80 cm around Dec 20`). Use actual configurable goal, dates, and existing formatting. Do not invent a forecast when absent.
+- Place the existing verdict in its own visually separated row and the last check-in date and Add check-in action in a separate footer. Keep body detail navigation and check-in independent accessible targets. Keep stale check-in guidance, no-check-in/waist/weight, no-trend and goal-reached cases understandable. Trend absence should say not enough data, not imply zero. The weight percentage remains available in Body details; existing BodyScreen and its text should remain intact. Keep existing full verdict including caution.
+- No changes to domain calculations, sync, training alerts, exercise cards, or other screens. No new dependencies. Scope: ProgressScreen.kt, body presentation helpers/resources and focused tests, task notes only.
+- Worker: run `scripts/check --offline`, commit verified implementation and update this handoff. Lead: review diff, re-run check, install on connected phone if available, and inspect screenshot without interacting with personal data. Record remaining manual checks. Do not declare device interaction checks passed from a screenshot.
+
+Progress: [x] implement and test; [ ] lead review and phone visual check.
+
+### Decisions and discoveries
+- Each measurement has its own four-week rate; missing measurements are labeled explicitly and missing rates say there is not enough data. A real zero rate remains zero. The estimate uses the configured goal at measurement precision and is omitted without a forecast. Body details and its percentage text are unchanged.
+- The verdict remains in the history navigation target, separated by a divider; the dated footer and check-in action are outside that target. The existing responsive width/font-scale threshold also applies when a measurement is missing.
+
+### Verification
+- `scripts/check --offline` passed (debug build, lint, unit tests; Gradle deprecation warning). Focused tests cover signed and missing rates, zero, estimate precision/absence, and unchanged percentage in Body details.
+- No device installation, visual inspection, accessibility or interaction checks performed for this follow-up.
+
+### Handoff
+Lead: review the follow-up diff and rerun `scripts/check --offline`, install on the connected phone if available, and inspect a screenshot without interacting with personal data. Then arrange manual checks of scaled/narrow layout, missing data, stale guidance, scrolling and both independent actions; a screenshot alone does not verify interaction. Review: no known requirement guesses or plan deviations. Unrelated untracked `work/` remains untouched.

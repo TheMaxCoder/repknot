@@ -18,6 +18,12 @@ private fun signed(value: Double) = (if (value < 0) "−" else if (value > 0) "+
 
 fun bodyMeasurement(value: Double, unit: String): String = "${measure(value)} $unit"
 
+fun summaryRate(rate: Double?, unit: String): String =
+    rate?.let { "${signed(it)} $unit/week" } ?: "Not enough data for a trend"
+
+fun goalEstimate(s: BodySummary): String =
+    s.goalDate?.let { "Estimated ${measure(s.goalCm)} cm around ${date(it)}" } ?: ""
+
 fun waistCaption(s: BodySummary): String {
     val remaining = s.toGoalCm ?: return "Waist"
     return "Waist · " + if (remaining <= 0) "goal reached (${measure(s.goalCm)} cm)"

@@ -33,6 +33,15 @@ class BodyTextTest {
         assertEquals("−0.1 kg/week (−0.2 %/week)", weightTrendLine(s))
         assertEquals("", weightTrendLine(s.copy(weight = null)))
     }
+    @Test fun summaryRatesAndEstimate() {
+        assertEquals("−0.6 cm/week", summaryRate(-0.6, "cm"))
+        assertEquals("+0.1 kg/week", summaryRate(0.1, "kg"))
+        assertEquals("0 kg/week", summaryRate(0.0, "kg"))
+        assertEquals("Not enough data for a trend", summaryRate(null, "cm"))
+        assertEquals("Estimated 79.75 cm around Dec 20", goalEstimate(s.copy(goalCm = 79.75)))
+        assertEquals("", goalEstimate(s.copy(goalDate = null)))
+        assertEquals("Weight 74.6 kg · −0.1 kg/week (−0.2 %/week)", weightLine(s))
+    }
     @Test fun weightAndDates() {
         assertEquals("Weight 74.6 kg · −0.1 kg/week (−0.2 %/week)", weightLine(s))
         assertEquals("Weight 74.6 kg · −0.1 kg/week", weightLine(s.copy(weightPctPerWeek = null)))
