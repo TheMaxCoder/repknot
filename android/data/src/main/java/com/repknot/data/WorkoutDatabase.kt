@@ -66,15 +66,17 @@ interface SetDao {
     }
 }
 
-@Database(entities = [SetRow::class, SessionRow::class], version = 3, exportSchema = true)
+@Database(entities = [SetRow::class, SessionRow::class, ExerciseRow::class, ProgramRow::class,
+    ProgramWorkoutRow::class, ProgramExerciseRow::class], version = 4, exportSchema = true)
 abstract class WorkoutDatabase : RoomDatabase() {
     abstract fun sets(): SetDao
     abstract fun sessions(): SessionDao
+    abstract fun reference(): ReferenceDao
 
     companion object {
         fun open(context: Context): WorkoutDatabase = Room.databaseBuilder(
             context.applicationContext, WorkoutDatabase::class.java, "workouts.db",
-        ).fallbackToDestructiveMigrationFrom(true, 1, 2).build()
+        ).fallbackToDestructiveMigrationFrom(true, 1, 2, 3).build()
     }
 }
 

@@ -1,8 +1,8 @@
 # 009 — Room reference cache: exercises and programs
 
-Status: ready
+Status: in progress
 Updated: 2026-11-01
-Starting commit: (worker: record `git rev-parse --short HEAD` when you start)
+Starting commit: 94118c1
 Parent: [006](006-training-data-model.md) step 7 (first half) · Delegated: yes (see
 [delegation](../delegation/README.md)). The second half — nested sessions and sync — is
 lead work in task 010 and must not be started here.
@@ -97,13 +97,15 @@ Rule 7 and `replaceAll` are Room-only: verified by compilation now and by the le
 device later; no JVM test is needed for them.
 
 ## Plan / progress
-1. [ ] `testImplementation(libs.junit)`; entities + DAO + database version/fallback; build.
+1. [x] `testImplementation(libs.junit)`; entities + primitive DAO queries + database version/fallback; build. Transaction and domain helpers follow DTOs/mapping.
 2. [ ] DTOs + `fetchReference`; mapping functions.
 3. [ ] JVM tests for rules 1–6 and 8 (`ReferenceMappingTest.kt`).
 4. [ ] `scripts/check --offline`; confirm `schemas/.../4.json` exists; commit (task 009 in subject).
 
 ## Verification
-(worker: exact commands and results)
+- `cd android && ./gradlew :data:assembleDebug --offline` — passed; Room generated schema 4.
 
 ## Handoff
-(worker: what was done, anything unresolved or questioned)
+Room entities and primitive DAO queries compile. Next implement DTOs, fetch, mapping,
+and DAO helpers. Review: v4 fallback destructively resets synthetic v1–v3 databases;
+JUnit test dependency added as specified.
