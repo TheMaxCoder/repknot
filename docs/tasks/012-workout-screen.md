@@ -1,6 +1,6 @@
 # 012 — Workout screen (Compose)
 
-Status: blocked
+Status: in progress
 Updated: 2026-11-01
 Starting commit: f25a2ab
 Parent: [006](006-training-data-model.md) step 8 (UI half; logic is task 011) · Delegated:
@@ -53,7 +53,9 @@ Every state ends with the existing `CloudSection` below a divider. Errors from
      optional). When not editing, fields start from `suggestion` (load/reps as plain text,
      whole numbers without ".0"; unit from suggestion) and a small hint "Suggested from
      previous" shows when `previous` is `Previous`. Fields reset to the new suggestion after
-     a successful log. **Log set** → `logSet(row.id, null or editing set id, …)`.
+     a successful log: key the fields' `rememberSaveable` on (exercise id, number of logged
+     sets, editing set id, suggestion) — a successful log changes the set count in state, so
+     no ViewModel result is needed (clarified 2026-11-01). An invalid input keeps the fields. **Log set** → `logSet(row.id, null or editing set id, …)`.
    - Actions row: **↑** / **↓** (`moveExercise`, disabled at the ends), **Substitute**
      (opens the picker → `substitute`), **Remove** (confirm dialog → `removeExercise`).
    - Exercise notes field + **Save notes** → `saveExerciseNotes`.

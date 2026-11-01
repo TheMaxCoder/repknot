@@ -59,6 +59,8 @@ One line each: date · task · category (1–4) · what happened · action.
   (`todayState` program name) · worker-notes rule 1 (decide small gaps, record, continue).
 - 2026-11-01 · 011 · 1 · spec rules 10/14: set position by count; no reload on history
   change · lead fixed in review.
+- 2026-11-01 · 012 · 1 · spec asked to reset fields "after a successful log" without a signal;
+  worker stopped (as told to for ViewModel gaps) · answered: derive from set count in state.
 
 ## Kept with the lead
 (none beyond the defaults above)
