@@ -47,6 +47,7 @@ fun WorkoutScreen(vm: WorkoutViewModel, footer: @Composable () -> Unit) {
                     }
                 }
                 is WorkoutUiState.Session -> SessionScreen(current, vm)
+                is WorkoutUiState.Preview -> Text(current.workout.name)  // interim; task 015 builds the preview
             }
             footer()
         }

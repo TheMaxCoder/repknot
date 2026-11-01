@@ -47,7 +47,7 @@ class MainActivity : ComponentActivity() {
                 val cloud: CloudViewModel = viewModel(factory = cloudFactory)
                 val cloudState by cloud.state.collectAsState()
                 val workout: WorkoutViewModel = viewModel(factory = WorkoutViewModel.Factory(
-                    app.database.sessions(), app.database.reference(), app.sync, app.current,
+                    app.database.sessions(), app.database.reference(), app.sync, app.current, app.settings.uploadEnabled,
                 ))
                 WorkoutScreen(workout) {
                     CloudSection(cloudState, cloud::signIn, cloud::signOut)

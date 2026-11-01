@@ -175,6 +175,21 @@ interface SessionDao {
         putExercises(exercises)
         return true
     }
+    @Query("DELETE FROM sessions WHERE id = :id")
+    suspend fun deleteSessionRow(id: String)
+    /**
+     * Abandons a started workout. Only a session that is still in progress and was never
+     * uploaded (no server number or base revision) can be discarded; returns whether it was.
+     */
+    @Transaction
+    suspend fun discard(id: String): Boolean {
+        val row = get(id) ?: return false
+        if (row.status != "in_progress" || row.number != null || row.baseRevision != null) return false
+        deleteSets(id)
+        deleteExercises(id)
+        deleteSessionRow(id)
+        return true
+    }
     /** Values and the new revision are written in one transaction. */
     @Transaction
     suspend fun saveSet(set: SetRow) {

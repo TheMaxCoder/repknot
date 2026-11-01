@@ -20,6 +20,19 @@ class WorkoutStateTest {
         assertEquals(second, state.suggested)
         assertEquals(listOf(first, second), state.workouts)
     }
+    @Test fun previewShowsPrescriptionsWithPreviousValuesAndMarksTheSuggestion() {
+        val press = Prescription(1, "x", "Press", 3, 6, 10, 1, 2, 20.0, LoadUnit.LB)
+        val deck = Prescription(0, "y", "Deck", 2, 12, 20, 1, 2, 12.0, LoadUnit.PLATES)
+        val program = Program("p", listOf(first.copy(exercises = listOf(press, deck)), second))
+        val preview = previewState(program, "PPL", "a", listOf(past))!!
+        assertEquals("PPL", preview.programName)
+        assertFalse(preview.suggested)  // "a" was done last, so "b" is suggested
+        assertEquals(listOf("Deck", "Press"), preview.exercises.map { it.prescription.exerciseName })
+        assertEquals(Prefill.Previous("old", listOf(pastSet)), preview.exercises[1].previous)
+        assertEquals(Prefill.StartLoad(12.0, LoadUnit.PLATES), preview.exercises[0].previous)
+        assertTrue(previewState(program, null, "b", listOf(past))!!.suggested)
+        assertNull(previewState(program, null, "missing", emptyList()))
+    }
     @Test fun prescriptionAndSuggestions() {
         val p = prescriptionFor(exercise, LoadUnit.LB)
         assertEquals(3, p.sets); assertEquals(LoadUnit.LB, p.unit); assertEquals(10, p.repMax)

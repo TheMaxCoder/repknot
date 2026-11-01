@@ -78,6 +78,18 @@ class WorkoutDatabaseTest {
         assertEquals(8L, dao.get("s")!!.localRevision)
     }
 
+        @Test fun discardRemovesOnlyANeverUploadedWorkoutInProgress() = runBlocking {
+        val dao = db.sessions()
+        db.logSet("draft", "set", 20.0)
+        assertTrue(dao.discard("draft"))
+        assertNull(dao.get("draft")); assertTrue(dao.sets("draft").isEmpty()); assertTrue(dao.exercises("draft").isEmpty())
+        db.logSet("done", "set2", 20.0); dao.finish("done")
+        assertFalse(dao.discard("done"))
+        dao.put(draft("uploaded").copy(number = 7, baseRevision = 3))
+        assertFalse(dao.discard("uploaded"))
+        assertFalse(dao.discard("missing"))
+    }
+
         @Test fun recordedValuesSurviveDatabaseReopen() = runBlocking {
         val name = "persistence-test.db"
         context.deleteDatabase(name)

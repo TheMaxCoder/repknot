@@ -47,6 +47,13 @@ class SharedSessionIntegrationTest {
         suspend fun log(sessionId: String, setId: String, load: Double) = db.logSet(sessionId, setId, load, exerciseId = bench)
         val ids = mutableListOf<String>()
         try {
+            // With upload disabled a finished session stays local and never reaches the server.
+            val localOnly = UUID.randomUUID().toString(); ids += localOnly
+            log(localOnly, UUID.randomUUID().toString(), 30.0); db.sessions().finish(localOnly)
+            SessionSync(cloud, db.sessions(), db.reference(), uploadEnabled = { false }).refreshAndPush()
+            assertEquals("finished", db.sessions().get(localOnly)!!.status)
+            assertEquals(0, client.from("workout_sessions").select { filter { eq("id", localOnly) } }.decodeList<ServerSession>().size)
+            db.sessions().takeDeleted(localOnly); db.sessions().put(draft(localOnly).copy(status = "pushed")); db.sessions().deleteCached(localOnly)
             for (edited in listOf(false, true)) {
                 val id = UUID.randomUUID().toString(); val setId = UUID.randomUUID().toString(); ids += id
                 log(id, setId, 32.5)

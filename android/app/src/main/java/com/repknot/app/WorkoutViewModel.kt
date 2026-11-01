@@ -22,9 +22,20 @@ sealed interface WorkoutUiState {
     data object NoProgram : WorkoutUiState
     data class Today(val programName: String, val suggested: ProgramWorkout, val workouts: List<ProgramWorkout>) : WorkoutUiState
     data class Session(val row: SessionRow, val exercises: List<ExerciseUi>, val choices: List<ExerciseRow>) : WorkoutUiState
+    /** A workout looked at before starting it; nothing is stored until `start`. */
+    data class Preview(val programName: String, val workout: ProgramWorkout, val suggested: Boolean,
+                       val exercises: List<PreviewExerciseUi>) : WorkoutUiState
 }
 data class ExerciseUi(val row: SessionExerciseRow, val sets: List<SetRow>, val previous: Prefill, val suggestion: SetSuggestion)
 data class SetSuggestion(val load: Double?, val unit: LoadUnit, val reps: Double?)
+data class PreviewExerciseUi(val prescription: Prescription, val previous: Prefill)
+
+/** Preview of one program workout with previous values; null if the key is not in the program. */
+fun previewState(program: Program, programName: String?, workoutKey: String, history: List<PastSession>): WorkoutUiState.Preview? {
+    val workout = program.workouts.firstOrNull { it.key == workoutKey } ?: return null
+    return WorkoutUiState.Preview(programName ?: "Program", workout, todaysWorkout(program, history).key == workoutKey,
+        workout.exercises.sortedBy { it.position }.map { PreviewExerciseUi(it, prefill(it, history)) })
+}
 
 fun todayState(program: Program?, programName: String?, history: List<PastSession>): WorkoutUiState =
     if (program == null) WorkoutUiState.NoProgram else WorkoutUiState.Today(
@@ -61,9 +72,11 @@ fun sessionState(snapshot: SessionSnapshot, history: List<PastSession>, exercise
 @OptIn(ExperimentalCoroutinesApi::class)
 class WorkoutViewModel(
     private val sessions: SessionDao, private val reference: ReferenceDao, private val sync: SessionSync,
-    private val current: CurrentSession, private val today: () -> LocalDate = LocalDate::now,
+    private val current: CurrentSession, val uploadEnabled: StateFlow<Boolean>,
+    private val today: () -> LocalDate = LocalDate::now,
 ) : ViewModel() {
     private val currentId = MutableStateFlow(current.get())
+    private val previewKey = MutableStateFlow<String?>(null)
     private val mutableState = MutableStateFlow<WorkoutUiState>(WorkoutUiState.Loading)
     val state: StateFlow<WorkoutUiState> = mutableState.asStateFlow()
     private val mutableError = MutableStateFlow<Int?>(null)
@@ -76,28 +89,41 @@ class WorkoutViewModel(
                 val snapshot = if (id == null) flowOf(null) else sessions.observeSession(id)
                 // Session history (e.g. a refresh bringing in another client's session) also
                 // changes today's suggestion, so any session change reloads the state.
-                combine(snapshot, reference.observeActiveProgramRow(), sessions.observeAllSessions()) { session, program, _ ->
-                    Triple(id, session, program)
+                combine(snapshot, reference.observeActiveProgramRow(), sessions.observeAllSessions(), previewKey) { session, program, _, key ->
+                    Pair(Triple(id, session, program), key)
                 }
-            }.collect { (id, snapshot, programRow) ->
+            }.collect { (loaded, key) ->
+                val (id, snapshot, programRow) = loaded
                 if (id != null && snapshot == null) {
                     current.set(null)
                     currentId.value = null
                 }
                 val history = sessions.history()
-                mutableState.value = if (snapshot == null) todayState(reference.activeProgram(), programRow?.name, history)
-                    else sessionState(snapshot, history, reference.activeExercises())
+                val program = if (snapshot == null) reference.activeProgram() else null
+                mutableState.value = when {
+                    snapshot != null -> sessionState(snapshot, history, reference.activeExercises())
+                    program != null && key != null -> previewState(program, programRow?.name, key, history)
+                        ?: todayState(program, programRow?.name, history)
+                    else -> todayState(program, programRow?.name, history)
+                }
             }
         }
     }
 
+    fun preview(workoutKey: String) { previewKey.value = workoutKey }
+    fun closePreview() { previewKey.value = null }
+    /** Abandons the current workout if it was never uploaded; back to today's workout. */
+    fun discard() = action {
+        val id = current.get() ?: return@action
+        if (sessions.discard(id)) { current.set(null); currentId.value = null }
+    }
     fun start(workoutKey: String) = action {
         if (current.get() != null) return@action
         val program = reference.activeProgram() ?: return@action
         val workout = program.workouts.firstOrNull { it.key == workoutKey } ?: return@action
         val id = uuid()
         val (row, exercises) = startRows(id, today(), program, workout, ::uuid)
-        if (sessions.start(row, exercises)) { current.set(id); currentId.value = id }
+        if (sessions.start(row, exercises)) { current.set(id); currentId.value = id; previewKey.value = null }
     }
     fun logSet(exerciseId: String, setId: String?, load: String, unit: LoadUnit, reps: String, rir: String) {
         val input = parseSetInput(load, unit, reps, rir)
@@ -133,7 +159,8 @@ class WorkoutViewModel(
     fun saveSessionNotes(notes: String) = action {
         current.get()?.let { sessions.saveSessionNotes(it, notes.trim().ifEmpty { null }) }
     }
-    fun finish() = action { current.get()?.let { sessions.finish(it); sync.refreshAndPush() } }
+    /** Marks the workout finished; it is uploaded only while upload is enabled in settings. */
+    fun finish() = action { current.get()?.let { sessions.finish(it); if (uploadEnabled.value) sync.refreshAndPush() } }
     fun keepMine() = action { current.get()?.let { sync.keepMine(it) } }
     fun takeTheirs() = action { current.get()?.let { sync.takeTheirs(it) } }
     fun share(deliver: (String) -> Unit) = action {
@@ -156,10 +183,10 @@ class WorkoutViewModel(
         }
     }
     class Factory(private val sessions: SessionDao, private val reference: ReferenceDao, private val sync: SessionSync,
-                  private val current: CurrentSession) : ViewModelProvider.Factory {
+                  private val current: CurrentSession, private val uploadEnabled: StateFlow<Boolean>) : ViewModelProvider.Factory {
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
             require(modelClass.isAssignableFrom(WorkoutViewModel::class.java))
-            @Suppress("UNCHECKED_CAST") return WorkoutViewModel(sessions, reference, sync, current) as T
+            @Suppress("UNCHECKED_CAST") return WorkoutViewModel(sessions, reference, sync, current, uploadEnabled) as T
         }
     }
 }

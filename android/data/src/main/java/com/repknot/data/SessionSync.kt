@@ -20,6 +20,8 @@ private data class PushResult(val status: String, val session: ServerSession? = 
 
 class SessionSync(
     private val cloud: CloudAccount, private val dao: SessionDao, private val reference: ReferenceDao,
+    /** When false, refresh still downloads programs and sessions but nothing is uploaded. */
+    private val uploadEnabled: () -> Boolean = { true },
     private val checkOwner: (String) -> Boolean = { true },
 ) {
     private val mutex = Mutex()
@@ -32,6 +34,7 @@ class SessionSync(
         reference.replaceAll(fetchReference(cloud))
         val remote = client.from("workout_sessions").select(Columns.raw(SESSION_COLUMNS)).decodeList<ServerSession>()
         dao.replaceCache(remote)
+        if (!uploadEnabled()) return@withLock
         var firstFailure: Exception? = null
         for (row in dao.pending()) {
             try { push(row) }
