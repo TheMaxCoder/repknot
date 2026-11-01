@@ -81,8 +81,6 @@ importer. Out: check-in UI, web companion, ChatGPT connector identity (1a), anal
 Done (2026-11-01): acceptance met on dev — schema + pgTAP (6 files, 109 tests), real
 exercises + PPL v1 published, the phone runs today's workout → log/edit → finish → upload
 (device smoke in 012), importer verified with the synthetic fixture (013).
-Open, owner-owned: review `private-data/programs/upper-lower-2026-09.json` (draft of the
-previous program; see its `review_notes`), then publish it inactive with
-`scripts/repknot publish-program … --inactive`. Real history import goes to prod once a
+Previous program published inactive as `upper-lower` v1 (2026-11-01, owner accepted the draft). Real history import goes to prod once a
 prod project exists (ADR 002). Cosmetic: `save_session` always records source `chatgpt`;
 the cloud section's session count is only taken at sign-in.

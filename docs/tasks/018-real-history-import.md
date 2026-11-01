@@ -28,5 +28,5 @@ from the first workout and future progress views have the full history.
 
 ## Open
 - Public sign-ups confirmed off by the owner (2026-11-01).
-- Owner: review `private-data/programs/upper-lower-2026-09.json` before publishing it
-  inactive (imported sessions could later be linked to it; not required for last values).
+- Previous program published inactive as `upper-lower` v1 (owner accepted the draft as-is,
+  2026-11-01); PPL v1 stays active.
