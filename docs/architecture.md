@@ -66,7 +66,5 @@ actual temporary policy relaxation here when introduced.
   destructively resets synthetic v1–v3 databases (approved 2026-11-01 with the training
   model; earlier v3 reset also approved). Future schema changes must not silently discard local data;
   add real migrations once Android starts logging real workouts.
-- Building phase (server): the training-model migration dropped and recreated the
-  synthetic dev session tables instead of migrating rows (approved 2026-11-01). Once
-  real data exists anywhere, migrations must preserve it; squash migrations into one
-  baseline before creating prod.
+- Server: the project holds real training history ([ADR 003](decisions/003-single-canonical-project.md)).
+  Migrations must preserve data; the 2026-11-01 drop-and-recreate was the last destructive one.

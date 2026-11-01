@@ -68,7 +68,8 @@ export) and the PPL program starting 2026-11-02 show:
   unique per user where present, so re-running an import is idempotent and never creates
   duplicates. Ambiguous originals are kept in `raw jsonb` with the review reason.
 - Import input is the normalized export from `scripts/airtable-normalize` (kept in
-  git-ignored `private-data/`). Real data is imported to prod only, after dev verification.
+  git-ignored `private-data/`). ~~Real data is imported to prod only, after dev verification.~~
+  Superseded by [ADR 003](003-single-canonical-project.md): the existing project is canonical.
 - Check-ins get their own table (`checkins`: date, weight, waist, other girths, notes).
   Health-state and training-habit entries are stored as dated text context records.
 
