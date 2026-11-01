@@ -98,14 +98,16 @@ device later; no JVM test is needed for them.
 
 ## Plan / progress
 1. [x] `testImplementation(libs.junit)`; entities + primitive DAO queries + database version/fallback; build. Transaction and domain helpers follow DTOs/mapping.
-2. [ ] DTOs + `fetchReference`; mapping functions.
-3. [ ] JVM tests for rules 1–6 and 8 (`ReferenceMappingTest.kt`).
+2. [x] DTOs + `fetchReference`; mapping functions and DAO helpers.
+3. [x] JVM tests for rules 1–6 and 8 (`ReferenceMappingTest.kt`).
 4. [ ] `scripts/check --offline`; confirm `schemas/.../4.json` exists; commit (task 009 in subject).
 
 ## Verification
-- `cd android && ./gradlew :data:assembleDebug --offline` — passed; Room generated schema 4.
+- `cd android && ./gradlew :data:assembleDebug --offline` — passed twice; Room generated schema 4 and compiled DAO helpers.
+- `cd android && ./gradlew :data:testDebugUnitTest --offline` — passed (4 tests).
 
 ## Handoff
-Room entities and primitive DAO queries compile. Next implement DTOs, fetch, mapping,
-and DAO helpers. Review: v4 fallback destructively resets synthetic v1–v3 databases;
-JUnit test dependency added as specified.
+DTOs, fetch, transactional replacement and domain mapping are implemented and unit-tested.
+Next run `scripts/check --offline` and confirm the schema. Review: v4 fallback destructively
+resets synthetic v1–v3 databases; JUnit test dependency added as specified. Room transaction
+behavior and the backend fetch require later device verification; no dev backend used.
