@@ -30,7 +30,7 @@ work may be delegated per [docs/delegation](delegation/README.md).
 
 ## Next priorities
 
-1. Task 006: workout screen (step 8) → import (step 9). Device tests for 010 pending.
+1. Task 006: workout screen (step 8) → import (step 9).
 2. Verify a narrowly scoped, authenticated ChatGPT integration before using it to write
    sessions; see [the draft instructions](chatgpt-session-instructions.md).
 3. Check-ins UI, prod project + real import, then the web companion per the PRD.

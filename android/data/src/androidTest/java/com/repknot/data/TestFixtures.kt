@@ -14,6 +14,6 @@ suspend fun WorkoutDatabase.logSet(
     val dao = sessions()
     dao.insertIfAbsent(draft(sessionId))
     val exercise = dao.exercises(sessionId).firstOrNull()
-        ?: SessionExerciseRow("ex-$sessionId", sessionId, 0, exerciseId, "Bench").also { dao.putExercises(listOf(it)) }
+        ?: SessionExerciseRow(java.util.UUID.randomUUID().toString(), sessionId, 0, exerciseId, "Bench").also { dao.putExercises(listOf(it)) }
     dao.saveSet(SetRow(setId, sessionId, exercise.id, 0, load, unit, 7.0, rir = 3))
 }

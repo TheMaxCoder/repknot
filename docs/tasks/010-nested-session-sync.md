@@ -1,6 +1,6 @@
 # 010 — Nested sessions on the phone and sync
 
-Status: done (device tests pending)
+Status: done
 Updated: 2026-11-01
 Starting commit: d506393
 Parent: [006](006-training-data-model.md) step 7 (second half) · Lead task (sync/conflict
@@ -53,10 +53,13 @@ Out: the workout screen itself (step 8), importer (step 9), server changes.
 - `./gradlew --offline :data:compileDebugAndroidTestKotlin`: compiles (device tests rewritten).
 - Read-only probe on dev as the main user with the phone's exact select strings: sessions
   return `exercises` → `sets`; programs return PPL v1 active, 6 workouts, 29 prescriptions.
-- Not run: instrumented tests (`WorkoutDatabaseTest`, `SessionStoreTest`,
-  `SharedSessionIntegrationTest`) — no device connected.
+- Test phone (2026-11-01): `:data:connectedDebugAndroidTest --offline` —
+  SessionStoreTest 5/5, WorkoutDatabaseTest 4/4 (integration test skips without creds).
+  `scripts/test-sync-integration --offline` (test2, dev) first failed: the test fixture
+  used non-uuid session-exercise ids (`ex-<id>`), which the server rejects; fixture now
+  uses random uuids → `OK (1 test)`. `:app:installDebug`, cold launch OK (1.7 s), dark
+  home screen signed in, no crash-buffer entries, no "Refresh failed" log.
 
 ## Handoff
-Next action: run the device tests when a device is connected
-(`cd android && ./gradlew :data:connectedDebugAndroidTest`, plus the integration test's
-credential arguments as in task 004), then step 8 (workout screen).
+Done. For step 8: session-exercise and set ids must be uuids (the server casts them);
+pass `UUID.randomUUID().toString()` as `startRows`'s `newId`.

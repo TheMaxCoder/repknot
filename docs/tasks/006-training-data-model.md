@@ -35,7 +35,7 @@ importer. Out: check-in UI, web companion, ChatGPT connector identity (1a), anal
 6. [x] Domain: today's-workout selection and prefill as pure Kotlin with unit tests —
    delegated as [007](007-domain-today-and-prefill.md) (done).
 7. [x] Data/Room: cache programs/exercises ([009](009-room-reference-cache.md), delegated);
-   session_exercises + nested push/pull ([010](010-nested-session-sync.md), lead; device tests pending).
+   session_exercises + nested push/pull ([010](010-nested-session-sync.md), lead).
 8. [ ] App: workout screen (exercise list, set rows, previous values, add/remove/substitute).
 9. [ ] Importer (dev, synthetic-shaped fixture first); derive the previous Upper/Lower
    program version from the Airtable Exercises table — its roles are free text, so the
@@ -79,5 +79,4 @@ importer. Out: check-in UI, web companion, ChatGPT connector identity (1a), anal
 
 ## Handoff
 Next action: step 8 — workout screen (today's workout, set rows with prefill, add/remove/
-substitute, finish/share/conflict UI reusing `SyncViewModel`). Device tests from 010 are
-pending a connected device. `save_session` always records `source = 'chatgpt'` (cosmetic).
+substitute, finish/share/conflict UI reusing `SyncViewModel`). Local ids must be uuids. `save_session` always records `source = 'chatgpt'` (cosmetic).
