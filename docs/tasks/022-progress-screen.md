@@ -59,6 +59,8 @@ Out of scope (do not modify): `domain`, `data`, `WorkoutViewModel.kt`, sync, new
    - `dipText(d: SessionDip, names: Map<String, String>): String` → "Broad dip on Oct 26 —
      4 of 7 exercises below usual (Seated row, Bar curl, …). Check sleep, food and
      recovery." (all names, comma-separated, id when missing).
+   - Any input combination not listed: the most conservative readable text; record it under
+     Decisions and keep going.
 4. **Progress screen.** Loading → a centered progress indicator. Empty items → "No
    finished workouts yet." Otherwise: each dip as a card (`dipText`, errorContainer
    colors) at the top; then the items in order with a group header (`groupLabel`,
