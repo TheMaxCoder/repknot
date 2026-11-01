@@ -1,6 +1,6 @@
 # Project status
 
-Updated: 2026-11-01
+Updated: 2026-11-02
 
 ## Current state
 
@@ -21,6 +21,8 @@ Updated: 2026-11-01
 - Shared startup, task-sizing, and handoff instructions now live in `AGENTS.md`.
 
 ## Current task
+
+[026 — Flat focused workout logger](tasks/026-flat-workout-logger.md) is done: flat session layout, compact Plan/Last, simplified footer and Light day/Discard menu. Installed and phone-tested (log/edit/delete, RIR, keyboard, notes and selection).
 
 [025 — Compact workout preview](tasks/025-workout-preview.md) is done: compact Plan/Last comparison, fixed Start, full scrollable exercise list, no target suggestion. Installed and device-checked, including local start/discard and back navigation.
 

@@ -12,6 +12,11 @@ ad-hoc exercises. Substitutions use the replacement exercise default and do not 
 the original start load; editing a saved set preserves its recorded unit. Unit choice is not a
 per-set logging control. Bodyweight inputs omit load; no conversions are inferred.
 
+The active workout uses a flat focused logger with Plan/Last comparison, saved-set rows,
+filled load/reps entry and RIR controls. Its footer contains Add exercise, Session notes,
+a workout menu (Light day/Discard), and a quiet Finish action. Session headers omit date
+and global navigation; selection/preview retain their navigation.
+
 Workout preview compares the prescription and previous performance in compact columns,
 with a fixed Start action above the navigation inset. Target suggestions are no longer
 displayed in preview or session UI; previous values and per-set comparisons remain.

@@ -1,6 +1,6 @@
 # 026 — Flat focused workout logger
 
-Status: in progress
+Status: done
 Starting commit: 213535d
 Date: 2026-11-02
 
@@ -19,11 +19,11 @@ App UI/presentation/resources and focused helper tests only if logic is added, t
 ## Plan / progress
 - [x] Worker implement UI, run scripts/check --offline, commit verified coherent changes.
 - [x] Worker address review feedback: inline Edit, overflow Delete, filled inputs and flat RIR controls.
-- [ ] Lead inspect full diff, independently run scripts/check --offline.
-- [ ] Lead install and smoke test on phone if available, record limits; update routing/architecture.
+- [x] Lead inspected full diff and independently ran scripts/check --offline.
+- [x] Lead installed, smoke-tested on the phone, and updated routing/architecture.
 
 ## Decisions / discoveries
-No ADR required; UI rearrangement only. Mockup uses illustrative data. User has explicitly authorized local test workouts, starting/logging/discarding, and says they are local-only. Lead must verify upload is off before mutating test workouts; do not change it.
+No ADR required; UI rearrangement only. Mockup uses illustrative data. User explicitly authorized starting/discarding local test workouts; local set operations were exercised as part of the UI verification. Lead must verify upload is off before mutating test workouts; do not change it.
 
 Worker: session Plan uses the nullable snapshot directly (dash for missing values); Last reuses preview formatting. Edit is inline where space permits; Delete remains in a labeled per-set menu. Saved-set details and actions stack at narrow effective widths. Existing state-holder and input keys remain unchanged.
 
@@ -34,5 +34,13 @@ Lead phone: actual flat layout/header absence; Log, Edit, RIR stepper, switching
 ## Verification
 Worker: `scripts/check --offline` passed (debug build, lint and JVM tests), including after the review refinement. Device, large-font and screen-reader verification not run by worker.
 
+## Lead verification
+- `scripts/check --offline` passed independently (build, lint, JVM tests); `git diff 213535d..HEAD --check` passed. No new dependencies or changes to domain/data/ViewModel logic.
+- `cd android && ./gradlew :app:installDebug --offline` installed on the test phone. Inspected actual flat layout, removed header, compact Plan/Last, filled inputs, flat RIR controls, inline saved set with Edit and overflow Delete, outlined Finish and footer menu.
+- Phone already had a local test Push 1 session (some sets already logged). Kept it. Logged only one new test set (one set), edited its reps, verified updated row/delta and edit completion, then deleted that same added set through its overflow menu. Existing sets/session were not discarded or finished.
+- Enabled Light day, inspected visible status, and restored it to false. Opened Discard confirmation and canceled it. Opened session and exercise notes without saving; All exercises list and scrolling worked while footer remained fixed. An unsaved 16-rep entry survived Next/Previous selection; restored the original 14-rep entry afterward. Keyboard screenshot showed focused filled field and accessible Update action above IME; footer hid during text entry as before.
+- Upload was last visually verified off in task 025 during this chat. A fresh read via `run-as` failed due to device SELinux policy; no credentials were accessed. No finish/upload operation was used and upload setting was not changed. Live upload setting was not independently reverified in this follow-up; tests only affected the in-progress local draft and the added test set was removed.
+- Not manually checked: large font/screen reader, finished/conflict/share flows, unit-edge cases on device. Existing tests and code paths for those behaviors remain.
+
 ## Handoff
-Lead: inspect the complete diff including the review refinement and independently run `scripts/check --offline`, then perform phone checks listed above if available, checking upload is off first. Pay particular attention to saved-set wrapping and overflow accessibility, narrow/large-text layout, keyboard insets, nullable/mixed Plan/Last data and retained unsaved fields. Lead owns status/architecture edits. No known blocker; task remains in progress until lead review and verification.
+Implemented, installed and checked. Owner can review the current workout screen; no test sets remain from verification. Existing session and unrelated work/ preserved. Commits: 31ee150 (layout) and aefe6f0 (saved rows/inputs refinement). Any further visual feedback can be scoped as a follow-up.
