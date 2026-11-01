@@ -28,17 +28,18 @@ exercise card, Up next, separated actions, dynamic dark colors, and configured l
 Milestone [006 — Training data model and program-driven workouts](tasks/006-training-data-model.md)
 is done (design: [ADR 002](decisions/002-training-data-model.md); steps delegated per
 [docs/delegation](delegation/README.md) as tasks 007–009 and 011–013, lead work in 010).
-The phone app starts today's PPL workout, logs and edits sets with previous-value
-prefill, and uploads nested sessions to dev.
+The phone app previews and starts today's PPL workout, logs and edits sets with last
+values from the full imported history ([ADR 003](decisions/003-single-canonical-project.md)),
+and keeps workouts local until upload is enabled in Settings.
 
 ## Next priorities
 
-1. Owner review of the drafted previous program (`private-data/programs/upper-lower-2026-09.json`),
-   then publish it inactive. Log real workouts in the app from 2026-11-02 and fix what hurts.
-2. Verify a narrowly scoped, authenticated ChatGPT integration before using it to write
-   sessions; see [the draft instructions](chatgpt-session-instructions.md).
-3. Check-ins UI, prod project + real import, then the web companion per the PRD.
-   These are roadmap directions, not claims that their detailed scope is settled.
+1. Real logging on the phone from 2026-11-02 (upload off until the owner enables it in
+   Settings); fix what hurts in the gym.
+2. Owner checks: public sign-ups off; review the drafted previous program
+   (`private-data/programs/upper-lower-2026-09.json`), then publish it inactive.
+3. Progress/regression views on the full history (imported 2026-11-01, [task 018](tasks/018-real-history-import.md)).
+4. ChatGPT integration, check-ins UI, web companion per the PRD.
 
 ## Environment and handoff limitations
 

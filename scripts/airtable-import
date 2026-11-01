@@ -106,9 +106,12 @@ async function main() {
     const ex = exerciseRefs.get(r.log_ref);
     if (!ex || ex.session_id !== sessionMap.get(r.session_ref)) throw new Error(`invalid session exercise ${r.log_ref}`);
     let load = numeric(r.load);
-    const unit = nullable(r.unit), reps = numeric(r.reps), duration = numeric(r.duration_s);
+    const unit = nullable(r.unit), duration = numeric(r.duration_s);
+    let reps = numeric(r.reps);
     const raw: Row = details(r, ["rir_raw", "review"]);
     if (unit === "bodyweight" && load !== null) { raw.load = load; load = null; }
+    // A 0-rep set is a failed attempt: keep it, but not as performed reps (schema: reps > 0).
+    if (reps === 0) { raw.reps = 0; raw.review ??= "failed attempt (0 reps)"; reps = null; }
     if ((!unit || (reps === null && duration === null) || (unit !== "bodyweight" && load === null)) && !Object.keys(raw).length) {
       raw.review = "incomplete source row";
     }
