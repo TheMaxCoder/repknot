@@ -18,20 +18,21 @@ App UI/presentation/resources and focused helper tests only if logic is added, t
 
 ## Plan / progress
 - [x] Worker implement UI, run scripts/check --offline, commit verified coherent changes.
+- [x] Worker address review feedback: inline Edit, overflow Delete, filled inputs and flat RIR controls.
 - [ ] Lead inspect full diff, independently run scripts/check --offline.
 - [ ] Lead install and smoke test on phone if available, record limits; update routing/architecture.
 
 ## Decisions / discoveries
 No ADR required; UI rearrangement only. Mockup uses illustrative data. User has explicitly authorized local test workouts, starting/logging/discarding, and says they are local-only. Lead must verify upload is off before mutating test workouts; do not change it.
 
-Worker: session Plan uses the nullable snapshot directly (dash for missing values); Last reuses preview formatting. Set actions are in labeled per-set menus. Existing state-holder and input keys remain unchanged.
+Worker: session Plan uses the nullable snapshot directly (dash for missing values); Last reuses preview formatting. Edit is inline where space permits; Delete remains in a labeled per-set menu. Saved-set details and actions stack at narrow effective widths. Existing state-holder and input keys remain unchanged.
 
 ## Verification responsibilities
 Worker: build/lint/JVM tests via scripts/check --offline. Don't add shallow layout tests or weaken existing tests.
 Lead phone: actual flat layout/header absence; Log, Edit, RIR stepper, switching exercises retains unsaved entry; exercise and session notes reachable; All exercises; footer/menu and light toggle, discard confirmation/cancel; keyboard/insets. Any new test session is to be discarded after verification; never discard a pre-existing session unless clearly authorized test-only. Check upload setting first. Large-font/screen-reader checks may be explicitly pending.
 
 ## Verification
-Worker: `scripts/check --offline` passed (debug build, lint and JVM tests). Device, large-font and screen-reader verification not run by worker.
+Worker: `scripts/check --offline` passed (debug build, lint and JVM tests), including after the review refinement. Device, large-font and screen-reader verification not run by worker.
 
 ## Handoff
-Lead: inspect the complete diff and independently run `scripts/check --offline`, then perform phone checks listed above if available, checking upload is off first. Pay particular attention to narrow/large-text layout, keyboard insets, nullable/mixed Plan/Last data and retained unsaved fields. Lead owns status/architecture edits. No known blocker; task remains in progress until lead review and verification.
+Lead: inspect the complete diff including the review refinement and independently run `scripts/check --offline`, then perform phone checks listed above if available, checking upload is off first. Pay particular attention to saved-set wrapping and overflow accessibility, narrow/large-text layout, keyboard insets, nullable/mixed Plan/Last data and retained unsaved fields. Lead owns status/architecture edits. No known blocker; task remains in progress until lead review and verification.

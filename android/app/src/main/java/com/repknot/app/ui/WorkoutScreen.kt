@@ -232,6 +232,7 @@ private fun SessionActions(session: WorkoutUiState.Session, vm: WorkoutViewModel
         dismissButton = { TextButton(onClick = { notesOpen = false }) { Text(stringResource(R.string.cancel)) } })
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun ExerciseCard(exercise: ExerciseUi, choices: List<ExerciseRow>, index: Int, count: Int,
                          vm: WorkoutViewModel, substitute: () -> Unit) {
@@ -282,15 +283,32 @@ private fun ExerciseCard(exercise: ExerciseUi, choices: List<ExerciseRow>, index
                         set.notes?.let { append(" — $it") }
                     }
                     var setMenu by remember(set.id) { mutableStateOf(false) }
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Text(description, modifier = Modifier.weight(1f))
-                        DeltaHint(exercise.deltas[setIndex])
+                    val details: @Composable (Modifier) -> Unit = { modifier ->
+                        FlowRow(modifier, horizontalArrangement = Arrangement.spacedBy(4.dp), verticalArrangement = Arrangement.Center) {
+                            Text(description)
+                            DeltaHint(exercise.deltas[setIndex])
+                        }
+                    }
+                    val actions: @Composable () -> Unit = {
+                        TextButton(onClick = { editing = set.id }) { Text(stringResource(R.string.edit)) }
                         Box {
                             val label = stringResource(R.string.set_menu, setIndex + 1)
-                            TextButton(onClick = { setMenu = true }, modifier = Modifier.semantics { contentDescription = label }) { Text("⋯") }
+                            IconButton(onClick = { setMenu = true }, modifier = Modifier.semantics { contentDescription = label }) { Text("⋯") }
                             DropdownMenu(expanded = setMenu, onDismissRequest = { setMenu = false }) {
-                                DropdownMenuItem(text = { Text(stringResource(R.string.edit)) }, onClick = { setMenu = false; editing = set.id })
                                 DropdownMenuItem(text = { Text(stringResource(R.string.delete)) }, onClick = { setMenu = false; vm.deleteSet(set.id); if (editing == set.id) editing = null })
+                            }
+                        }
+                    }
+                    BoxWithConstraints(Modifier.fillMaxWidth()) {
+                        if (maxWidth.value / LocalDensity.current.fontScale < 240f) {
+                            Column {
+                                details(Modifier.fillMaxWidth())
+                                Row(verticalAlignment = Alignment.CenterVertically) { actions() }
+                            }
+                        } else {
+                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
+                                details(Modifier.weight(1f))
+                                actions()
                             }
                         }
                     }
@@ -378,14 +396,14 @@ private fun SetInput(exercise: ExerciseUi, set: SetRow?, vm: WorkoutViewModel, c
     val unit = set?.unit?.uppercase()?.let(LoadUnit::valueOf) ?: suggestion.unit
     if (set == null && exercise.previous is Prefill.Previous) Text(stringResource(R.string.suggested_previous), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-        if (unit != LoadUnit.BODYWEIGHT) OutlinedTextField(load, { load = it }, modifier = Modifier.weight(1f), label = { Text(if (set != null && set.unit == null) stringResource(R.string.label_load) else "${stringResource(R.string.label_load)} · ${unit.name.lowercase()}") }, singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal))
-        OutlinedTextField(reps, { reps = it }, modifier = Modifier.weight(1f), label = { Text(stringResource(R.string.label_reps)) }, singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal))
+        if (unit != LoadUnit.BODYWEIGHT) TextField(load, { load = it }, modifier = Modifier.weight(1f), label = { Text(if (set != null && set.unit == null) stringResource(R.string.label_load) else "${stringResource(R.string.label_load)} · ${unit.name.lowercase()}") }, singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal))
+        TextField(reps, { reps = it }, modifier = Modifier.weight(1f), label = { Text(stringResource(R.string.label_reps)) }, singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal))
     }
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Text(stringResource(R.string.label_rir), modifier = Modifier.weight(1f))
-        FilledTonalIconButton(onClick = { rir-- }, enabled = rir > 0, modifier = Modifier.size(48.dp).semantics { contentDescription = "Decrease RIR" }) { Text("−") }
+        IconButton(onClick = { rir-- }, enabled = rir > 0, modifier = Modifier.size(48.dp).semantics { contentDescription = "Decrease RIR" }) { Text("−") }
         Text(rir.toString(), modifier = Modifier.padding(horizontal = 12.dp))
-        FilledTonalIconButton(onClick = { rir++ }, enabled = rir < rirMax, modifier = Modifier.size(48.dp).semantics { contentDescription = "Increase RIR" }) { Text("+") }
+        IconButton(onClick = { rir++ }, enabled = rir < rirMax, modifier = Modifier.size(48.dp).semantics { contentDescription = "Increase RIR" }) { Text("+") }
     }
     Button(onClick = { vm.logSet(exercise.row.id, set?.id, load, unit, reps, rir.toString()) }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(if (set == null) R.string.log_set else R.string.update_set)) }
     if (set != null) TextButton(onClick = cancel) { Text(stringResource(R.string.cancel)) }
