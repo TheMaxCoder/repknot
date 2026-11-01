@@ -1,8 +1,8 @@
 # 023 — Body card: waist goal, trends, cut check, check-in entry
 
-Status: ready
+Status: in progress
 Updated: 2026-11-01
-Starting commit: (worker: record `git rev-parse --short HEAD` when you start)
+Starting commit: 4bc409f
 Parent: [019](019-progress-milestone.md) step 5 · Delegated: yes (see
 [delegation](../delegation/README.md))
 
@@ -112,13 +112,19 @@ loss and declines/dip), `goalDate` (computed, null when rising, null beyond 365 
 `addCheckIn` parsing is a pure helper you may extract and test (recommended).
 
 ## Plan / progress
-1. [ ] `Body.kt` + `BodyTest`.
+1. [x] `Body.kt` + `BodyTest`.
 2. [ ] Settings goal, ViewModel, `BodyText` + tests.
 3. [ ] Card, dialog, body screen.
 4. [ ] `scripts/check --offline`; commit(s) with task 023 in the subject.
 
 ## Decisions and discoveries
 
+- Projection cutoff is measured from today, as “more than 365 days away” describes the date.
+
 ## Verification
 
+- `cd android && ./gradlew :domain:test --offline` passed (21 tests). An initial test used a non-exact floating-point rate and expected 30 rather than the specified `ceil` result; changed its fixture to an exactly representable slope.
+
 ## Handoff
+
+Next: settings, ViewModel and text (step 2); then UI and offline full check. Device check belongs to lead.
