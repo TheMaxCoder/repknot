@@ -2,7 +2,7 @@ package com.repknot.domain
 
 import kotlinx.coroutines.flow.Flow
 
-enum class LoadUnit { KG, LB }
+enum class LoadUnit { KG, LB, PLATES, BODYWEIGHT }
 
 data class SetValues(val load: Double, val unit: LoadUnit, val reps: Int, val rir: Int?) {
     init {

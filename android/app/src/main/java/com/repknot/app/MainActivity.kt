@@ -117,7 +117,7 @@ private fun SetEditor(state: LoggingState, session: com.repknot.data.SessionRow?
     OutlinedTextField(load, { load = it }, label = { Text(stringResource(R.string.label_load)) }, singleLine = true,
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal), modifier = Modifier.fillMaxWidth())
     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        LoadUnit.entries.forEach { unit ->
+        listOf(LoadUnit.KG, LoadUnit.LB).forEach { unit ->
             FilterChip(selected = unitName == unit.name, onClick = { unitName = unit.name }, label = { Text(unit.name.lowercase()) })
         }
     }

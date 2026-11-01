@@ -1,8 +1,8 @@
 # 007 — Domain: today's workout and previous-value prefill
 
-Status: ready
+Status: in progress
 Updated: 2026-11-01
-Starting commit: (worker: record `git rev-parse --short HEAD` when you start)
+Starting commit: 1686b5c
 Parent: [006](006-training-data-model.md) step 6 · Delegated: yes (first trial, see
 [delegation](../delegation/README.md))
 
@@ -80,7 +80,7 @@ fun prefill(prescription: Prescription, sessions: List<PastSession>): Prefill
 9. Functions are pure: no clock, no I/O; inputs are not mutated.
 
 ## Plan / progress
-1. [ ] Add units + picker change; build passes.
+1. [x] Add units + picker change; build passes.
 2. [ ] `Program.kt` + `ProgramTest.kt` covering rules 1–9.
 3. [ ] `scripts/check --offline`; commit (task 007 in subject).
 
@@ -90,7 +90,7 @@ fun prefill(prescription: Prescription, sessions: List<PastSession>): Prefill
   input order keeps the functions deterministic without ids carrying meaning.
 
 ## Verification
-(worker: exact commands and results)
+- `cd android && ./gradlew --offline :app:assembleDebug` — passed.
 
 ## Handoff
-(worker: what was done, anything unresolved or questioned)
+Units and picker updated; next implement the domain API and rule tests. No known blockers.
