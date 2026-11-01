@@ -27,8 +27,8 @@ Updated: 2026-11-01
 Steps 4–7 done (5 and 6 delegated: [008](tasks/008-cli-seed-and-publish.md),
 [007](tasks/007-domain-today-and-prefill.md)); PPL v1 is published on dev. Implementation
 work may be delegated per [docs/delegation](delegation/README.md). Step 8 logic
-[task 011](tasks/011-workout-logic.md) is blocked on a verification-scope question;
-its DAO checkpoint is committed.
+[task 011](tasks/011-workout-logic.md) is blocked on `todayState` null-name behavior;
+its DAO checkpoint is committed and accepted.
 
 ## Next priorities
 
