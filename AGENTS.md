@@ -11,7 +11,8 @@ Native Kotlin/Compose workout logger. Read `Repknot-PRD.md` for product scope,
   actual files and Git status/diff when available. Notes can be stale; reconcile
   them with evidence. Do not overwrite unrelated or unfinished work.
 - A new request may interrupt a task: preserve its handoff instead of erasing it.
-- Use one implementation task at a time. No orchestration framework is required.
+- Use one implementation task at a time per working tree (parallel work uses separate
+  Git worktrees). No orchestration framework is required.
 
 ## Size the work yourself
 - Small, clear, locally verifiable change: implement directly; no task file.
@@ -63,6 +64,12 @@ commit (not push) on `main`.
 - Reviewers re-run checks rather than trusting reports, and verify claims against the diff.
 - Never print credential values (from `.env` or elsewhere) in output, logs, or commits.
 
+## Delegation
+The Claude session leads (judgment, task files, review); well-specified implementation
+goes to one worker model via `scripts/delegate <task-file>`. When to delegate, the review
+loop, and the bounded rules for tuning `docs/delegation/worker-notes.md` live in
+`docs/delegation/README.md`. If you are the worker, execute the task; don't re-delegate.
+
 ## Commands
 - `scripts/check` — debug build, Android lint, and available unit tests.
 - `cd android && ./gradlew :app:installDebug` — install on a connected device.
@@ -71,6 +78,8 @@ commit (not push) on `main`.
 - `scripts/repknot …` — CLI as the signed-in user (`--as test2` for the second user).
 - `scripts/airtable-normalize <export-dir>` — regenerate import-ready CSVs from a
   private Airtable export (`private-data/README.md` describes the layout).
+- `scripts/delegate <task-file> [feedback]` — run a task through the worker model;
+  logs go to the ignored `.delegate-logs/`.
 
 ## Boundaries
 - Dark-only UI, including launch background and system bars. No theme toggle or dynamic colors.

@@ -11,3 +11,6 @@
 *.keystore
 # Private health exports
 /private-data/
+
+# Delegated worker logs
+/.delegate-logs/

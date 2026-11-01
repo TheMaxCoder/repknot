@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+# Run a task file through the worker model headlessly. See docs/delegation/README.md.
+# Usage: scripts/delegate <task-file> [extra instruction...]
+# Env:   DELEGATE_MODEL (default openai-codex/gpt-6.1-terra), DELEGATE_THINKING (default high)
+set -euo pipefail
+repo_root="$(git rev-parse --show-toplevel)"
+cd "$repo_root"
+
+task="${1:?usage: scripts/delegate <task-file> [extra instruction...]}"
+shift
+[[ -f "$task" ]] || { echo "no such task file: $task" >&2; exit 1; }
+
+model="${DELEGATE_MODEL:-openai-codex/gpt-6.1-terra}"
+thinking="${DELEGATE_THINKING:-high}"
+notes="docs/delegation/worker-notes.md"
+log_dir="$repo_root/.delegate-logs"
+mkdir -p "$log_dir"
+log="$log_dir/$(date +%Y%m%d-%H%M%S)-$(basename "$task" .md).log"
+start="$(git rev-parse HEAD)"
+
+prompt="You are the implementation worker for this repository. Read AGENTS.md, then
+execute the task in $task exactly as specified: stay inside its scope, follow its
+plan, run its verification commands, and commit each verified step per the AGENTS.md
+commit rules. Before stopping, update the task file's progress, verification, and
+handoff sections. If the spec is ambiguous or a requirement looks wrong, do not guess:
+stop and write the question under Handoff. Finish with a short summary: what you did,
+commands run with results, and anything unresolved.${*:+
+
+Additional instruction: $*}"
+
+echo "worker: $model ($thinking) · task: $task · log: ${log#$repo_root/}"
+status=0
+pi -p --no-session --model "$model" --thinking "$thinking" \
+  --append-system-prompt "$notes" "$prompt" >"$log" 2>&1 || status=$?
+
+echo "--- exit $status · summary (tail of log) ---"
+tail -n 40 "$log"
+echo "--- commits since $(git rev-parse --short "$start") ---"
+git log --oneline "$start"..HEAD
+echo "--- uncommitted ---"
+git status --short
+exit "$status"
