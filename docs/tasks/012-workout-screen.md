@@ -76,18 +76,17 @@ Every state ends with the existing `CloudSection` below a divider. Errors from
     where the meaning matches.
 
 ## Plan / progress
-1. [ ] Today / NoProgram / Loading + wiring in `MainActivity`.
-2. [ ] Session screen: exercise cards, set input, picker, notes, finish/sync section.
-3. [ ] `scripts/check --offline` on the implementation; commit(s) with task 012 in the subject.
+1. [x] Today / NoProgram / Loading + wiring in `MainActivity`.
+2. [x] Session screen: exercise cards, set input, picker, notes, finish/sync section.
+3. [x] `scripts/check --offline` on the implementation; commit with task 012 in the subject. Lead device smoke test remains pending.
 
 ## Decisions and discoveries
-- `logSet` launches an asynchronous action and exposes no per-action completion or success result. The error flow alone cannot distinguish a successful save from an action that has not yet completed or silently returned, and the session state may remain equal when editing a set to the same values. Inferring success from state changes would therefore be unreliable.
+- Per clarified item 5, input state keys include exercise ID, logged count, editing ID, and the suggestion's individual values. No ViewModel changes. Editing remains active after Update until Cancel; the ViewModel exposes no success signal to safely exit editing on an unchanged or failed update.
 
 ## Verification
-- `scripts/check --offline` — passed on the unchanged starting implementation (build, lint and unit tests); this is not verification of the requested screen.
+- `scripts/check --offline` — passed on implementation (debug build, lint and unit tests); an earlier run failed on Kotlin array type inference, corrected before the passing run.
 - Device smoke test not run; assigned to the lead after implementation.
 
 ## Handoff
-- No screen changes made. Blocked before implementation because the specified reset after a successful log requires an observable completion result outside the permitted UI scope.
-- Question for the lead: May `WorkoutViewModel.logSet` be changed to expose a reliable per-action success/completion signal (including unchanged edits and failures), or what explicit alternative behavior should the screen use?
-- Next action: resolve the question and adjust the scope/contract, then implement plan step 1. Review: this blocker concerns a required ViewModel contract outside the task scope; no implementation deviation has been made.
+- Implementation and offline checks complete; task remains in progress until the lead's device smoke test.
+- Next action: lead reviews the commit and tests start, log, edit, invalid input, rotation, exercise actions, notes, finish/retry, sharing and conflicts on a device. Review the retained editing mode after Update and state-keyed input reset, particularly unchanged edits and failures.

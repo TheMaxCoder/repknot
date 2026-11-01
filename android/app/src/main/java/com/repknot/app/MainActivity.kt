@@ -5,22 +5,14 @@ import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -33,7 +25,6 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.repknot.app.ui.theme.RepknotTheme
 import com.repknot.data.CloudState
@@ -55,26 +46,13 @@ class MainActivity : ComponentActivity() {
             RepknotTheme {
                 val cloud: CloudViewModel = viewModel(factory = cloudFactory)
                 val cloudState by cloud.state.collectAsState()
-                HomeScreen {
+                val workout: WorkoutViewModel = viewModel(factory = WorkoutViewModel.Factory(
+                    app.database.sessions(), app.database.reference(), app.sync, app.current,
+                ))
+                WorkoutScreen(workout) {
                     CloudSection(cloudState, cloud::signIn, cloud::signOut)
                 }
             }
-        }
-    }
-}
-
-/** Interim screen: the program-driven workout screen replaces it in task 006 step 8. */
-@Composable
-private fun HomeScreen(footer: @Composable () -> Unit) {
-    Scaffold { padding ->
-        Column(
-            Modifier.fillMaxSize().padding(padding).imePadding()
-                .verticalScroll(rememberScrollState()).padding(24.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-        ) {
-            Text(stringResource(R.string.app_name), color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.titleMedium)
-            Text(stringResource(R.string.logging_rebuilding), color = MaterialTheme.colorScheme.onSurfaceVariant)
-            footer()
         }
     }
 }
