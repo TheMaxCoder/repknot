@@ -8,6 +8,7 @@ import androidx.room.PrimaryKey
 import androidx.room.Query
 import androidx.room.Transaction
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 
 /** Sync state follows ADR 001: status, local/pushed/base revisions and the conflict snapshot. */
 @Entity(tableName = "sessions")
@@ -85,6 +86,54 @@ interface SessionDao {
     fun observeSets(id: String): Flow<List<SetRow>>
     @Query("SELECT * FROM logged_sets WHERE id = :id")
     suspend fun getSet(id: String): SetRow?
+    @Query("SELECT * FROM session_exercises WHERE id = :id")
+    suspend fun getExercise(id: String): SessionExerciseRow?
+    @Query("DELETE FROM logged_sets WHERE sessionExerciseId = :id")
+    suspend fun deleteExerciseSets(id: String)
+    @Query("DELETE FROM session_exercises WHERE id = :id")
+    suspend fun deleteExerciseRow(id: String)
+
+    fun observeSession(id: String): Flow<SessionSnapshot?> =
+        combine(observe(id), observeExercises(id), observeSets(id)) { row, exercises, sets ->
+            row?.let { SessionSnapshot(it, exercises, sets) }
+        }
+
+    @Transaction
+    suspend fun addExercise(row: SessionExerciseRow) {
+        val position = (exercises(row.sessionId).maxOfOrNull { it.position } ?: -1) + 1
+        putExercises(listOf(row.copy(position = position)))
+        bump(row.sessionId)
+    }
+    @Transaction
+    suspend fun removeExercise(id: String) {
+        val row = getExercise(id) ?: return
+        deleteExerciseSets(id)
+        deleteExerciseRow(id)
+        putExercises(exercises(row.sessionId).mapIndexed { index, exercise -> exercise.copy(position = index) })
+        bump(row.sessionId)
+    }
+    @Transaction
+    suspend fun moveExercise(id: String, delta: Int) {
+        if (delta != -1 && delta != 1) return
+        val row = getExercise(id) ?: return
+        val neighbor = exercises(row.sessionId).firstOrNull { it.position == row.position + delta } ?: return
+        putExercises(listOf(row.copy(position = neighbor.position), neighbor.copy(position = row.position)))
+        bump(row.sessionId)
+    }
+    @Transaction
+    suspend fun substituteExercise(id: String, exerciseId: String, exerciseName: String) {
+        val row = getExercise(id) ?: return
+        val original = row.substitutedFor ?: row.exerciseId
+        putExercises(listOf(row.copy(exerciseId = exerciseId, exerciseName = exerciseName,
+            substitutedFor = if (exerciseId == original) null else original)))
+        bump(row.sessionId)
+    }
+    @Transaction
+    suspend fun saveExerciseNotes(id: String, notes: String?) {
+        val row = getExercise(id) ?: return
+        putExercises(listOf(row.copy(notes = notes)))
+        bump(row.sessionId)
+    }
     @Query("SELECT * FROM sessions")
     suspend fun allSessions(): List<SessionRow>
     @Query("SELECT * FROM session_exercises")

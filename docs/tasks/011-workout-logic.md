@@ -1,8 +1,8 @@
 # 011 — Workout logic: session editing, set input, workout ViewModel
 
-Status: ready
+Status: in progress
 Updated: 2026-11-01
-Starting commit: (worker: record `git rev-parse --short HEAD` when you start)
+Starting commit: `4123c56`
 Parent: [006](006-training-data-model.md) step 8 (logic half; the Compose screen is task 012)
 · Delegated: yes (see [delegation](../delegation/README.md))
 
@@ -143,7 +143,7 @@ In `RepknotApplication`: drop `sessionId`/`ids`; expose `current: CurrentSession
 interim `MainActivity` compiling (it does not use the new ViewModel yet).
 
 ## Plan / progress
-1. [ ] DAO additions + reference queries; compile (incl. androidTest).
+1. [x] DAO additions + reference queries; compile (incl. androidTest).
 2. [ ] `SetInput`, `CurrentSession`, pure helpers + `WorkoutViewModel`; cleanup; wiring.
 3. [ ] JVM tests: `SetInputTest` (1–3), `WorkoutStateTest` (4, 7, 8 and `sessionState`
    ordering/choices), `SessionShareTest` still passing. Rules 5, 6, 10–14 and the DAO
@@ -151,7 +151,8 @@ interim `MainActivity` compiling (it does not use the new ViewModel yet).
 4. [ ] `scripts/check --offline`; androidTest compile; commit(s) with task 011 in subject.
 
 ## Verification
-(worker: exact commands and results)
+- `cd android && ./gradlew --offline :data:compileDebugKotlin :data:compileDebugAndroidTestKotlin` — passed.
+- DAO behavior still requires lead's device verification; review revision bump and reorder logic.
 
 ## Handoff
-(worker: what was done, anything unresolved or questioned)
+DAO additions compiled; next implement step 2 and its tests. Device verification of DAO and sync/revision logic remains pending.

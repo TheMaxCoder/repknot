@@ -10,6 +10,7 @@ import com.repknot.domain.LoadUnit
 import com.repknot.domain.Prescription
 import com.repknot.domain.Program
 import com.repknot.domain.ProgramWorkout
+import kotlinx.coroutines.flow.Flow
 
 @Entity(tableName = "exercises")
 data class ExerciseRow(
@@ -58,6 +59,10 @@ interface ReferenceDao {
 
     @Query("SELECT * FROM programs WHERE isActive = 1 LIMIT 1")
     suspend fun getActiveProgram(): ProgramRow?
+    @Query("SELECT * FROM programs WHERE isActive = 1 LIMIT 1")
+    fun observeActiveProgramRow(): Flow<ProgramRow?>
+    @Query("SELECT * FROM exercises WHERE archived = 0 ORDER BY name")
+    suspend fun activeExercises(): List<ExerciseRow>
     @Query("SELECT * FROM program_workouts WHERE programId = :programId")
     suspend fun getWorkouts(programId: String): List<ProgramWorkoutRow>
     @Query("SELECT * FROM program_exercises")
