@@ -56,8 +56,7 @@
     <string name="label_reps">Reps</string>
     <string name="label_rir">RIR</string>
     <string name="notes">Notes</string>
-    <string name="light_day">Light day</string>
-    <string name="light_day_hint">Deload, injury or short on time — not counted in progress</string>
+    <string name="light_day">Light day · not counted in progress</string>
     <string name="error_invalid_input">Enter a non-negative load, positive whole reps, and optional non-negative whole RIR.</string>
     <string name="cloud_title">Cloud (dev)</string>
     <string name="cloud_not_configured">Supabase is not configured for this build (.env missing).</string>

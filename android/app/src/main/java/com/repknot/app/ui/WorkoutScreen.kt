@@ -16,6 +16,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.contentDescription
@@ -160,12 +161,9 @@ private fun SessionActions(session: WorkoutUiState.Session, vm: WorkoutViewModel
                 TextButton(onClick = { notes = session.row.notes.orEmpty(); notesOpen = true }, modifier = Modifier.weight(1f)) { Text(stringResource(R.string.session_notes)) }
             }
             Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-                Column(Modifier.weight(1f)) {
-                    Text(stringResource(R.string.light_day))
-                    Text(stringResource(R.string.light_day_hint), style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-                Switch(checked = session.row.light, onCheckedChange = vm::setLight)
+                Text(stringResource(R.string.light_day), modifier = Modifier.weight(1f),
+                    style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Switch(checked = session.row.light, onCheckedChange = vm::setLight, modifier = Modifier.scale(0.8f))
             }
             FinishSection(session.row.status, vm)
         }
