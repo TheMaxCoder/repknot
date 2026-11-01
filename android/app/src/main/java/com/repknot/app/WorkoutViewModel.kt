@@ -74,7 +74,11 @@ class WorkoutViewModel(
         viewModelScope.launch {
             currentId.flatMapLatest { id ->
                 val snapshot = if (id == null) flowOf(null) else sessions.observeSession(id)
-                combine(snapshot, reference.observeActiveProgramRow()) { session, program -> Triple(id, session, program) }
+                // Session history (e.g. a refresh bringing in another client's session) also
+                // changes today's suggestion, so any session change reloads the state.
+                combine(snapshot, reference.observeActiveProgramRow(), sessions.observeAllSessions()) { session, program, _ ->
+                    Triple(id, session, program)
+                }
             }.collect { (id, snapshot, programRow) ->
                 if (id != null && snapshot == null) {
                     current.set(null)
@@ -102,7 +106,9 @@ class WorkoutViewModel(
             val id = current.get() ?: return@action
             val exercise = sessions.getExercise(exerciseId)?.takeIf { it.sessionId == id } ?: return@action
             val existing = setId?.let { sessions.getSet(it)?.takeIf { set -> set.sessionExerciseId == exercise.id && set.sessionId == id } ?: return@action }
-            val position = existing?.position ?: sessions.sets(id).count { it.sessionExerciseId == exerciseId }
+            // max + 1, not count: after deleting a middle set, count could repeat a position.
+            val position = existing?.position
+                ?: ((sessions.sets(id).filter { it.sessionExerciseId == exerciseId }.maxOfOrNull { it.position } ?: -1) + 1)
             sessions.saveSet(existing?.copy(load = input.load, unit = input.unit.name.lowercase(), reps = input.reps, rir = input.rir)
                 ?: SetRow(uuid(), id, exerciseId, position, input.load, input.unit.name.lowercase(), input.reps, rir = input.rir))
         }

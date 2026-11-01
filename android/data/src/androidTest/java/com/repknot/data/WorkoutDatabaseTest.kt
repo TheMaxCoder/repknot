@@ -54,7 +54,31 @@ class WorkoutDatabaseTest {
         assertNull(db.reference().activeProgram())
     }
 
-    @Test fun recordedValuesSurviveDatabaseReopen() = runBlocking {
+    @Test fun exerciseEditsKeepOrderTrackTheOriginalAndBumpTheRevision() = runBlocking {
+        val dao = db.sessions()
+        dao.start(draft("s"), listOf(
+            SessionExerciseRow("a", "s", 0, "press-id", "Press"), SessionExerciseRow("b", "s", 1, "deck-id", "Deck")))
+        dao.addExercise(SessionExerciseRow("c", "s", 99, "row-id", "Row"))
+        assertEquals(listOf("a" to 0, "b" to 1, "c" to 2), dao.exercises("s").map { it.id to it.position })
+        dao.moveExercise("c", -1); dao.moveExercise("a", -1)
+        assertEquals(listOf("a", "c", "b"), dao.exercises("s").map { it.id })
+        dao.saveSet(SetRow("set-b", "s", "b", 0, 12.0, "plates", 12.0))
+        dao.removeExercise("c")
+        assertEquals(listOf("a" to 0, "b" to 1), dao.exercises("s").map { it.id to it.position })
+        dao.substituteExercise("b", "fly-id", "Fly")
+        assertEquals("deck-id", dao.getExercise("b")!!.substitutedFor)
+        dao.substituteExercise("b", "cable-id", "Cable")
+        assertEquals("deck-id", dao.getExercise("b")!!.substitutedFor)
+        dao.substituteExercise("b", "deck-id", "Deck")
+        assertNull(dao.getExercise("b")!!.substitutedFor)
+        assertEquals(listOf("set-b"), dao.sets("s").map { it.id })
+        dao.saveExerciseNotes("a", "elbow ok")
+        assertEquals("elbow ok", dao.getExercise("a")!!.notes)
+        // add, move c, set, remove, 3 substitutes, notes; moving the first item up is a no-op
+        assertEquals(8L, dao.get("s")!!.localRevision)
+    }
+
+        @Test fun recordedValuesSurviveDatabaseReopen() = runBlocking {
         val name = "persistence-test.db"
         context.deleteDatabase(name)
         var fileDb = Room.databaseBuilder(context, WorkoutDatabase::class.java, name).build()

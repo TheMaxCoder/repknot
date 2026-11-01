@@ -136,6 +136,9 @@ interface SessionDao {
     }
     @Query("SELECT * FROM sessions")
     suspend fun allSessions(): List<SessionRow>
+    /** Emits whenever any session row changes (refresh, finish, edits); used as a reload trigger. */
+    @Query("SELECT * FROM sessions")
+    fun observeAllSessions(): Flow<List<SessionRow>>
     @Query("SELECT * FROM session_exercises")
     suspend fun allExercises(): List<SessionExerciseRow>
     @Query("SELECT * FROM logged_sets")

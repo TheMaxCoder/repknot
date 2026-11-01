@@ -1,6 +1,6 @@
 # 011 — Workout logic: session editing, set input, workout ViewModel
 
-Status: in progress
+Status: done
 Updated: 2026-11-01
 Starting commit: `4123c56`
 Parent: [006](006-training-data-model.md) step 8 (logic half; the Compose screen is task 012)
@@ -169,3 +169,15 @@ interim `MainActivity` compiling (it does not use the new ViewModel yet).
 
 ## Handoff
 DAO additions committed as `c7b87e4` and accepted by the lead. Steps 2–4 are implemented and local acceptance commands passed. Next: lead reviews the diff, especially sync/conflict handling and DAO revision bumps/reordering, and verifies rules 5, 6, 10–14 and DAO behavior on device as specified. No backend or device operations were run. Task remains in progress pending that verification; task 012 supplies the Compose screen.
+
+## Lead review (2026-11-01)
+Accepted (third run; the first two stopped on questions, the second run was then hung by a
+delegate-script stdin bug — not a worker issue). Diff read against rules 1–14; the
+worker also scoped every action to the current session and serialized actions with a mutex.
+Lead fixes, both spec gaps: new set position is max + 1 (rule 10 said "logged count",
+which repeats a position after deleting a middle set); state also reloads on any session
+change (`observeAllSessions`), so a refresh that brings in another client's session updates
+today's suggestion (rule 14 missed this). Verified: `scripts/check --offline` (app JVM
+tests incl. WorkoutStateTest 3/3, SetInputTest 2/2); device `:data:connectedDebugAndroidTest`
+with a new test for add/move/remove/substitute/notes and revision bumps — 10/10 Room tests.
+Rules 5, 6, 10–14 get their device check through the screen in task 012.

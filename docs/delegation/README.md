@@ -57,6 +57,8 @@ One line each: date · task · category (1–4) · what happened · action.
   device; worker stopped and asked (correct behavior) · spec fixed, resumed with feedback; Loop rule added.
 - 2026-11-01 · 011 · 3 · second stop in the same task, over a trivial nullable default
   (`todayState` program name) · worker-notes rule 1 (decide small gaps, record, continue).
+- 2026-11-01 · 011 · 1 · spec rules 10/14: set position by count; no reload on history
+  change · lead fixed in review.
 
 ## Kept with the lead
 (none beyond the defaults above)
