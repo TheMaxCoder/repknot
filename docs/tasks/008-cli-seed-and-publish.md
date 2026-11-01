@@ -95,3 +95,12 @@ Actual results (fresh synthetic fixtures, all commands `scripts/repknot --as tes
 ## Handoff
 Complete. Synthetic exercises and program versions remain on dev for test2 as specified.
 No unresolved questions. Next: lead reviews the commit and proceeds with task 006.
+
+## Lead review (2026-11-01)
+Accepted without retry. Diff matches behavior 1–8; the worker flagged the new dependency
+under `Review:`. Lead fix: pinned `jsr:@std/csv@1` (task did not specify a version — spec
+gap, category 1 in the delegation triage; no worker rule). Re-verified with real data as
+the main user on dev: `seed-exercises …/normalized/exercises.csv` → 31 new, then 31 updated;
+`publish-program private-data/programs/ppl-2026-11.json` → `ppl v1 … · active`; repeat →
+"already published", exit 1. Read-back query: 6 workouts in sequence order, weekdays
+Mon–Sat, 29 prescriptions matching the JSON (sets, ranges, loads, units).
