@@ -1,6 +1,6 @@
 # 011 — Workout logic: session editing, set input, workout ViewModel
 
-Status: in progress
+Status: blocked
 Updated: 2026-11-01
 Starting commit: `4123c56`
 Parent: [006](006-training-data-model.md) step 8 (logic half; the Compose screen is task 012)
@@ -152,7 +152,11 @@ interim `MainActivity` compiling (it does not use the new ViewModel yet).
 
 ## Verification
 - `cd android && ./gradlew --offline :data:compileDebugKotlin :data:compileDebugAndroidTestKotlin` — passed.
+- `scripts/check --offline` — passed on DAO-only checkpoint (existing tests; remaining implementation not present).
+- `cd android && ./gradlew --offline :data:compileDebugAndroidTestKotlin` — passed on DAO-only checkpoint.
 - DAO behavior still requires lead's device verification; review revision bump and reorder logic.
 
 ## Handoff
-DAO additions compiled; next implement step 2 and its tests. Device verification of DAO and sync/revision logic remains pending.
+DAO additions committed as `c7b87e4`; steps 2–4 remain unfinished. No uncommitted implementation changes. Review revision bumps and reorder logic; device verification remains pending.
+
+**Question / blocker:** Acceptance requires JVM tests for rules 1–14 (pure functions; no new test libraries), but plan step 3 explicitly assigns rules 5, 6, and 10–14 to the lead's device verification. Which verification requirement governs? In particular, should those ViewModel/action rules be extracted into pure helpers and tested on the JVM, or verified only on device as planned? After clarification, implement step 2 and tests under the agreed interpretation, then rerun both acceptance commands.
