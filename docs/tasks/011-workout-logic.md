@@ -1,6 +1,6 @@
 # 011 — Workout logic: session editing, set input, workout ViewModel
 
-Status: blocked
+Status: in progress
 Updated: 2026-11-01
 Starting commit: `4123c56`
 Parent: [006](006-training-data-model.md) step 8 (logic half; the Compose screen is task 012)
@@ -94,7 +94,7 @@ class WorkoutViewModel(sessions: SessionDao, reference: ReferenceDao, sync: Sess
 ```
 Pure helpers (top level in `WorkoutViewModel.kt`, these carry the logic and the tests):
 ```kotlin
-fun todayState(program: Program?, programName: String?, history: List<PastSession>): WorkoutUiState
+fun todayState(program: Program?, programName: String?, history: List<PastSession>): WorkoutUiState  // null name → "Program"
 fun prescriptionFor(row: SessionExerciseRow, defaultUnit: LoadUnit): Prescription
 fun suggestionFor(prefill: Prefill, setIndex: Int, row: SessionExerciseRow, defaultUnit: LoadUnit): SetSuggestion
 fun sessionState(snapshot: SessionSnapshot, history: List<PastSession>, exercises: List<ExerciseRow>): WorkoutUiState.Session

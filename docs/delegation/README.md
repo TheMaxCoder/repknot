@@ -52,6 +52,8 @@ One line each: date · task · category (1–4) · what happened · action.
 - 2026-11-01 · 008 · 1 · new dependency unpinned; spec named no version · lead pinned; Loop rule added.
 - 2026-11-01 · 011 · 1 · acceptance said JVM tests for rules 1–14, plan gave 5/6/10–14 to
   device; worker stopped and asked (correct behavior) · spec fixed, resumed with feedback; Loop rule added.
+- 2026-11-01 · 011 · 3 · second stop in the same task, over a trivial nullable default
+  (`todayState` program name) · worker-notes rule 1 (decide small gaps, record, continue).
 
 ## Kept with the lead
 (none beyond the defaults above)

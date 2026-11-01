@@ -7,4 +7,8 @@ when full, merge or replace an existing rule. Change only per the triage in
 
 ## Rules
 
-(none yet)
+1. Small gaps: when an ambiguity cannot change data, sync, security, or user-visible
+   product behavior a reviewer would care about (a nullable default, a helper's name, a
+   formatting detail), pick the most conservative reasonable option, write it under the
+   task's "Decisions and discoveries", and keep going. Stop and ask only for gaps that
+   do affect those things. (Task 011: stopped twice; the second was a null default.)
