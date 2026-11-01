@@ -27,7 +27,7 @@ importer. Out: check-in UI, web companion, ChatGPT connector identity (1a), anal
 2. [x] Structure the PPL program → `private-data/programs/ppl-2026-11.json` (cross-checked
    against the markdown's weekly set table; all exercises map to export slugs).
 3. [x] ADR 002.
-4. [ ] Migration: exercises, programs/workouts/exercises, `publish_program`, session_exercises,
+4. [x] Migration: exercises, programs/workouts/exercises, `publish_program`, session_exercises,
    set unit/measure changes, `source_ref`/`raw`, checkins; update `session_snapshot`,
    `replace_session_sets`, `push_session`, `save_session` for nested payloads. Tests.
 5. [ ] `scripts/repknot` (or sibling) commands: `seed-exercises`, `publish-program <json>`.
@@ -47,12 +47,38 @@ importer. Out: check-in UI, web companion, ChatGPT connector identity (1a), anal
   DB chest press logs were on a separate exercise with unconfirmed bench angle.
 - Units in history: kg, plates and bodyweight, plus a few unknown.
 
+- Step 4 (2026-11-01, lead): dev session tables are dropped and recreated rather than
+  migrated (synthetic data; owner said "use judgment, go" after the drop-vs-squash choice).
+  Squash all migrations into one baseline before prod exists.
+- Step 4 shape choices beyond ADR 002: `programs.key` names the program family (`ppl`) so
+  versions are unique per key; `programs.details jsonb` keeps informational fields (goal,
+  review date, source); session-exercise snapshot columns are prefixed `planned_`;
+  `session_sets` keeps `session_id` (composite FK through `session_exercises`) for the
+  revision trigger and queries. Payloads reference exercises by slug or uuid.
+- No server `finished_at`: per ADR 001 every server session is finished. Step 7 should
+  order sessions for `todaysWorkout`/`prefill` by `performed_on`, then `number`.
+- Checkins table added; dated health-state/training-habit context records deferred to
+  step 9 (importer), which is where they are first needed.
+- Sets with a `raw` original may be incomplete (no unit/reps/load); all other sets need
+  a unit, reps or duration, and a load unless bodyweight.
+
 ## Verification
 - `scripts/airtable-normalize private-data/airtable-health-2026-10-31`: every source log
   produces ≥1 set (asserted); raw JSON matched CSV with 0 differences before deletion.
 - `git check-ignore` confirms `private-data/` is ignored.
 
+- Step 4 (2026-11-01): owner ran `scripts/db push` (training model, drops/recreates dev
+  session tables). First `scripts/db test`: 44/45 — a foreign/unknown exercise slug was
+  silently dropped because the planner skipped `resolve_exercise` inside a join. Fixed in
+  `20261101040000_resolve_exercises_first.sql` (resolve up front + row-count guard), pushed;
+  `scripts/db test` then passed 001 23/23, 002 17/17, 003 10/10, 004 7/7, 005 45/45.
+  `scripts/repknot log-test` / `list` / `show` against dev: nested session #39 created and
+  read back (1 exercise, 1 set). `deno check` on a .ts copy of the CLI passed.
+
 ## Handoff
-Next action: step 4 (migration + pgTAP on dev). The app cannot log real workouts by
-2026-11-02; log the first PPL week as before (Airtable/ChatGPT) — a later export can be
-normalized with the same script and imported.
+Next action: step 5 — `scripts/repknot` commands `seed-exercises` (from the normalized
+`exercises.csv`) and `publish-program <json>` (calls `publish_program`); candidate for
+delegation. Known until step 7: Android sync and `SharedSessionIntegrationTest` still use
+the flat v1 payload and fail against dev. `save_session` always records `source =
+'chatgpt'`, so CLI `log-test` sessions show that source (cosmetic; revisit with the
+connector work).

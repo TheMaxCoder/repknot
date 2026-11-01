@@ -14,9 +14,14 @@ is not evidence that this ChatGPT account has a compatible scoped write connecti
 - Reuse the `ref` UUID in shared workout text. Never invent an ID; omit `ref` if
   no reference was provided.
 - Read the current session before updating it. Confirm the intended changes with the user.
-- Send a complete snapshot: `performed_on` (ISO date), `title`, optional `notes`, and
-  `sets` as an array with `exercise_name`, `load`, `unit` (`kg` or `lb`), `reps`,
-  optional `rir` and optional `notes`. Saving replaces the session's set list.
+- Send a complete snapshot: `performed_on` (ISO date), `title`, optional `notes`,
+  optional `program_id` + `program_workout_key` (both or neither), and `exercises` in
+  order. Each exercise has `exercise` (the user's exercise slug, e.g. `lateral-raise`;
+  unknown slugs are rejected), optional `notes`, optional `substituted_for` (slug of
+  the prescribed exercise it replaced), and `sets` in order. Each set has `unit`
+  (`kg`, `lb`, `plates` = machine pin number, or `bodyweight`), `load` (omit for
+  bodyweight), `reps` (0.5 steps) and/or `duration_s`, optional `rir` (lower bound of
+  a reported range) and optional `notes`. Saving replaces the session's exercises and sets.
 - When updating an existing session, include its last-read `revision` as
   `expected_revision`. If the function returns `status: conflict`, re-read the
   session and ask the user how to resolve it; do not retry with a newer revision

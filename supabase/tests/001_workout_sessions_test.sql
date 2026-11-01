@@ -9,7 +9,7 @@ create temp table tap (n serial, line text);
 grant all on tap to public;
 grant all on sequence tap_n_seq to public;
 
-insert into tap (line) select plan(22);
+insert into tap (line) select plan(23);
 
 -- Two throwaway users (rolled back with the transaction).
 insert into auth.users (id, email) values
@@ -40,24 +40,30 @@ insert into tap (line) select throws_ok($$
   insert into workout_sessions (performed_on, number) values ('2026-10-31', 999)
 $$, '428C9', null, 'clients cannot choose the friendly number');
 
+insert into exercises (id, slug, name) values ('11000000-0000-4000-a000-000000000001', 'db-bench-press', 'Dumbbell bench press');
+insert into session_exercises (id, session_id, position, exercise_id, exercise_name)
+  values ('12000000-0000-4000-a000-000000000001', '10000000-0000-4000-a000-000000000001', 0,
+          '11000000-0000-4000-a000-000000000001', 'Dumbbell bench press');
+insert into tap (line) select is((select revision from workout_sessions where id = '10000000-0000-4000-a000-000000000001'),
+  2::bigint, 'adding an exercise bumps the session revision');
 insert into tap (line) select lives_ok($$
-  insert into session_sets (session_id, position, exercise_name, load, unit, reps, rir)
-  values ('10000000-0000-4000-a000-000000000001', 0, 'Dumbbell bench press', 32.5, 'kg', 7, 3)
+  insert into session_sets (session_exercise_id, session_id, position, load, unit, reps, rir)
+  values ('12000000-0000-4000-a000-000000000001', '10000000-0000-4000-a000-000000000001', 0, 32.5, 'kg', 7, 3)
 $$, 'owner can add a set');
 insert into tap (line) select is((select revision from workout_sessions where id = '10000000-0000-4000-a000-000000000001'),
-  2::bigint, 'adding a set bumps the session revision');
+  3::bigint, 'adding a set bumps the session revision');
 
 update session_sets set reps = 8 where session_id = '10000000-0000-4000-a000-000000000001';
 insert into tap (line) select is((select revision from workout_sessions where id = '10000000-0000-4000-a000-000000000001'),
-  3::bigint, 'editing a set bumps the session revision');
+  4::bigint, 'editing a set bumps the session revision');
 
 update workout_sessions set revision = 100 where id = '10000000-0000-4000-a000-000000000001';
 insert into tap (line) select is((select revision from workout_sessions where id = '10000000-0000-4000-a000-000000000001'),
-  4::bigint, 'a writer cannot set the revision directly');
+  5::bigint, 'a writer cannot set the revision directly');
 
 insert into tap (line) select throws_ok($$
-  insert into session_sets (session_id, position, exercise_name, load, unit, reps)
-  values ('10000000-0000-4000-a000-000000000001', 1, 'Row', 40, 'kg', 0)
+  insert into session_sets (session_exercise_id, session_id, position, load, unit, reps)
+  values ('12000000-0000-4000-a000-000000000001', '10000000-0000-4000-a000-000000000001', 1, 40, 'kg', 0)
 $$, '23514', null, 'reps must be positive');
 
 -- ── Act as user B ────────────────────────────────────────────────────────────
@@ -72,8 +78,8 @@ with d as (delete from session_sets returning 1)
 insert into tap (line) select is(count(*), 0::bigint, 'other user cannot delete owner sets') from d;
 
 insert into tap (line) select throws_ok($$
-  insert into session_sets (session_id, position, exercise_name, load, unit, reps)
-  values ('10000000-0000-4000-a000-000000000001', 5, 'Sneaky', 1, 'kg', 1)
+  insert into session_sets (session_exercise_id, session_id, position, load, unit, reps)
+  values ('12000000-0000-4000-a000-000000000001', '10000000-0000-4000-a000-000000000001', 5, 1, 'kg', 1)
 $$, '23503', null, 'other user cannot add sets to owner session');
 
 insert into tap (line) select throws_ok($$

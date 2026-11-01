@@ -21,8 +21,10 @@ and the signed-in user's session; RLS restricts every table to its owner. Schema
 - Session substitutions do not mutate the program.
 - Room is the local read source; Supabase is the canonical shared store. Sessions are
   refreshed transactionally after a complete fetch; local drafts and pending edits are
-  retained. The current synthetic workout is the only prescription; program and
-  previous-performance tables are not present yet.
+  retained. The server has the ADR 002 model (exercises, immutable program versions
+  via `publish_program`, sessions → session exercises → sets); the Android cache and
+  sync still use the flat v1 shape until task 006 step 7, so phone sync against the
+  current dev schema is broken in the meantime.
 - Persist edits and pending sync together, retain stable IDs, and handle retries without duplicates.
 - Upload acknowledgements must not discard newer local edits, and no writer (Android,
   web, ChatGPT, CLI) may silently overwrite another's change. Revision rules are in
@@ -54,3 +56,7 @@ actual temporary policy relaxation here when introduced.
   destructively reset the prior synthetic v1/v2 schemas only; the phone's reset was
   explicitly approved. Future schema changes must not silently discard local data;
   add real migrations once Android starts logging real workouts.
+- Building phase (server): the training-model migration dropped and recreated the
+  synthetic dev session tables instead of migrating rows (approved 2026-11-01). Once
+  real data exists anywhere, migrations must preserve it; squash migrations into one
+  baseline before creating prod.
