@@ -1,8 +1,8 @@
 # 022 — Progress screen and exercise history
 
-Status: ready
+Status: in progress
 Updated: 2026-11-01
-Starting commit: (worker: record `git rev-parse --short HEAD` when you start)
+Starting commit: 1e2482e
 Parent: [019](019-progress-milestone.md) step 3 · Delegated: yes (see
 [delegation](../delegation/README.md))
 
@@ -81,12 +81,19 @@ trained, both), `exposureLine` (normal, light), `dipText` (known and missing nam
 ViewModel and screens are checked by the lead on the device.
 
 ## Plan / progress
-1. [ ] `ProgressText.kt` + tests.
+1. [x] `ProgressText.kt` + tests.
 2. [ ] `ProgressViewModel` + navigation + screens.
 3. [ ] `scripts/check --offline`; commit(s) with task 022 in the subject.
 
 ## Decisions and discoveries
 
+- Pre-existing untracked `work/` is unrelated and left untouched.
+- For unusual bodyweight MovedUp/LoadDown inputs, omit load values and use “Moved up on …” / “Load down for 2 sessions”; normal engine output does not generate these. Exposure summaries use `previousSummary` exactly as specified, including its bodyweight label.
+
 ## Verification
 
+- `cd android && ./gradlew --offline :app:testDebugUnitTest` — passed, including ProgressText tests.
+
 ## Handoff
+
+- Text functions complete; next implement ViewModel, navigation and screens, then run offline checks. Review: conservative text for unusual bodyweight reason inputs described above.
