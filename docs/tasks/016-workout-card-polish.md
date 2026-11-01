@@ -1,6 +1,6 @@
 # 016 — Workout card polish: last-time summary, RIR stepper, compact actions
 
-Status: blocked
+Status: in progress
 Updated: 2026-11-01
 Starting commit: 9766ddd
 Delegated: yes (see [delegation](../delegation/README.md)). Owner feedback after using the
@@ -50,7 +50,8 @@ libraries. Reading anything is fine.
    `FilledTonalIconButton` with text "−"/"+" — no icon library). Value is an Int, default
    **1**, range 0–10 (`−` disabled at 0, `+` at 10); it resets to 1 when the input resets
    (same keys as the other fields); when editing a set it starts from that set's RIR (1 if
-   null). It is passed to `logSet` as text. Remove "(optional)" (string `label_rir` → "RIR").
+   null), and the upper bound becomes max(10, that RIR) so an existing value is never clamped
+   (clarified 2026-11-01). It is passed to `logSet` as text. Remove "(optional)" (string `label_rir` → "RIR").
    Load and Reps fields keep their current behavior; the three controls fit one row on a
    ~390 dp-wide phone (load and reps fields share the remaining width).
 4. **Compact card.**

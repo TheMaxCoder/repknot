@@ -64,6 +64,8 @@ One line each: date · task · category (1–4) · what happened · action.
   worker stopped (as told to for ViewModel gaps) · answered: derive from set count in state.
 - 2026-11-01 · 013 · 1 · out-of-scope line said "do not read" for supabase/ while Context
   required reading two migrations · wording fixed; Loop rule on read vs modify.
+- 2026-11-01 · 016 · 1 · RIR stepper range 0–10 vs existing larger values; worker stopped
+  (correct per rule 1: affects saved data) · answered: upper bound max(10, current).
 
 ## Kept with the lead
 (none beyond the defaults above)
