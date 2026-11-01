@@ -84,3 +84,12 @@ absent / partially missing, singular "1 set"). `WorkoutStateTest`: `previousOn` 
 
 ## Handoff
 - Implementation and automated checks complete; no unfinished code changes. Next: lead runs the device check, including ~390 dp layout, menu, notes, and RIR editing above 10. Keep task in progress pending that check.
+
+## Lead review (2026-11-01)
+Accepted after one clarification (RIR range vs existing values; correct stop per worker
+rule 1). Diff read against items 1–4: start-load line removed; `Last · …` + summary from the
+tested helpers; `⋯` menu with move/substitute/remove; collapsible exercise and session
+notes; RIR stepper default 1, upper bound max(10, current). `scripts/check --offline`
+passed (PreviousSummaryTest 2/2, WorkoutStateTest 4/4).
+Pending: device check — the phone disconnected from adb during install. Check the ~390 dp
+row fit, the menu, notes toggle, and the stepper on the owner's open Pull 1 session.
