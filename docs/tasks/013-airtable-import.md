@@ -1,8 +1,8 @@
 # 013 — Airtable history importer (synthetic-verified on dev)
 
-Status: ready
+Status: blocked
 Updated: 2026-11-01
-Starting commit: (worker: record `git rev-parse --short HEAD` when you start)
+Starting commit: 5643b25
 Parent: [006](006-training-data-model.md) step 9 · Delegated: yes (see
 [delegation](../delegation/README.md))
 
@@ -83,11 +83,14 @@ batched (≤ 500 rows per call):
     (count existing refs before inserting). Exit 1 on any error with the message.
 
 ## Plan / progress
+Blocked before step 1 on the scope clarification in Handoff; no implementation started.
+
 1. [ ] Normalizer changes (1–3); fixture (4); normalizer runs on a temp copy.
 2. [ ] Importer (5–11).
 3. [ ] Verification (below); commit(s) with task 013 in the subject.
 
 ## Verification (worker: run, record actual output)
+- Not run: implementation has not started pending the scope clarification below.
 1. `d=$(mktemp -d) && cp -r scripts/fixtures/airtable-synthetic $d/ && scripts/airtable-normalize $d/airtable-synthetic`
    → succeeds; show the normalized headers of the five changed/used files.
 2. `scripts/airtable-import --as test2 $d/airtable-synthetic/normalized` → all `X new`.
@@ -102,4 +105,8 @@ Synthetic test2 rows stay on dev.
   loads go to `raw` rather than guessing "added weight" semantics.
 
 ## Handoff
-(worker: what was done, outputs, anything unresolved or questioned)
+- Blocked before implementation: the scope says not to read anything under `supabase/`,
+  but Context to read explicitly requires reading two files under `supabase/migrations/`.
+  May the worker read those two migrations, or should the lead supply the relevant schema
+  outside that directory? After clarification, begin plan step 1; no implementation changes
+  or verification commands have been made.
