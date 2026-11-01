@@ -36,7 +36,7 @@ and keeps workouts local until upload is enabled in Settings.
 
 1. Real logging on the phone from 2026-11-02 (upload off until the owner enables it in
    Settings); fix what hurts in the gym.
-2. Owner checks: public sign-ups off; review the drafted previous program
+2. Owner decision: publish the drafted previous program
    (`private-data/programs/upper-lower-2026-09.json`), then publish it inactive.
 3. Progress/regression views on the full history (imported 2026-11-01, [task 018](tasks/018-real-history-import.md)).
 4. ChatGPT integration, check-ins UI, web companion per the PRD.

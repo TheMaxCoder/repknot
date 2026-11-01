@@ -50,7 +50,7 @@ it (PRD: Supabase is the canonical store for every client).
 - Last values and future progress views work from the full history immediately.
 - Destructive migrations now need a data-preserving plan, and Room's
   "building phase" reset applies only to the phone's local cache (server data is safe).
-- Open risks to revisit: whether public sign-ups are enabled (owner to confirm in the
-  dashboard: Authentication → Sign In / Providers → "Allow new users to sign up"); the
+- Public sign-ups are disabled (owner confirmed in the dashboard, 2026-11-01).
+- Open risks to revisit: the
   account-wide Supabase CLI token noted in `docs/architecture.md`; connector (ChatGPT)
   privileges before any connector writes.
