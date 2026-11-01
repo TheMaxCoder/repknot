@@ -5,6 +5,13 @@
 Native Kotlin + Compose, dark-only regardless of system appearance. App ID currently
 `com.repknot.app`; min SDK 26, compile/target SDK 36. These are initial defaults.
 
+Workout UI uses wallpaper-derived dynamic dark colors on Android 12+, with the fixed
+dark palette as fallback. The owner approved this change in task 017. Logging uses the
+session's prescribed load unit, falling back to the exercise's configured default for
+ad-hoc exercises. Substitutions use the replacement exercise default and do not reuse
+the original start load; editing a saved set preserves its recorded unit. Unit choice is not a
+per-set logging control. Bodyweight inputs omit load; no conversions are inferred.
+
 Dependencies: `app → domain`, `app → data → domain`. Domain is pure Kotlin/JVM.
 App owns Compose, ViewModels, navigation, and wiring. Data will own Room, Supabase,
 and sync. Repositories separate UI from storage; no direct DAO/network calls in UI.

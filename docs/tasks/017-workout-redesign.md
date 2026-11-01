@@ -1,6 +1,6 @@
 # 017 — Workout redesign
 
-Status: in progress
+Status: done
 Starting commit: 024ddf2
 Updated: 2026-11-01
 
@@ -90,3 +90,33 @@ using the resolved fallback; only preserve existing.unit when copying an existin
 WorkoutViewModel.logSet. Concrete saved units stay unchanged. New sets use configured
 units. This narrow ViewModel edit is in scope; test the pure unit-preservation helper.
 No schema or domain changes. Proceed with the UI implementation.
+
+## Lead review and completion
+- Reviewed worker diff; independent `scripts/check --offline` passed before installation.
+- Fixed substitution unit resolution: replacement catalog unit drives new inputs/history,
+  with no original start-load carryover. Original prescription snapshot and old sets remain
+  unchanged. Added WorkoutStateTest coverage for catalog default, snapshot precedence,
+  substitution kg-to-plates, and bodyweight null load.
+- Removed the identity-only recordedUnit helper/test: existing.copy now omits unit directly,
+  preserving even null. Review: test replacement is intentional; identity test offered no
+  protection for persistence. Existing parser and state tests remain and pass.
+- Final `scripts/check --offline` passed (106 tasks, 17 executed, 89 up-to-date).
+- `cd android && ./gradlew :app:installDebug --offline` passed on the test phone, including
+  final installation after the unit fix. No app data reset or backend mutation performed.
+- Device UI: dynamic pink dark palette visible, no app title, compact date, selected
+  exercise, Up next, list selection to Pec deck with Load · plates, separated footer.
+  RIR 1→2→1 confirmed in UI hierarchy. Numeric keyboard opens with load/reps/log controls
+  unobscured; footer hides while keyboard is open. No workout sets logged/edited/deleted.
+- Device screenshots inspected at /tmp/repknot-after.png and /tmp/repknot-keyboard2.png
+  (temporary evidence, not tracked).
+- Not manually exercised: saved-set edits with RIR above 10, bodyweight on phone, finish,
+  conflict/upload flows, pre-Android-12 theme fallback, full long-workout usability.
+- Spec gap discovered in review: substitutions retain original plannedUnit in storage;
+  resolved in app state without modifying storage. No new dependencies or migrations.
+- Delegation first launch failed from mise banner in JSON stdout; reran with MISE_QUIET=1.
+  Worker first stopped appropriately about nullable historical units; lead clarified.
+
+## Final handoff
+Implemented and installed. Next: owner tries the revised workout screen and reports visual
+or in-gym friction. Core unit/state behaviors have JVM coverage; the manual limitations
+above remain. Untracked work/ from exploration is preserved. Nothing pushed.

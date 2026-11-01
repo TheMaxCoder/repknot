@@ -61,4 +61,17 @@ class WorkoutStateTest {
         assertEquals(LoadUnit.KG, state.exercises[0].suggestion.unit)
         assertEquals(choices, state.choices)
     }
+    @Test fun configuredUnitsAndSubstitutionsDoNotRelabelLoads() {
+        val catalog = listOf(ExerciseRow("x", "x", "Press", "plates", false))
+        fun state(e: SessionExerciseRow) = sessionState(SessionSnapshot(row, listOf(e), emptyList()), emptyList(), catalog).exercises.single()
+        assertEquals(LoadUnit.PLATES, state(exercise).suggestion.unit)
+        assertEquals(LoadUnit.KG, state(exercise.copy(plannedUnit = "kg")).suggestion.unit)
+        val substituted = state(exercise.copy(plannedUnit = "kg", substitutedFor = "original"))
+        assertEquals(LoadUnit.PLATES, substituted.suggestion.unit)
+        assertNull(substituted.suggestion.load)
+        val bodyweight = sessionState(SessionSnapshot(row, listOf(exercise), emptyList()), emptyList(),
+            listOf(ExerciseRow("x", "x", "Press", "bodyweight", false))).exercises.single()
+        assertEquals(LoadUnit.BODYWEIGHT, bodyweight.suggestion.unit)
+        assertNull(bodyweight.suggestion.load)
+    }
 }

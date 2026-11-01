@@ -71,10 +71,15 @@ fun sessionState(snapshot: SessionSnapshot, history: List<PastSession>, exercise
     val sets = snapshot.sets.groupBy { it.sessionExerciseId }
     val previousHistory = history.filterNot { it.id == snapshot.row.id }
     return WorkoutUiState.Session(snapshot.row, snapshot.exercises.sortedBy { it.position }.map { row ->
-        val unit = row.plannedUnit?.let(::parseUnit) ?: byId[row.exerciseId]?.defaultUnit?.let(::parseUnit) ?: LoadUnit.KG
+        val configuredUnit = byId[row.exerciseId]?.defaultUnit?.let(::parseUnit)
+        val unit = if (row.substitutedFor != null) configuredUnit ?: LoadUnit.KG
+            else row.plannedUnit?.let(::parseUnit) ?: configuredUnit ?: LoadUnit.KG
+        // A substitution keeps the original prescription snapshot, but its start load
+        // is not a suggestion for a different exercise or unit.
+        val inputRow = if (row.substitutedFor != null) row.copy(plannedUnit = unit.name.lowercase(), plannedLoad = null) else row
         val logged = sets[row.id].orEmpty().sortedBy { it.position }
-        val previous = prefill(prescriptionFor(row, unit), previousHistory)
-        ExerciseUi(row, logged, previous, suggestionFor(previous, logged.size, row, unit), previousDate(previous, previousHistory))
+        val previous = prefill(prescriptionFor(inputRow, unit), previousHistory)
+        ExerciseUi(row, logged, previous, suggestionFor(previous, logged.size, inputRow, unit), previousDate(previous, previousHistory))
     }, exercises)
 }
 
@@ -144,7 +149,7 @@ class WorkoutViewModel(
             // max + 1, not count: after deleting a middle set, count could repeat a position.
             val position = existing?.position
                 ?: ((sessions.sets(id).filter { it.sessionExerciseId == exerciseId }.maxOfOrNull { it.position } ?: -1) + 1)
-            sessions.saveSet(existing?.copy(load = input.load, unit = recordedUnit(existing.unit), reps = input.reps, rir = input.rir)
+            sessions.saveSet(existing?.copy(load = input.load, reps = input.reps, rir = input.rir)
                 ?: SetRow(uuid(), id, exerciseId, position, input.load, input.unit.name.lowercase(), input.reps, rir = input.rir))
         }
     }

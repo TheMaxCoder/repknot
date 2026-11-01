@@ -15,9 +15,4 @@ class ExerciseSelectionTest {
         assertNull(selectedExerciseId("a", emptyList()))
     }
 
-    @Test fun recordedUnitsRemainUnchangedIncludingUnknown() {
-        assertNull(recordedUnit(null))
-        assertEquals("plates", recordedUnit("plates"))
-        assertEquals("kg", recordedUnit("kg"))
-    }
 }

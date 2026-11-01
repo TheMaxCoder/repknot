@@ -7,6 +7,3 @@ internal fun selectedExerciseId(selected: String?, exercises: List<ExerciseProgr
         ?: exercises.lastOrNull()?.id
 
 internal data class ExerciseProgress(val id: String, val target: Int?, val completed: Int)
-
-/** A saved set's unit is historical data, including an unknown (null) unit. */
-internal fun recordedUnit(existingUnit: String?): String? = existingUnit

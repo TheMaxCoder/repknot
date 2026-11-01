@@ -82,7 +82,8 @@ loop, and the bounded rules for tuning `docs/delegation/worker-notes.md` live in
   logs go to the ignored `.delegate-logs/`.
 
 ## Boundaries
-- Dark-only UI, including launch background and system bars. No theme toggle or dynamic colors.
+- Dark-only UI, including launch background and system bars. Use wallpaper-derived dynamic
+  dark colors on Android 12+, with a fixed dark fallback on older devices. No theme toggle.
 - `android/app`: UI and wiring. `domain`: pure Kotlin. `data`: persistence and sync.
 - Keep the foundation small; add libraries, abstractions, and tooling when used.
 - Preserve unrelated changes. Never claim checks passed unless they ran.

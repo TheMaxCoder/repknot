@@ -22,7 +22,10 @@ Updated: 2026-11-01
 
 ## Current task
 
-None in progress. Milestone [006 — Training data model and program-driven workouts](tasks/006-training-data-model.md)
+[017 — Workout redesign](tasks/017-workout-redesign.md) is implemented and device-smoke-tested: compact
+exercise card, Up next, separated actions, dynamic dark colors, and configured load units.
+
+Milestone [006 — Training data model and program-driven workouts](tasks/006-training-data-model.md)
 is done (design: [ADR 002](decisions/002-training-data-model.md); steps delegated per
 [docs/delegation](delegation/README.md) as tasks 007–009 and 011–013, lead work in 010).
 The phone app starts today's PPL workout, logs and edits sets with previous-value
