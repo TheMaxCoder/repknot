@@ -1,6 +1,6 @@
 # 025 — Compact workout preview
 
-Status: in progress
+Status: done
 Starting commit: a7ff9ee
 
 ## Outcome / acceptance
@@ -19,7 +19,7 @@ Lead device: verify full list scroll, Start remains visible, no overlap system b
 - [x] Worker run scripts/check --offline and commit verified step(s).
 - [x] Apply review clarification: preserve existing prefill/history selection; acceptance applies to the Prefill passed to the presentation helper.
 - [x] Adjust responsive threshold and run checks.
-- [ ] Lead inspect diff and re-run checks, install and device-check.
+- [x] Lead inspected diff, reran checks, installed and device-checked.
 
 ## Decisions / discoveries
 - Design only was iterated until explicit implementation approval; full previous performance including RIR and units must survive compaction.
@@ -34,3 +34,13 @@ Lead device: verify full list scroll, Start remains visible, no overlap system b
 
 ## Handoff
 Next: lead inspect the diff, re-run checks, install and perform the lead device checks (scroll, fixed Start/insets, local start/discard, system back, target absence, ordinary/narrow widths and large font). Lead updates status/architecture. No device actions performed by worker. Preserve unrelated `work/` and lead changes to `docs/status.md`.
+
+
+## Lead verification and final handoff
+- `scripts/check --offline` passed independently; `git diff a7ff9ee..HEAD --check` passed.
+- `cd android && ./gradlew :app:installDebug --offline` installed on the test phone.
+- Inspected actual Push 1 preview: five exercises, plan/last values, RIR, kg/plates and compact age columns, no program name/target/bottom Back, fixed Start and safe system insets. Android Back returned to selection.
+- Confirmed Upload workouts off in Settings without changing it. Started a new empty local test workout from fixed Start; current exercise and Up next had no target suggestion. Discarded only that new empty test workout through the confirmation, then reopened preview. Owner explicitly authorized this local test activity.
+- Tested overflow by temporarily setting display size to 1080x1600, swiping the exercise list, and inspecting the fixed Start area. Restored original display size with wm size reset and verified 1080x2400 afterward. No saved sets, upload setting or remote records changed.
+- Large font, screen reader and extreme narrow-width rendering were not manually tested; helpers cover nulls, dates and mixed loads/units. Existing unit-filtered prefill history selection remains unchanged by design.
+- Next: owner uses the installed preview and provides feedback. Implementation is complete. Unrelated work/ preserved.

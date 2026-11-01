@@ -12,6 +12,10 @@ ad-hoc exercises. Substitutions use the replacement exercise default and do not 
 the original start load; editing a saved set preserves its recorded unit. Unit choice is not a
 per-set logging control. Bodyweight inputs omit load; no conversions are inferred.
 
+Workout preview compares the prescription and previous performance in compact columns,
+with a fixed Start action above the navigation inset. Target suggestions are no longer
+displayed in preview or session UI; previous values and per-set comparisons remain.
+
 Dependencies: `app → domain`, `app → data → domain`. Domain is pure Kotlin/JVM.
 App owns Compose, ViewModels, navigation, and wiring. Data will own Room, Supabase,
 and sync. Repositories separate UI from storage; no direct DAO/network calls in UI.

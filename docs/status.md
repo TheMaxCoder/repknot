@@ -22,6 +22,8 @@ Updated: 2026-11-01
 
 ## Current task
 
+[025 — Compact workout preview](tasks/025-workout-preview.md) is done: compact Plan/Last comparison, fixed Start, full scrollable exercise list, no target suggestion. Installed and device-checked, including local start/discard and back navigation.
+
 [024 — Progress screen redesign](tasks/024-progress-redesign.md) is implemented, checked, installed, and visually inspected at the phone’s current size; owner feedback and interaction/edge-case checks remain pending.
 
 [017 — Workout redesign](tasks/017-workout-redesign.md) is implemented and device-smoke-tested: compact
@@ -35,7 +37,7 @@ values from the full imported history ([ADR 003](decisions/003-single-canonical-
 and keeps workouts local until upload is enabled in Settings.
 
 Milestone [019 — Progress and regression](tasks/019-progress-milestone.md) is done: workout
-card targets and ▲/=/▼, Progress screen (statuses, broad dips, exercise history), body card
+card ▲/=/▼, Progress screen (statuses, broad dips, exercise history), body card
 (waist goal, trends, cut check, check-in entry), light-day flag (tasks 020–023).
 
 ## Next priorities
