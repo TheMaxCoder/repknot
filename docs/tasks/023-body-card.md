@@ -1,6 +1,6 @@
 # 023 — Body card: waist goal, trends, cut check, check-in entry
 
-Status: in progress
+Status: blocked
 Updated: 2026-11-01
 Starting commit: 4bc409f
 Parent: [019](019-progress-milestone.md) step 5 · Delegated: yes (see
@@ -119,12 +119,16 @@ loss and declines/dip), `goalDate` (computed, null when rising, null beyond 365 
 
 ## Decisions and discoveries
 
-- Projection cutoff is measured from today, as “more than 365 days away” describes the date.
+- Projection cutoff is measured from today, as “more than 365 days away” describes the date; review this interpretation.
+- `CheckInDao.add` is suspending, while the specified `addCheckIn` returns a synchronous Boolean and calls for a successful write before returning. See Handoff.
 
 ## Verification
 
 - `cd android && ./gradlew :domain:test --offline` passed (21 tests). An initial test used a non-exact floating-point rate and expected 30 rather than the specified `ceil` result; changed its fixture to an exactly representable slope.
+- `scripts/check --offline` passed for the domain-only checkpoint; this is not verification of the unfinished app integration. Device verification remains with the lead.
 
 ## Handoff
 
-Next: settings, ViewModel and text (step 2); then UI and offline full check. Device check belongs to lead.
+Blocked on a question: `CheckInDao.add` is `suspend`, but the specified `addCheckIn(...): Boolean` must write successfully before returning true and closing the dialog. Should the API become suspending (with the dialog saving asynchronously and handling write failures), or should true mean input was valid and a background write was merely launched, even though a failed write would close the dialog without saving? Please specify desired failure behavior.
+
+Next after clarification: settings, ViewModel and text (step 2), then UI and rerun the full offline check. Device check belongs to lead. No unfinished implementation changes remain; untracked `work/` pre-existed and was untouched.
