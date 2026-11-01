@@ -2,6 +2,10 @@
 # Run a task file through the worker model headlessly. See docs/delegation/README.md.
 # Usage: scripts/delegate <task-file> [extra instruction...]
 # Env:   DELEGATE_MODEL (default openai-codex/gpt-6.1-terra), DELEGATE_THINKING (default high)
+#        DELEGATE_HERDR=0 disables the herdr "worker" tab.
+# Progress (one line per tool call / message) streams to .delegate-logs/<run>.progress;
+# follow it with scripts/delegate-watch. The raw event stream is kept as <run>.jsonl.
+# stdin is closed: pi -p otherwise waits on a non-terminal stdin and never starts.
 set -euo pipefail
 repo_root="$(git rev-parse --show-toplevel)"
 cd "$repo_root"
@@ -9,13 +13,16 @@ cd "$repo_root"
 task="${1:?usage: scripts/delegate <task-file> [extra instruction...]}"
 shift
 [[ -f "$task" ]] || { echo "no such task file: $task" >&2; exit 1; }
+command -v jq >/dev/null || { echo "jq is required" >&2; exit 1; }
 
 model="${DELEGATE_MODEL:-openai-codex/gpt-6.1-terra}"
 thinking="${DELEGATE_THINKING:-high}"
 notes="docs/delegation/worker-notes.md"
 log_dir="$repo_root/.delegate-logs"
 mkdir -p "$log_dir"
-log="$log_dir/$(date +%Y%m%d-%H%M%S)-$(basename "$task" .md).log"
+run="$log_dir/$(date +%Y%m%d-%H%M%S)-$(basename "$task" .md)"
+raw="$run.jsonl"; progress="$run.progress"
+ln -sfn "$progress" "$log_dir/latest.progress"
 start="$(git rev-parse HEAD)"
 
 prompt="You are the implementation worker for this repository. Read AGENTS.md, then
@@ -28,13 +35,55 @@ commands run with results, and anything unresolved.${*:+
 
 Additional instruction: $*}"
 
-echo "worker: $model ($thinking) · task: $task · log: ${log#$repo_root/}"
-status=0
-pi -p --no-session --model "$model" --thinking "$thinking" \
-  --append-system-prompt "$notes" "$prompt" >"$log" 2>&1 || status=$?
+echo "$(date +%H:%M:%S) start · $model ($thinking) · $task" >"$progress"
 
-echo "--- exit $status · summary (tail of log) ---"
-tail -n 40 "$log"
+# Best effort: show live progress in a herdr tab labelled "worker" (reused if present).
+if [[ "${DELEGATE_HERDR:-1}" != 0 ]] && command -v herdr >/dev/null \
+   && herdr status 2>/dev/null | grep -q 'status: running'; then
+  workspace="$(herdr pane list 2>/dev/null | jq -r --arg cwd "$repo_root" \
+    '[.result.panes[] | select(.cwd == $cwd)][0].workspace_id // empty')"
+  if [[ -n "$workspace" ]]; then
+    tab="$(herdr tab list 2>/dev/null | jq -r --arg ws "$workspace" \
+      '[.result.tabs[] | select(.workspace_id == $ws and .label == "worker")][0].tab_id // empty')"
+    if [[ -z "$tab" ]]; then
+      tab="$(herdr tab create --workspace "$workspace" --cwd "$repo_root" --label worker --no-focus 2>/dev/null \
+        | jq -r '.result.tab.tab_id // .result.tab_id // empty')"
+    fi
+    pane="$(herdr pane list 2>/dev/null | jq -r --arg tab "$tab" \
+      '[.result.panes[] | select(.tab_id == $tab)][0].pane_id // empty')"
+    if [[ -n "$pane" ]]; then
+      herdr pane send-keys "$pane" C-c >/dev/null 2>&1 || true
+      herdr pane run "$pane" "clear; scripts/delegate-watch" >/dev/null 2>&1 || true
+      echo "progress: herdr tab 'worker' (pane $pane)"
+    fi
+  fi
+fi
+
+# One readable line per event that matters; message_update deltas are skipped.
+filter='
+  def t: now | strflocaltime("%H:%M:%S");
+  def short(n): tostring | gsub("\\s+"; " ") | if length > n then .[0:n] + "…" else . end;
+  if .type == "tool_execution_start" then
+    "\(t) ▶ \(.toolName): \((.args.command // .args.path // .args.file_path // .args) | short(150))"
+  elif .type == "tool_execution_end" then
+    "\(t) \(if .isError then "✗" else "✓" end) \(.toolName) \((.durationMs // 0) / 1000 | floor)s"
+  elif .type == "message_end" and .message.role == "assistant" then
+    ([.message.content[]? | select(.type == "text") | .text] | join(" ")) as $text
+    | if ($text | length) > 0 then "\(t) 💬 \($text | short(300))" else empty end
+  elif .type == "turn_start" then "\(t) · turn"
+  elif .type == "agent_end" then "\(t) ■ agent finished"
+  else empty end'
+
+echo "worker: $model ($thinking) · task: $task · progress: ${progress#$repo_root/}"
+status=0
+pi -p --no-session --mode json --model "$model" --thinking "$thinking" \
+  --append-system-prompt "$notes" "$prompt" </dev/null 2>>"$progress" \
+  | tee "$raw" | jq --unbuffered -r "$filter" >>"$progress" || status=$?
+echo "$(date +%H:%M:%S) exit $status" >>"$progress"
+
+echo "--- exit $status · worker summary ---"
+jq -r 'select(.type == "agent_end") | [.messages[] | select(.role == "assistant")] | last
+  | [.content[]? | select(.type == "text") | .text] | join("\n")' "$raw" 2>/dev/null | tail -n 40
 echo "--- commits since $(git rev-parse --short "$start") ---"
 git log --oneline "$start"..HEAD
 echo "--- uncommitted ---"

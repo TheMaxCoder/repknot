@@ -29,6 +29,9 @@ Keep it with the lead:
    Pin versions of any new dependency, and keep acceptance and plan consistent: each
    rule is assigned to exactly one verifier (worker JVM test or lead device check).
 2. `scripts/delegate docs/tasks/NNN-*.md` (run one task per worktree if parallel).
+   Progress streams one line per tool call/message to `.delegate-logs/latest.progress`;
+   inside herdr it shows in a "worker" tab automatically, elsewhere run
+   `scripts/delegate-watch`. A run with no new progress lines for a long time is stuck.
 3. Lead re-runs the checks and reads the diff; never accept on the report alone.
 4. On a miss: one retry with specific feedback
    (`scripts/delegate <task> "Review feedback: ..."`). If the retry also misses, the

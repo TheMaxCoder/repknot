@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+# Follow the most recent worker run's progress (see scripts/delegate). Ctrl-C to stop.
+log="$(git rev-parse --show-toplevel)/.delegate-logs/latest.progress"
+echo "waiting for $log …"
+until [[ -e "$log" ]]; do sleep 1; done
+exec tail -n +1 -F "$log"
