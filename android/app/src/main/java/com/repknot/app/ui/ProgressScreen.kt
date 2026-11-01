@@ -37,7 +37,7 @@ fun ProgressScreen(state: ProgressUiState, back: () -> Unit, openBody: () -> Uni
                    addCheckIn: (String, String, String, String) -> Boolean, openExercise: (String) -> Unit) {
     var showDialog by rememberSaveable { mutableStateOf(false) }
     if (showDialog) CheckInDialog(state, addCheckIn) { showDialog = false }
-    ProgressLayout(back, state.loading, title = {
+    ProgressLayout(back, state.loading, showBack = false, title = {
         Text(stringResource(R.string.progress), style = MaterialTheme.typography.titleLarge)
     }) {
         when {
@@ -288,7 +288,7 @@ private fun Flags(item: ExerciseProgress) {
 }
 
 @Composable
-private fun ProgressLayout(back: () -> Unit, loading: Boolean, title: @Composable RowScope.() -> Unit,
+private fun ProgressLayout(back: () -> Unit, loading: Boolean, showBack: Boolean = true, title: @Composable RowScope.() -> Unit,
                            content: @Composable ColumnScope.() -> Unit) {
     Scaffold { padding ->
         val scroll = rememberScrollState()
@@ -296,7 +296,7 @@ private fun ProgressLayout(back: () -> Unit, loading: Boolean, title: @Composabl
         Column((if (loading) body else body.verticalScroll(scroll)).padding(24.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                TextButton(onClick = back) { Text(stringResource(R.string.back)) }
+                if (showBack) TextButton(onClick = back) { Text(stringResource(R.string.back)) }
                 title()
             }
             content()

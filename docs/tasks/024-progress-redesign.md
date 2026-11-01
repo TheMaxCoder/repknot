@@ -54,3 +54,7 @@ Progress: [x] implement and test; [x] address further alignment feedback; [x] le
 
 ### Handoff
 Obtain owner feedback and arrange manual checks of scaled/narrow layout, missing data, long stale guidance, scrolling and both independent actions; the current-size screenshot alone does not verify interaction. Review: no known requirement guesses or plan deviations. Unrelated untracked `work/` remains untouched.
+
+## Progress header follow-up
+- Owner requested removal of the on-screen Back button from Progress. The Android system back handler in `MainActivity` still returns to Workout; Body and exercise detail keep their existing Back buttons.
+- `scripts/check --offline` passed after the change. Phone installation and system-back interaction verification remain pending: the phone currently has an in-progress workout, so do not interrupt it or risk its unsaved input. Next: install once the workout is safely finished or the owner chooses, then check Progress → system Back returns to Workout.
