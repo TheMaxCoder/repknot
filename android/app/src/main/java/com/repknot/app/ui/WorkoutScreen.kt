@@ -11,6 +11,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -24,12 +25,16 @@ import com.repknot.domain.LoadUnit
 import com.repknot.domain.Prefill
 
 @Composable
-fun WorkoutScreen(vm: WorkoutViewModel, footer: @Composable () -> Unit) {
+fun WorkoutScreen(vm: WorkoutViewModel, openSettings: () -> Unit) {
     val state by vm.state.collectAsState()
     val error by vm.error.collectAsState()
     Scaffold { padding ->
         Column(Modifier.fillMaxSize().padding(padding).imePadding().verticalScroll(rememberScrollState()).padding(24.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                Text(stringResource(R.string.app_name), color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.titleSmall)
+                TextButton(onClick = openSettings) { Text(stringResource(R.string.settings)) }
+            }
             error?.let { Text(stringResource(it), color = MaterialTheme.colorScheme.error) }
             when (val current = state) {
                 WorkoutUiState.Loading -> CircularProgressIndicator()
@@ -49,7 +54,6 @@ fun WorkoutScreen(vm: WorkoutViewModel, footer: @Composable () -> Unit) {
                 is WorkoutUiState.Session -> SessionScreen(current, vm)
                 is WorkoutUiState.Preview -> Text(current.workout.name)  // interim; task 015 builds the preview
             }
-            footer()
         }
     }
 }

@@ -1,8 +1,8 @@
 # 015 — Screens: settings page, workout preview, discard
 
-Status: ready
+Status: in progress
 Updated: 2026-11-01
-Starting commit: (worker: record `git rev-parse --short HEAD` when you start)
+Starting commit: 3a54670
 Parent: [014](014-settings-preview-local-mode.md) (logic done by the lead) · Delegated: yes
 
 ## Outcome and acceptance
@@ -55,13 +55,16 @@ Out of scope (do not modify): `WorkoutViewModel.kt`, `AppSettings.kt`,
    become unused.
 
 ## Plan / progress
-1. [ ] Navigation + settings screen (items 1–2).
+1. [x] Navigation + settings screen (items 1–2).
 2. [ ] Today → preview, preview screen (3–4).
 3. [ ] Discard + finished-status copy (5); cleanup (6).
 4. [ ] `scripts/check --offline`; commit(s) with task 015 in the subject.
 
+## Decisions and discoveries
+- Settings retains the existing cloud divider and uses the same Scaffold/inset and scroll padding as workouts.
+
 ## Verification
-(worker: exact commands and results)
+- `scripts/check --offline` — passed after step 1 (debug build, lint, unit tests).
 
 ## Handoff
-(worker: what was done, anything unresolved or questioned)
+Step 1 verified; next implement Today and preview. Device smoke test belongs to the lead.
