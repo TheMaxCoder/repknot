@@ -32,16 +32,15 @@ The phone app previews and starts today's PPL workout, logs and edits sets with 
 values from the full imported history ([ADR 003](decisions/003-single-canonical-project.md)),
 and keeps workouts local until upload is enabled in Settings.
 
-Milestone [019 — Progress and regression](tasks/019-progress-milestone.md): engine, workout
-card targets and ▲/=/▼, Progress screen with exercise history, and the light-day flag are
-done (tasks 020–022). Remaining: step 5, the body card (needs check-ins on the phone).
+Milestone [019 — Progress and regression](tasks/019-progress-milestone.md) is done: workout
+card targets and ▲/=/▼, Progress screen (statuses, broad dips, exercise history), body card
+(waist goal, trends, cut check, check-in entry), light-day flag (tasks 020–023).
 
 ## Next priorities
 
 1. Real logging on the phone from 2026-11-02 (upload off until the owner enables it in
    Settings); fix what hurts in the gym.
-2. Progress/regression views on the full history (imported 2026-11-01, [task 018](tasks/018-real-history-import.md)).
-3. ChatGPT integration, check-ins UI, web companion per the PRD.
+2. ChatGPT integration, web companion per the PRD; progress follow-ups in task 019.
 
 ## Environment and handoff limitations
 

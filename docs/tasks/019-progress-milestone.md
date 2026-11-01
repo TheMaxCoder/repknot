@@ -1,6 +1,6 @@
 # 019 — Progress and regression (milestone)
 
-Status: in progress
+Status: done
 Updated: 2026-11-01
 Starting commit: dbd6b62
 Lead task; steps are delegated as separate task files.
@@ -34,7 +34,7 @@ checked the screens on the phone against the real history.
    `light` column, push/save keep it when omitted; pgTAP 007). Phone side 1a7b656: Room v5
    with an explicit migration (MigrationTest), sync payload, "Light day" switch. The installed
    app upgraded v4→v5 on the owner's phone without data loss or crash (2026-11-01).
-5. [ ] Body card: check-ins to the phone (sync + entry form), waist now / cm to goal /
+5. [x] Body card: check-ins to the phone (sync + entry form), waist now / cm to goal /
    14-day rate and projected date, weight via 14-day medians (≥3 check-ins per window);
    prompt to review the cut when weight loss > ~1 %/week *and* broad strength declines.
 
@@ -62,5 +62,8 @@ checked the screens on the phone against the real history.
   (pushing an imported incomplete set without `raw` would fail `session_sets_complete`).
 
 ## Handoff
-Steps 1–4 done and device-checked (2026-11-01). Next: step 5 (body card), which first needs
-check-ins on the phone (sync + entry form) — write its task file.
+Done 2026-11-01. Steps 1–5 shipped and device-checked on the real history (tasks 020–023;
+check-in data layer a632ef7, light day 742ed5c/1a7b656). Follow-ups, not blocking:
+- Watch whether "best" (+1 on reps+RIR) is too generous once phone logging accumulates.
+- Weekly hard sets per muscle (needs muscle tags) and e1RM as a kg-only secondary number.
+- Guard `raw`/`source_ref` before any past-session editing on the phone.

@@ -12,13 +12,15 @@ import kotlin.math.abs
 private val bodyDateFormat = DateTimeFormatter.ofPattern("MMM d", Locale.ENGLISH)
 private fun date(value: LocalDate) = value.format(bodyDateFormat)
 private fun number(value: Double) = String.format(Locale.ENGLISH, "%.1f", value).removeSuffix(".0")
+/** Measurements keep the precision they were taken with (waist to 0.25 cm): up to 2 decimals. */
+private fun measure(value: Double) = String.format(Locale.ENGLISH, "%.2f", value).trimEnd('0').removeSuffix(".")
 private fun signed(value: Double) = (if (value < 0) "−" else if (value > 0) "+" else "") + number(abs(value))
 
 fun waistLine(s: BodySummary): String {
     val waist = s.waist ?: return "No waist measurement yet"
-    val remaining = s.toGoalCm ?: return "Waist ${number(waist.latest)} cm"
-    return "Waist ${number(waist.latest)} cm · " + if (remaining <= 0) "goal reached (${number(s.goalCm)} cm)"
-        else "${number(remaining)} cm to go"
+    val remaining = s.toGoalCm ?: return "Waist ${measure(waist.latest)} cm"
+    return "Waist ${measure(waist.latest)} cm · " + if (remaining <= 0) "goal reached (${measure(s.goalCm)} cm)"
+        else "${measure(remaining)} cm to go"
 }
 fun rateLine(s: BodySummary): String {
     val waist = s.waist ?: return ""
@@ -27,7 +29,7 @@ fun rateLine(s: BodySummary): String {
 }
 fun weightLine(s: BodySummary): String {
     val weight = s.weight ?: return ""
-    return "Weight ${number(weight.latest)} kg" + (weight.perWeek?.let { rate ->
+    return "Weight ${measure(weight.latest)} kg" + (weight.perWeek?.let { rate ->
         " · ${signed(rate)} kg/week" + (s.weightPctPerWeek?.let { " (${signed(it)} %/week)" } ?: "")
     } ?: "")
 }
@@ -44,6 +46,9 @@ fun verdictLine(s: BodySummary, declines: Int, recentDip: Boolean): String = whe
     BodyVerdict.NOT_ENOUGH_DATA -> ""
 }
 fun checkInLine(row: CheckInRow): String = listOfNotNull(
-    date(LocalDate.parse(row.checkedOn)), row.weightKg?.let { "${number(it)} kg" },
-    row.waistCm?.let { "${number(it)} cm" }, if (row.pending) "not uploaded" else null,
+    date(LocalDate.parse(row.checkedOn)), row.weightKg?.let { "${measure(it)} kg" },
+    row.waistCm?.let { "waist ${measure(it)} cm".takeIf { row.weightKg == null } ?: "${measure(it)} cm" },
+    row.chestCm?.let { "chest ${measure(it)}" }, row.armsCm?.let { "arms ${measure(it)}" },
+    row.armsFlexedCm?.let { "arms flexed ${measure(it)}" }, row.legsCm?.let { "legs ${measure(it)}" },
+    if (row.pending) "not uploaded" else null,
 ).joinToString(" · ")

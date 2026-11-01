@@ -44,7 +44,9 @@ class BodyTextTest {
     @Test fun rowsAndParsing() {
         val row = CheckInRow("id", "2026-10-31", 74.6, 91.5, pending = true)
         assertEquals("Oct 31 · 74.6 kg · 91.5 cm · not uploaded", checkInLine(row))
-        assertEquals("Oct 31 · 91.5 cm", checkInLine(row.copy(weightKg = null, pending = false)))
+        assertEquals("Oct 31 · waist 91.5 cm", checkInLine(row.copy(weightKg = null, pending = false)))
+        assertEquals("Oct 25 · 74.5 kg · 91.75 cm", checkInLine(row.copy(checkedOn = "2026-10-25", weightKg = 74.5, waistCm = 91.75, pending = false)))
+        assertEquals("Sep 30 · chest 104 · arms 36.5", checkInLine(row.copy(checkedOn = "2026-09-30", weightKg = null, waistCm = null, chestCm = 104.0, armsCm = 36.5, pending = false)))
         assertEquals("Oct 31 · 74.6 kg", checkInLine(row.copy(waistCm = null, pending = false)))
         val parsed = parseCheckIn("2026-10-31", "74,6", "", " hi ")!!
         assertEquals(74.6, parsed.weightKg!!, 0.0)

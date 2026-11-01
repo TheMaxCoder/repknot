@@ -35,6 +35,12 @@ and the signed-in user's session; RLS restricts every table to its owner. Schema
   the phone and refreshed before sessions. Upload is a device setting (Settings → Upload
   workouts), off by default: refresh still downloads, finished sessions stay local
   until it is enabled.
+- Check-ins: the phone caches the server's check-ins (replaced on refresh) and keeps
+  phone-added ones `pending`; with upload on they are upserted by their phone id, then
+  marked uploaded. Add-only on the phone. Sessions carry a `light` flag excluded from
+  progress statuses.
+- Progress (domain `Progress.kt`, `Body.kt`) is computed on the phone from the local cache,
+  so it works offline and includes unuploaded workouts; see task 019 for the rules.
 - Persist edits and pending sync together, retain stable IDs, and handle retries without duplicates.
 - Upload acknowledgements must not discard newer local edits, and no writer (Android,
   web, ChatGPT, CLI) may silently overwrite another's change. Revision rules are in
@@ -62,9 +68,8 @@ actual temporary policy relaxation here when introduced.
 - Supabase CLI is logged in (`supabase login`) with an account-wide token while dev is the
   only project. Before creating a prod project: log out and use `--db-url`, or keep prod in
   a separate account.
-- Building phase: Room schema changes ship without migrations. The v4 database
-  destructively resets synthetic v1–v3 databases (approved 2026-11-01 with the training
-  model; earlier v3 reset also approved). Future schema changes must not silently discard local data;
-  add real migrations once Android starts logging real workouts.
+- Room migrations: from v4 the phone holds real workouts. v4→v5 (session `light`) and
+  v5→v6 (check-ins) are explicit migrations tested by `MigrationTest`; every later schema
+  change needs one. Only the synthetic v1–v3 databases may still be reset.
 - Server: the project holds real training history ([ADR 003](decisions/003-single-canonical-project.md)).
   Migrations must preserve data; the 2026-11-01 drop-and-recreate was the last destructive one.

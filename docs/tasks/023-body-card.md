@@ -137,3 +137,14 @@ validity; on true it launches the write in `viewModelScope` (`checkIns.add(...)`
 ## Handoff
 
 Next: lead review and device smoke test of goal setting, navigation, entry, trends and upload-off/pending behavior. The clarified background write can fail after the dialog closes and needs careful review. No unfinished implementation changes. Untracked `work/` pre-existed and is untouched.
+
+## Lead review (2026-11-01)
+Accepted after one clarification (sync Boolean vs suspending write — spec gap). `Body.kt`
+read against the rules; ViewModel and screens read. Test phone, real data (imported check-ins
+downloaded after the v5→v6 upgrade): waist, rate, goal estimate and weight lines
+rendered from the real values, verdict "On track — waist down; keep an eye on the exercises below." (2
+recent declines); body screen lists every check-in; the Add check-in dialog opens with
+today's date (cancelled, nothing saved). Settings goal field not opened on device.
+Lead fix after the device check: check-in values keep their 0.25 cm precision (`91.75`, was
+rounded to `91.8`), and check-ins with only chest/arms/legs show those values (Sep 30 was
+blank). Covered by `BodyTextTest`; not re-seen on the phone (it locked).
