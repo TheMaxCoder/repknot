@@ -137,7 +137,7 @@ fun pastSessions(rows: List<SessionRow>, exercises: List<SessionExerciseRow>, se
             exercisesBySession[row.id].orEmpty().map { e ->
                 PastExercise(e.position, e.exerciseId, setsByExercise[e.id].orEmpty().mapNotNull { s ->
                     s.unit?.let { PastSet(s.position, s.load, parseUnit(it), s.reps, s.durationS, s.rir) }
-                })
+                }, exerciseName = e.exerciseName, plannedSets = e.plannedSets)
             })
     }
 }

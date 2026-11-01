@@ -1,6 +1,6 @@
 # 020 — Progress engine (domain)
 
-Status: blocked
+Status: in progress
 Updated: 2026-11-01
 Starting commit: 7aa6770
 Parent: [019](019-progress-milestone.md) step 1 · Delegated: yes (see
@@ -171,7 +171,7 @@ and without a known next load, Repeat, bodyweight, null cases; setDelta all bran
 sessionDips emit and not-emit (2 of 3 below; 3 of 7 below).
 
 ## Plan / progress
-1. [ ] Model fields + mapping + mapping test.
+1. [x] Model fields + mapping + mapping test.
 2. [ ] `Progress.kt` + `ProgressTest.kt`.
 3. [ ] `scripts/check --offline`; commit(s) with task 020 in the subject.
 
@@ -181,18 +181,13 @@ sessionDips emit and not-emit (2 of 3 below; 3 of 7 below).
   consequently a finished session can contain an exercise with no sets. The lineage
   definition does not specify a unit when the most recent session containing that
   exercise has no sets.
-- Pre-existing untracked `work/` was left untouched.
+- Clarification in `749be69`: skip sessions with no sets when selecting lineage unit.
+- Pre-existing untracked `work/` and `docs/tasks/021-workout-card-targets.md` left untouched.
 
 ## Verification
 
-- `git status --short && git log -1 --oneline`: starting commit `7aa6770`, with
-  pre-existing untracked `work/`. No implementation or build checks run.
+- `cd android && ./gradlew --offline :domain:test :data:testDebugUnitTest`: passed after model and mapping changes.
 
 ## Handoff
 
-Blocked pending clarification: if the most recent finished session containing an
-exercise has no sets for that exercise, should lineage selection skip that session
-and use the most recent session with at least one set, or should it do something else?
-This affects progress, target, and dip results. After clarification, implement plan
-step 1, verify and commit it, then implement and verify step 2. No implementation
-changes are unfinished.
+Next: implement and test the progress engine (step 2), then run the full offline check.

@@ -13,9 +13,10 @@ data class Program(val id: String, val workouts: List<ProgramWorkout>)
 
 data class PastSet(val position: Int, val load: Double?, val unit: LoadUnit,
     val reps: Double?, val durationS: Int?, val rir: Int?)
-data class PastExercise(val position: Int, val exerciseId: String, val sets: List<PastSet>)
+data class PastExercise(val position: Int, val exerciseId: String, val sets: List<PastSet>,
+    val exerciseName: String = "", val plannedSets: Int? = null)
 data class PastSession(val id: String, val programId: String?, val programWorkoutKey: String?,
-    val finishedAtMillis: Long?, val exercises: List<PastExercise>)
+    val finishedAtMillis: Long?, val exercises: List<PastExercise>, val light: Boolean = false)
 
 sealed interface Prefill {
     data class Previous(val sessionId: String, val sets: List<PastSet>) : Prefill

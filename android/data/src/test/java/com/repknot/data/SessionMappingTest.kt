@@ -101,13 +101,16 @@ class SessionMappingTest {
 
     @Test fun historySkipsUnitlessSetsAndPrefillsFromSameUnit() {
         val rows = listOf(session("s1", "2026-11-02", 7, "push-1"))
-        val exercises = listOf(SessionExerciseRow("x1", "s1", 0, "press-id", "DB press"))
+        val exercises = listOf(SessionExerciseRow("x1", "s1", 0, "press-id", "DB press", plannedSets = 3))
         val sets = listOf(
             SetRow("a1", "s1", "x1", 0, 25.0, "kg", 10.0),
             SetRow("raw", "s1", "x1", 1, null, null, null),
         )
         val history = pastSessions(rows, exercises, sets)
-        val kept = history.single().exercises.single().sets.single()
+        val exercise = history.single().exercises.single()
+        assertEquals("DB press", exercise.exerciseName)
+        assertEquals(3, exercise.plannedSets)
+        val kept = exercise.sets.single()
         assertEquals(25.0, kept.load!!, 0.0); assertEquals(LoadUnit.KG, kept.unit)
         val result = prefill(press, history) as Prefill.Previous
         assertEquals("s1", result.sessionId)
