@@ -50,7 +50,7 @@ Progress: [x] implement and test; [x] address further alignment feedback; [ ] le
 ### Verification
 - `scripts/check --offline` passed (debug build, lint, unit tests; Gradle deprecation warning). Focused tests cover signed and missing rates, zero, estimate precision/absence, and unchanged percentage in Body details.
 - After the further alignment feedback, `scripts/check --offline` passed again (debug build, lint, unit tests; Gradle deprecation warning).
-- No device installation, visual inspection, accessibility or interaction checks performed for the latest alignment follow-up.
+- No device installation, visual inspection, accessibility or interaction checks performed for the latest alignment follow-up. Commit `c66231e` omitted its intended `Not verified:` trailer because the commit command split incorrectly; the missing limitation is recorded here and in the subsequent handoff commit.
 
 ### Handoff
 Lead: review the latest alignment diff and rerun `scripts/check --offline`, install on the connected phone if available, and inspect a screenshot without interacting with personal data. Then arrange manual checks of scaled/narrow layout, missing data, long stale guidance, scrolling and both independent actions; a screenshot alone does not verify interaction. Review: no known requirement guesses or plan deviations. Unrelated untracked `work/` remains untouched.
