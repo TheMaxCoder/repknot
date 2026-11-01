@@ -16,14 +16,15 @@ Implement in `android/app/src/main/java/com/repknot/app/ui/ProgressScreen.kt` an
 ## Plan / progress
 - [x] Build the body summary and grouped training cards, preserving functionality.
 - [x] Run `scripts/check --offline`; record results and commit verified changes under AGENTS.md.
-- [ ] Lead reviews diff, repeats checks, and assesses device verification.
+- [x] Address review feedback: responsive side-by-side body metrics, preserving existing body detail and actions.
+- [ ] Lead reviews follow-up diff, repeats checks, and assesses device verification.
 
 ## Decisions / discoveries
 - The user selected the body card from the first concept and grouped training history from the second, then removed all introductory copy.
-- Kept existing formatted body lines and stacked prominent measurements to accommodate narrow screens and larger text. The body-history tap region and check-in button are separate siblings. Group counts follow contiguous attention-ordered groups.
+- Body metrics use two columns when both measurements exist and available width divided by font scale is at least 250 dp; otherwise they stack. Goal caption and weight trend remain separate from the prominent measurements. BodyScreen retains its original presentation. The body-history tap region and check-in button are separate siblings. Group counts follow contiguous attention-ordered groups.
 
 ## Verification
-`scripts/check --offline` passed (debug build, lint, and unit tests); Gradle reported deprecated features. No device or visual verification was run.
+`scripts/check --offline` passed for the original implementation and again for the follow-up (debug build, lint, and unit tests); Gradle reported deprecated features. The first follow-up run failed on a Kotlin cross-module smart cast; corrected before the passing run. Added formatting tests for metric precision, configured goal and weight trend. No device or visual verification was run.
 
 ## Handoff
-Implementation and offline checks complete; lead should review the diff, repeat checks, and assess device verification, including narrow screens, scaled text, and independent body-history/check-in actions. No known blockers. Unrelated untracked `work/` was left untouched.
+Review feedback implemented and offline checks complete. Lead should review the follow-up diff, repeat checks, and assess device verification, including narrow screens, scaled text, missing metrics, and independent body-history/check-in actions. No known blockers or unfinished implementation changes. Unrelated untracked `work/` was left untouched.

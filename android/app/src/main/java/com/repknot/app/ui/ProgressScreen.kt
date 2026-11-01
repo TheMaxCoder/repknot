@@ -16,6 +16,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.unit.dp
@@ -51,7 +52,7 @@ fun ProgressScreen(state: ProgressUiState, back: () -> Unit, openBody: () -> Uni
                                     style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
                                 Text("›", Modifier.clearAndSetSemantics {}, style = MaterialTheme.typography.titleLarge)
                             }
-                            BodyLines(state, prominentWeight = true)
+                            BodySummaryCardLines(state)
                         }
                         TextButton(onClick = { showDialog = true }, modifier = Modifier.padding(start = 8.dp, bottom = 8.dp)) {
                             Text(stringResource(R.string.add_check_in))
@@ -122,18 +123,61 @@ fun BodyScreen(state: ProgressUiState, back: () -> Unit, addCheckIn: (String, St
 }
 
 @Composable
-private fun BodyLines(state: ProgressUiState, prominentWeight: Boolean = false) {
+private fun BodyLines(state: ProgressUiState) {
     val body = state.body
     if (body == null) {
         Text(stringResource(R.string.no_check_ins), style = MaterialTheme.typography.titleLarge)
         return
     }
     Text(waistLine(body), style = MaterialTheme.typography.titleLarge)
-    if (prominentWeight) {
-        weightLine(body).takeIf { it.isNotEmpty() }?.let { Text(it, style = MaterialTheme.typography.titleMedium) }
+    rateLine(body).takeIf { it.isNotEmpty() }?.let { Text(it) }
+    weightLine(body).takeIf { it.isNotEmpty() }?.let { Text(it) }
+    BodyDetails(state)
+}
+
+@Composable
+private fun BodySummaryCardLines(state: ProgressUiState) {
+    val body = state.body
+    if (body == null) {
+        Text(stringResource(R.string.no_check_ins), style = MaterialTheme.typography.titleLarge)
+        return
+    }
+    val waist: @Composable () -> Unit = {
+        val measurement = body.waist
+        if (measurement == null) Text(waistLine(body)) else Column {
+            Text(bodyMeasurement(measurement.latest, "cm"), style = MaterialTheme.typography.headlineSmall)
+            Text(waistCaption(body), style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
+    val weight: @Composable () -> Unit = {
+        body.weight?.let {
+            Column {
+                Text(bodyMeasurement(it.latest, "kg"), style = MaterialTheme.typography.headlineSmall)
+                Text("Weight", style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
+    }
+    BoxWithConstraints(Modifier.fillMaxWidth()) {
+        val fontScale = LocalDensity.current.fontScale
+        if (body.waist != null && body.weight != null && maxWidth.value / fontScale >= 250f) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Box(Modifier.weight(1f)) { waist() }
+                Box(Modifier.weight(1f)) { weight() }
+            }
+        } else {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) { waist(); weight() }
+        }
     }
     rateLine(body).takeIf { it.isNotEmpty() }?.let { Text(it) }
-    if (!prominentWeight) weightLine(body).takeIf { it.isNotEmpty() }?.let { Text(it) }
+    weightTrendLine(body).takeIf { it.isNotEmpty() }?.let { Text(it) }
+    BodyDetails(state)
+}
+
+@Composable
+private fun BodyDetails(state: ProgressUiState) {
+    val body = state.body ?: return
     state.checkIns.firstOrNull()?.let {
         Text(lastCheckInLine(java.time.LocalDate.parse(it.checkedOn), state.today),
             style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)

@@ -24,6 +24,15 @@ class BodyTextTest {
         assertEquals("Not enough check-ins for a trend (needs 4 over 2+ weeks)", rateLine(s.copy(waist = waist.copy(perWeek = null))))
         assertEquals("", rateLine(s.copy(waist = null)))
     }
+    @Test fun summaryMetrics() {
+        assertEquals("91.75 cm", bodyMeasurement(91.75, "cm"))
+        assertEquals("74.6 kg", bodyMeasurement(74.6, "kg"))
+        assertEquals("Waist · 11.5 cm to go", waistCaption(s))
+        assertEquals("Waist · goal reached (79.75 cm)", waistCaption(s.copy(goalCm = 79.75, toGoalCm = 0.0)))
+        assertEquals("Waist", waistCaption(s.copy(toGoalCm = null)))
+        assertEquals("−0.1 kg/week (−0.2 %/week)", weightTrendLine(s))
+        assertEquals("", weightTrendLine(s.copy(weight = null)))
+    }
     @Test fun weightAndDates() {
         assertEquals("Weight 74.6 kg · −0.1 kg/week (−0.2 %/week)", weightLine(s))
         assertEquals("Weight 74.6 kg · −0.1 kg/week", weightLine(s.copy(weightPctPerWeek = null)))

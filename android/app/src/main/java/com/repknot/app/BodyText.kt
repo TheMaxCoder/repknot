@@ -16,6 +16,14 @@ private fun number(value: Double) = String.format(Locale.ENGLISH, "%.1f", value)
 private fun measure(value: Double) = String.format(Locale.ENGLISH, "%.2f", value).trimEnd('0').removeSuffix(".")
 private fun signed(value: Double) = (if (value < 0) "−" else if (value > 0) "+" else "") + number(abs(value))
 
+fun bodyMeasurement(value: Double, unit: String): String = "${measure(value)} $unit"
+
+fun waistCaption(s: BodySummary): String {
+    val remaining = s.toGoalCm ?: return "Waist"
+    return "Waist · " + if (remaining <= 0) "goal reached (${measure(s.goalCm)} cm)"
+        else "${measure(remaining)} cm to go"
+}
+
 fun waistLine(s: BodySummary): String {
     val waist = s.waist ?: return "No waist measurement yet"
     val remaining = s.toGoalCm ?: return "Waist ${measure(waist.latest)} cm"
@@ -27,11 +35,13 @@ fun rateLine(s: BodySummary): String {
     val rate = waist.perWeek ?: return "Not enough check-ins for a trend (needs 4 over 2+ weeks)"
     return "${signed(rate)} cm/week over 4 weeks" + (s.goalDate?.let { " · ${number(s.goalCm)} cm around ${date(it)}" } ?: "")
 }
+fun weightTrendLine(s: BodySummary): String = s.weight?.perWeek?.let { rate ->
+    "${signed(rate)} kg/week" + (s.weightPctPerWeek?.let { " (${signed(it)} %/week)" } ?: "")
+} ?: ""
+
 fun weightLine(s: BodySummary): String {
     val weight = s.weight ?: return ""
-    return "Weight ${measure(weight.latest)} kg" + (weight.perWeek?.let { rate ->
-        " · ${signed(rate)} kg/week" + (s.weightPctPerWeek?.let { " (${signed(it)} %/week)" } ?: "")
-    } ?: "")
+    return "Weight ${measure(weight.latest)} kg" + weightTrendLine(s).let { if (it.isEmpty()) "" else " · $it" }
 }
 fun lastCheckInLine(latest: LocalDate, today: LocalDate): String {
     val days = ChronoUnit.DAYS.between(latest, today)
