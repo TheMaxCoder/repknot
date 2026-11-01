@@ -1,6 +1,6 @@
 # 023 — Body card: waist goal, trends, cut check, check-in entry
 
-Status: in progress
+Status: done
 Updated: 2026-11-01
 Starting commit: 4bc409f
 Parent: [019](019-progress-milestone.md) step 5 · Delegated: yes (see
@@ -118,8 +118,8 @@ validity; on true it launches the write in `viewModelScope` (`checkIns.add(...)`
 ## Plan / progress
 1. [x] `Body.kt` + `BodyTest`.
 2. [x] Settings goal, ViewModel, `BodyText` + tests.
-3. [ ] Card, dialog, body screen.
-4. [ ] `scripts/check --offline`; commit(s) with task 023 in the subject.
+3. [x] Card, dialog, body screen.
+4. [x] `scripts/check --offline`; commit(s) with task 023 in the subject.
 
 ## Decisions and discoveries
 
@@ -132,7 +132,8 @@ validity; on true it launches the write in `viewModelScope` (`checkIns.add(...)`
 - `cd android && ./gradlew :domain:test --offline` passed (21 tests). An initial test used a non-exact floating-point rate and expected 30 rather than the specified `ceil` result; changed its fixture to an exactly representable slope.
 - `scripts/check --offline` passed for the domain-only checkpoint; this is not verification of the unfinished app integration. Device verification remains with the lead.
 - `cd android && ./gradlew :app:testDebugUnitTest :app:assembleDebug --offline` passed for step 2.
+- `scripts/check --offline` passed after UI integration (debug build, lint, available unit tests). Device smoke test not run; lead owns it.
 
 ## Handoff
 
-Next: implement card, dialog and body screen (step 3), then rerun the full offline check. Device check belongs to lead. Untracked `work/` pre-existed and is untouched.
+Next: lead review and device smoke test of goal setting, navigation, entry, trends and upload-off/pending behavior. The clarified background write can fail after the dialog closes and needs careful review. No unfinished implementation changes. Untracked `work/` pre-existed and is untouched.

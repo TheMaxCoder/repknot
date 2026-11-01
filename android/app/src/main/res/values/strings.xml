@@ -7,6 +7,14 @@
     <string name="workouts">Workouts</string>
     <string name="waist_goal">Waist goal (cm)</string>
     <string name="waist_goal_range">40–200 cm</string>
+    <string name="body">Body</string>
+    <string name="no_check_ins">No check-ins yet</string>
+    <string name="add_check_in">Add check-in</string>
+    <string name="check_in_date">Date</string>
+    <string name="check_in_weight">Weight (kg)</string>
+    <string name="check_in_waist">Waist (cm)</string>
+    <string name="check_in_error">Enter a date and a weight or waist</string>
+    <string name="save">Save</string>
     <string name="upload_workouts">Upload workouts</string>
     <string name="upload_off_description">Workouts stay on this phone. Programs still download when signed in.</string>
     <string name="upload_on_description">Finished workouts upload to the cloud.</string>

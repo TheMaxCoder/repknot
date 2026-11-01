@@ -34,6 +34,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.repknot.app.ui.BodyScreen
 import com.repknot.app.ui.ExerciseProgressScreen
 import com.repknot.app.ui.ProgressScreen
 import com.repknot.app.ui.theme.RepknotTheme
@@ -67,7 +68,7 @@ class MainActivity : ComponentActivity() {
                     SettingsScreen(uploadEnabled, app::setUploadEnabled, waistGoal, app.settings::setWaistGoalCm, { screen = "workout" }) {
                         CloudSection(cloudState, cloud::signIn, cloud::signOut)
                     }
-                } else if (screen == "progress" || screen.startsWith("exercise:")) {
+                } else if (screen == "progress" || screen == "body" || screen.startsWith("exercise:")) {
                     val progress: ProgressViewModel = viewModel(factory = ProgressViewModel.Factory(
                         app.database.sessions(), app.database.reference(), app.database.checkIns(),
                         app.settings.waistGoalCm, app::requestRefresh,
@@ -75,7 +76,10 @@ class MainActivity : ComponentActivity() {
                     val progressState by progress.state.collectAsState()
                     if (screen == "progress") {
                         BackHandler { screen = "workout" }
-                        ProgressScreen(progressState, { screen = "workout" }) { screen = "exercise:$it" }
+                        ProgressScreen(progressState, { screen = "workout" }, { screen = "body" }, progress::addCheckIn) { screen = "exercise:$it" }
+                    } else if (screen == "body") {
+                        BackHandler { screen = "progress" }
+                        BodyScreen(progressState, { screen = "progress" }, progress::addCheckIn)
                     } else {
                         BackHandler { screen = "progress" }
                         ExerciseProgressScreen(progressState, screen.removePrefix("exercise:")) { screen = "progress" }
