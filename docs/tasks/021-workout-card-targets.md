@@ -1,6 +1,6 @@
 # 021 — Workout card: today's target, per-set ▲/=/▼, planned vs done
 
-Status: in progress
+Status: done
 Updated: 2026-11-01
 Starting commit: 499d8c6
 Parent: [019](019-progress-milestone.md) step 2 · Delegated: yes (see
@@ -67,8 +67,8 @@ logged set; preview target present. `ExerciseSelectionTest` compiles after the r
 
 ## Plan / progress
 1. [x] Rename (0), state (1), `TargetText.kt` (2) + tests.
-2. [ ] UI items 3–5.
-3. [ ] `scripts/check --offline`; commit(s) with task 021 in the subject.
+2. [x] UI items 3–5.
+3. [x] `scripts/check --offline`; commit(s) with task 021 in the subject.
 
 ## Decisions and discoveries
 
@@ -85,8 +85,9 @@ logged set; preview target present. `ExerciseSelectionTest` compiles after the r
 ## Verification
 
 - Inspected task, state mapping, UI, domain target engine and data models.
-- `scripts/check --offline`: first run failed on cross-module Kotlin smart casts; corrected. Second run passed (build, lint, unit tests).
+- `scripts/check --offline`: first run failed on cross-module Kotlin smart casts; corrected. Subsequent runs passed (build, lint, unit tests), including after UI changes.
+- Device and accessibility rendering not checked; lead runs the device check.
 
 ## Handoff
 
-Clarifications are in item 2. Next: implement UI plan step 2 and rerun checks; lead device check remains pending.
+Implementation complete. Next: lead review and device check of target placement, set indicators and accessibility, and planned/done header. Review the documented catch-all for unexpected numeric bodyweight loads. No unfinished tracked changes; pre-existing untracked `work/` remains untouched.

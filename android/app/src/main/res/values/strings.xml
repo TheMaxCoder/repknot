@@ -25,6 +25,9 @@
     <string name="previous_sets">Previous: %1$s</string>
     <string name="start_load">Start load: %1$s</string>
     <string name="suggested_previous">Suggested from previous</string>
+    <string name="delta_better">better than last time</string>
+    <string name="delta_same">same as last time</string>
+    <string name="delta_below">below last time</string>
     <string name="edit">Edit</string>
     <string name="delete">Delete</string>
     <string name="log_set">Log set</string>

@@ -29,6 +29,8 @@ import com.repknot.data.SessionExerciseRow
 import com.repknot.data.SetRow
 import com.repknot.domain.LoadUnit
 import com.repknot.domain.Prefill
+import com.repknot.domain.SetDelta
+import com.repknot.domain.TodayTarget
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
@@ -83,6 +85,7 @@ private fun PreviewScreen(preview: WorkoutUiState.Preview, vm: WorkoutViewModel)
                 PrescriptionLine(prescription.sets, prescription.repMin, prescription.repMax,
                     prescription.rirMin, prescription.rirMax, prescription.load, prescription.unit.name.lowercase())
                 PreviousHint(exercise.previous, exercise.previousOn)
+                TargetHint(exercise.target)
             }
         }
     }
@@ -127,6 +130,7 @@ private fun SessionScreen(session: WorkoutUiState.Session, vm: WorkoutViewModel)
                 Text(next.row.exerciseName, style = MaterialTheme.typography.titleMedium)
                 Prescription(next.row)
                 PreviousHint(next.previous, next.previousOn)
+                TargetHint(next.target)
             }
         }
     }
@@ -179,6 +183,10 @@ private fun ExerciseCard(exercise: ExerciseUi, choices: List<ExerciseRow>, index
             var menuExpanded by remember { mutableStateOf(false) }
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Text(row.exerciseName, modifier = Modifier.weight(1f), style = MaterialTheme.typography.titleLarge)
+                row.plannedSets?.takeIf { it > 0 }?.let { planned ->
+                    Text("${exercise.sets.size}/$planned", style = MaterialTheme.typography.labelLarge,
+                        color = if (exercise.sets.size >= planned) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
+                }
                 Box {
                     TextButton(onClick = { menuExpanded = true }) { Text("⋯") }
                     DropdownMenu(expanded = menuExpanded, onDismissRequest = { menuExpanded = false }) {
@@ -195,6 +203,7 @@ private fun ExerciseCard(exercise: ExerciseUi, choices: List<ExerciseRow>, index
             }
             Prescription(row)
             PreviousHint(exercise.previous, exercise.previousOn)
+            TargetHint(exercise.target)
             exercise.sets.forEachIndexed { setIndex, set ->
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     val description = buildString {
@@ -203,6 +212,7 @@ private fun ExerciseCard(exercise: ExerciseUi, choices: List<ExerciseRow>, index
                         set.notes?.let { append(" — $it") }
                     }
                     Text(description, modifier = Modifier.weight(1f))
+                    DeltaHint(exercise.deltas[setIndex])
                     TextButton(onClick = { editing = set.id }) { Text(stringResource(R.string.edit)) }
                     TextButton(onClick = { vm.deleteSet(set.id); if (editing == set.id) editing = null }) { Text(stringResource(R.string.delete)) }
                 }
@@ -262,6 +272,23 @@ private fun PreviousHint(previous: Prefill, previousOn: LocalDate?) {
         Text(lastLabel(previousOn, LocalDate.now()), color = MaterialTheme.colorScheme.onSurfaceVariant)
         Text(previousSummary(previous.sets), color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
+}
+
+@Composable
+private fun TargetHint(target: TodayTarget?) {
+    if (target != null) Text(targetText(target), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary)
+}
+
+@Composable
+private fun DeltaHint(delta: SetDelta) {
+    val (symbol, label, color) = when (delta) {
+        SetDelta.UP -> Triple("▲", R.string.delta_better, MaterialTheme.colorScheme.primary)
+        SetDelta.SAME -> Triple("=", R.string.delta_same, MaterialTheme.colorScheme.onSurfaceVariant)
+        SetDelta.DOWN -> Triple("▼", R.string.delta_below, MaterialTheme.colorScheme.error)
+        SetDelta.NONE -> return
+    }
+    val description = stringResource(label)
+    Text(symbol, color = color, modifier = Modifier.semantics { contentDescription = description })
 }
 
 @Composable
