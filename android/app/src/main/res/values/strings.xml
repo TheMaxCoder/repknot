@@ -52,6 +52,11 @@
     <string name="delta_below">below last time</string>
     <string name="edit">Edit</string>
     <string name="delete">Delete</string>
+    <string name="logged_sets">Logged sets · %1$s</string>
+    <string name="next_set">Next set</string>
+    <string name="edit_set">Edit set</string>
+    <string name="workout_menu">Workout menu</string>
+    <string name="set_menu">Set %1$d actions</string>
     <string name="log_set">Log set</string>
     <string name="update_set">Update set</string>
     <string name="cancel">Cancel</string>

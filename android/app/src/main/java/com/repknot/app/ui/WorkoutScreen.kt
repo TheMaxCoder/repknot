@@ -16,7 +16,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.contentDescription
@@ -32,8 +31,6 @@ import com.repknot.domain.LoadUnit
 import com.repknot.domain.Prefill
 import com.repknot.domain.SetDelta
 import java.time.LocalDate
-import java.time.format.DateTimeFormatter
-import java.time.format.FormatStyle
 
 @Composable
 fun WorkoutScreen(vm: WorkoutViewModel, openProgress: () -> Unit, openSettings: () -> Unit) {
@@ -52,9 +49,7 @@ fun WorkoutScreen(vm: WorkoutViewModel, openProgress: () -> Unit, openSettings: 
     }) { padding ->
         Column(Modifier.fillMaxSize().padding(padding).imePadding().verticalScroll(rememberScrollState()).padding(24.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                if (session != null) Text(runCatching { LocalDate.parse(session.row.performedOn).format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)) }.getOrDefault(session.row.performedOn), modifier = Modifier.weight(1f), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                else Spacer(Modifier.weight(1f))
+            if (session == null) Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
                 TextButton(onClick = openProgress) { Text(stringResource(R.string.progress)) }
                 TextButton(onClick = openSettings) { Text(stringResource(R.string.settings)) }
             }
@@ -139,6 +134,7 @@ private fun PreviewTableRow(label: String, values: PreviewValues, date: String, 
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun SessionScreen(session: WorkoutUiState.Session, vm: WorkoutViewModel) {
     var picker by rememberSaveable(session.row.id) { mutableStateOf<String?>(null) }
@@ -148,19 +144,22 @@ private fun SessionScreen(session: WorkoutUiState.Session, vm: WorkoutViewModel)
     val selectedId = selectedExerciseId(selected, session.exercises.map { ExerciseCompletion(it.row.id, it.row.plannedSets, it.sets.size) })
     LaunchedEffect(selectedId) { selected = selectedId }
     val index = session.exercises.indexOfFirst { it.row.id == selectedId }
-    Text(session.row.title, style = MaterialTheme.typography.headlineMedium)
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Text(session.row.title, modifier = Modifier.weight(1f), style = MaterialTheme.typography.headlineMedium)
+        if (index >= 0) Text(stringResource(R.string.exercise_position, index + 1, session.exercises.size),
+            style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+    if (session.row.light) Text(stringResource(R.string.light_day), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
     if (index >= 0) {
         val exercise = session.exercises[index]
         holder.SaveableStateProvider(exercise.row.id) {
             ExerciseCard(exercise, session.choices, index, session.exercises.size, vm) { picker = exercise.row.id }
         }
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically) {
+        FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             TextButton(enabled = index > 0, onClick = {
                 session.exercises.getOrNull(index - 1)?.let { selected = it.row.id; showAll = false }
             }) { Text(stringResource(R.string.previous_exercise)) }
-            Text(stringResource(R.string.exercise_position, index + 1, session.exercises.size),
-                style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            TextButton(onClick = { showAll = !showAll }) { Text(stringResource(if (showAll) R.string.hide_exercises else R.string.view_all_exercises)) }
             TextButton(enabled = index < session.exercises.lastIndex, onClick = {
                 session.exercises.getOrNull(index + 1)?.let { selected = it.row.id; showAll = false }
             }) { Text(stringResource(R.string.next_exercise)) }
@@ -177,7 +176,7 @@ private fun SessionScreen(session: WorkoutUiState.Session, vm: WorkoutViewModel)
             }
         }
     }
-    TextButton(onClick = { showAll = !showAll }) { Text(stringResource(if (showAll) R.string.hide_exercises else R.string.view_all_exercises)) }
+    if (index < 0) TextButton(onClick = { showAll = !showAll }) { Text(stringResource(if (showAll) R.string.hide_exercises else R.string.view_all_exercises)) }
     if (showAll) session.exercises.forEach { exercise ->
         TextButton(onClick = { selected = exercise.row.id; showAll = false }, modifier = Modifier.fillMaxWidth()) {
             Text("${exercise.row.exerciseName} · ${exercise.sets.size}${exercise.row.plannedSets?.let { " / $it" } ?: ""}")
@@ -193,22 +192,39 @@ private fun SessionScreen(session: WorkoutUiState.Session, vm: WorkoutViewModel)
 private fun SessionActions(session: WorkoutUiState.Session, vm: WorkoutViewModel) {
     var picker by rememberSaveable(session.row.id) { mutableStateOf(false) }
     var notesOpen by rememberSaveable(session.row.id) { mutableStateOf(false) }
+    var menuOpen by rememberSaveable(session.row.id) { mutableStateOf(false) }
+    var confirmDiscard by rememberSaveable(session.row.id) { mutableStateOf(false) }
     var notes by rememberSaveable(session.row.id) { mutableStateOf(session.row.notes.orEmpty()) }
     val keyboardOpen = WindowInsets.ime.getBottom(LocalDensity.current) > 0
-    if (!keyboardOpen) Surface(color = MaterialTheme.colorScheme.surfaceContainer, tonalElevation = 3.dp) {
-        Column(Modifier.fillMaxWidth().navigationBarsPadding().imePadding().padding(horizontal = 16.dp, vertical = 8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            Row(Modifier.fillMaxWidth()) {
-                TextButton(onClick = { picker = true }, modifier = Modifier.weight(1f)) { Text(stringResource(R.string.add_exercise)) }
-                TextButton(onClick = { notes = session.row.notes.orEmpty(); notesOpen = true }, modifier = Modifier.weight(1f)) { Text(stringResource(R.string.session_notes)) }
+    if (!keyboardOpen) Surface(color = MaterialTheme.colorScheme.surface) {
+        Column(Modifier.fillMaxWidth().navigationBarsPadding()) {
+            HorizontalDivider()
+            Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    TextButton(onClick = { picker = true }, modifier = Modifier.weight(1f)) { Text(stringResource(R.string.add_exercise)) }
+                    TextButton(onClick = { notes = session.row.notes.orEmpty(); notesOpen = true }, modifier = Modifier.weight(1f)) { Text(stringResource(R.string.session_notes)) }
+                    Box {
+                        val menuLabel = stringResource(R.string.workout_menu)
+                        TextButton(onClick = { menuOpen = true }, modifier = Modifier.semantics { contentDescription = menuLabel }) { Text("⋯") }
+                        DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                            DropdownMenuItem(text = { Text(stringResource(R.string.light_day)) },
+                                leadingIcon = { Checkbox(checked = session.row.light, onCheckedChange = null) },
+                                onClick = { vm.setLight(!session.row.light); menuOpen = false })
+                            if (session.row.status == "in_progress") DropdownMenuItem(text = { Text(stringResource(R.string.discard_workout)) },
+                                onClick = { menuOpen = false; confirmDiscard = true })
+                        }
+                    }
+                }
+                FinishSection(session.row.status, vm)
             }
-            Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text(stringResource(R.string.light_day), modifier = Modifier.weight(1f),
-                    style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Switch(checked = session.row.light, onCheckedChange = vm::setLight, modifier = Modifier.scale(0.8f))
-            }
-            FinishSection(session.row.status, vm)
         }
     }
+    if (confirmDiscard && session.row.status == "in_progress") AlertDialog(
+        onDismissRequest = { confirmDiscard = false }, title = { Text(stringResource(R.string.discard_confirm_title)) },
+        text = { Text(stringResource(R.string.discard_confirm_message)) },
+        confirmButton = { TextButton(onClick = { vm.discard(); confirmDiscard = false }) { Text(stringResource(R.string.discard)) } },
+        dismissButton = { TextButton(onClick = { confirmDiscard = false }) { Text(stringResource(R.string.cancel)) } },
+    )
     if (picker) ExercisePicker(session.choices, onDismiss = { picker = false }) { vm.addExercise(it); picker = false }
     if (notesOpen) AlertDialog(onDismissRequest = { notesOpen = false }, title = { Text(stringResource(R.string.session_notes)) },
         text = { OutlinedTextField(notes, { notes = it }, modifier = Modifier.fillMaxWidth()) },
@@ -226,15 +242,10 @@ private fun ExerciseCard(exercise: ExerciseUi, choices: List<ExerciseRow>, index
     val edited = exercise.sets.firstOrNull { it.id == editing }
     var editStart by remember(editing) { mutableStateOf(edited) }
     LaunchedEffect(edited) { if (editing != null && edited != editStart) { editing = null; editStart = null } }
-    Card(Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             var menuExpanded by remember { mutableStateOf(false) }
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Text(row.exerciseName, modifier = Modifier.weight(1f), style = MaterialTheme.typography.titleLarge)
-                row.plannedSets?.takeIf { it > 0 }?.let { planned ->
-                    Text("${exercise.sets.size}/$planned", style = MaterialTheme.typography.labelLarge,
-                        color = if (exercise.sets.size >= planned) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
-                }
                 Box {
                     TextButton(onClick = { menuExpanded = true }) { Text("⋯") }
                     DropdownMenu(expanded = menuExpanded, onDismissRequest = { menuExpanded = false }) {
@@ -249,21 +260,44 @@ private fun ExerciseCard(exercise: ExerciseUi, choices: List<ExerciseRow>, index
                 Text(stringResource(R.string.instead_of, choices.firstOrNull { it.id == id }?.name
                     ?: stringResource(R.string.prescribed_exercise)))
             }
-            Prescription(row)
-            PreviousHint(exercise.previous, exercise.previousOn)
+            BoxWithConstraints {
+                val stacked = maxWidth.value / LocalDensity.current.fontScale < 250f
+                val plan = PreviewValues("${row.plannedSets?.toString() ?: "–"} × ${range(row.plannedRepMin, row.plannedRepMax) ?: "–"}",
+                    range(row.plannedRirMin, row.plannedRirMax) ?: "–", loadText(row.plannedLoad, row.plannedUnit) ?: "–")
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    if (!stacked) PreviewTableRow("", PreviewValues(stringResource(R.string.preview_sets_reps), stringResource(R.string.label_rir), stringResource(R.string.label_load)), "", header = true)
+                    PreviewTableRow(stringResource(R.string.preview_plan), plan, "", stacked = stacked)
+                    val last = previewLast(exercise.previous)
+                    if (last.isEmpty()) Text(stringResource(R.string.no_previous_session), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    else last.forEachIndexed { i, values -> PreviewTableRow(stringResource(R.string.preview_last), values, if (i == 0) previewDate(exercise.previousOn, LocalDate.now()) else "", stacked = stacked) }
+                }
+            }
+            HorizontalDivider()
+            Text(stringResource(R.string.logged_sets, exercise.sets.size.toString() + (row.plannedSets?.let { " / $it" } ?: "")), style = MaterialTheme.typography.titleSmall)
             exercise.sets.forEachIndexed { setIndex, set ->
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Column(Modifier.fillMaxWidth()) {
                     val description = buildString {
                         append("${setIndex + 1}. ${formatSet(set)}")
                         set.rir?.let { append(" · RIR $it") }
                         set.notes?.let { append(" — $it") }
                     }
-                    Text(description, modifier = Modifier.weight(1f))
-                    DeltaHint(exercise.deltas[setIndex])
-                    TextButton(onClick = { editing = set.id }) { Text(stringResource(R.string.edit)) }
-                    TextButton(onClick = { vm.deleteSet(set.id); if (editing == set.id) editing = null }) { Text(stringResource(R.string.delete)) }
+                    var setMenu by remember(set.id) { mutableStateOf(false) }
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Text(description, modifier = Modifier.weight(1f))
+                        DeltaHint(exercise.deltas[setIndex])
+                        Box {
+                            val label = stringResource(R.string.set_menu, setIndex + 1)
+                            TextButton(onClick = { setMenu = true }, modifier = Modifier.semantics { contentDescription = label }) { Text("⋯") }
+                            DropdownMenu(expanded = setMenu, onDismissRequest = { setMenu = false }) {
+                                DropdownMenuItem(text = { Text(stringResource(R.string.edit)) }, onClick = { setMenu = false; editing = set.id })
+                                DropdownMenuItem(text = { Text(stringResource(R.string.delete)) }, onClick = { setMenu = false; vm.deleteSet(set.id); if (editing == set.id) editing = null })
+                            }
+                        }
+                    }
                 }
             }
+            HorizontalDivider()
+            Text(stringResource(if (editing == null) R.string.next_set else R.string.edit_set), style = MaterialTheme.typography.titleSmall)
             SetInput(exercise, exercise.sets.firstOrNull { it.id == editing }, vm) { editing = null }
             var notes by rememberSaveable(row.id) { mutableStateOf(row.notes.orEmpty()) }
             var notesExpanded by rememberSaveable(row.id) { mutableStateOf(false) }
@@ -272,7 +306,6 @@ private fun ExerciseCard(exercise: ExerciseUi, choices: List<ExerciseRow>, index
                 OutlinedTextField(notes, { notes = it }, label = { Text(stringResource(R.string.exercise_notes)) }, modifier = Modifier.fillMaxWidth())
                 OutlinedButton(onClick = { vm.saveExerciseNotes(row.id, notes) }) { Text(stringResource(R.string.save_notes)) }
             }
-        }
     }
     if (remove) AlertDialog(onDismissRequest = { remove = false }, title = { Text(stringResource(R.string.remove_exercise)) },
         text = { Text(stringResource(R.string.remove_exercise_confirm, row.exerciseName)) },
@@ -379,11 +412,9 @@ private fun FinishSection(status: String, vm: WorkoutViewModel) {
     val shareTitle = stringResource(R.string.share_workout)
     val clipboardLabel = stringResource(R.string.clipboard_workout)
     val uploadEnabled by vm.uploadEnabled.collectAsState()
-    var confirmDiscard by rememberSaveable { mutableStateOf(false) }
     when (status) {
         "in_progress" -> {
-            Button(onClick = vm::finish, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.finish_workout)) }
-            TextButton(onClick = { confirmDiscard = true }) { Text(stringResource(R.string.discard_workout)) }
+            OutlinedButton(onClick = vm::finish, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.finish_workout)) }
         }
         "finished" -> {
             if (uploadEnabled) {
@@ -406,13 +437,6 @@ private fun FinishSection(status: String, vm: WorkoutViewModel) {
             }
         }
     }
-    if (confirmDiscard && status == "in_progress") AlertDialog(
-        onDismissRequest = { confirmDiscard = false },
-        title = { Text(stringResource(R.string.discard_confirm_title)) },
-        text = { Text(stringResource(R.string.discard_confirm_message)) },
-        confirmButton = { TextButton(onClick = { vm.discard(); confirmDiscard = false }) { Text(stringResource(R.string.discard)) } },
-        dismissButton = { TextButton(onClick = { confirmDiscard = false }) { Text(stringResource(R.string.cancel)) } },
-    )
     if (status != "in_progress") Row {
         OutlinedButton(onClick = { vm.share { text ->
             val send = Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, text)
