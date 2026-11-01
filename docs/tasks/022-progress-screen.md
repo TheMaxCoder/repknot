@@ -101,3 +101,13 @@ ViewModel and screens are checked by the lead on the device.
 ## Handoff
 
 - Implementation and offline checks complete; lead should review the diff and run the specified device check, including loading, navigation/back, grouping, and exercise history. Review the edge-case formatting and recent-dip boundary above. No unfinished task changes. Untracked `work/` remains untouched.
+
+## Lead review (2026-11-01)
+Accepted without clarification stops. ViewModel, navigation and text functions read
+against items 1–5; the two recorded fallbacks (bodyweight MovedUp/LoadDown text, inclusive
+28-day dip window) are fine. Test phone on the real history: dip, "Needs a look" and
+"Improving" cards matched the history; exercise history lists every session with "best" tags; Back
+and system back work; no crashes.
+Tuning note (not changed): a "best" counts +1 on reps+RIR, so the same reps reported one
+RIR easier is a best (seen in the real history). Revisit after a few weeks of phone data
+if bests feel too generous.

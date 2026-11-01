@@ -25,7 +25,7 @@ checked the screens on the phone against the real history.
 1. [x] Status engine in `domain` — [020](020-progress-engine.md) (delegated).
 2. [x] Workout card: today's target, ▲/=/▼ per set vs the matching set last time, planned vs
    done sets (delegated after 1).
-3. [ ] Progress screen: exercises sorted by attention, status + reason + flags, broad-dip
+3. [x] Progress screen: exercises sorted by attention, status + reason + flags, broad-dip
    sessions grouped; tap → exercise history (delegated after 1).
 4. [x] Light / modified day flag on a session, excluded from statuses. Needs a non-destructive
    server migration, `push_session` support, and the **first real Room migration** (v4→v5:
@@ -62,5 +62,5 @@ checked the screens on the phone against the real history.
   (pushing an imported incomplete set without `raw` would fail `session_sets_complete`).
 
 ## Handoff
-Steps 1, 2, 4 done. [022](022-progress-screen.md) (progress screen) delegated. Then: compact
-the Light day row to one line (bottom bar too tall on device), device-check 022, step 5.
+Steps 1–4 done and device-checked (2026-11-01). Next: step 5 (body card), which first needs
+check-ins on the phone (sync + entry form) — write its task file.

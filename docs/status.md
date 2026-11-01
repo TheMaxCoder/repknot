@@ -32,6 +32,10 @@ The phone app previews and starts today's PPL workout, logs and edits sets with 
 values from the full imported history ([ADR 003](decisions/003-single-canonical-project.md)),
 and keeps workouts local until upload is enabled in Settings.
 
+Milestone [019 — Progress and regression](tasks/019-progress-milestone.md): engine, workout
+card targets and ▲/=/▼, Progress screen with exercise history, and the light-day flag are
+done (tasks 020–022). Remaining: step 5, the body card (needs check-ins on the phone).
+
 ## Next priorities
 
 1. Real logging on the phone from 2026-11-02 (upload off until the owner enables it in
