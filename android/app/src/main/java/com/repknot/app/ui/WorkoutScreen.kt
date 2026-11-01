@@ -238,11 +238,20 @@ private fun FinishSection(status: String, vm: WorkoutViewModel) {
     val context = LocalContext.current
     val shareTitle = stringResource(R.string.share_workout)
     val clipboardLabel = stringResource(R.string.clipboard_workout)
+    val uploadEnabled by vm.uploadEnabled.collectAsState()
+    var confirmDiscard by rememberSaveable { mutableStateOf(false) }
     when (status) {
-        "in_progress" -> Button(onClick = vm::finish) { Text(stringResource(R.string.finish_workout)) }
+        "in_progress" -> {
+            Button(onClick = vm::finish) { Text(stringResource(R.string.finish_workout)) }
+            OutlinedButton(onClick = { confirmDiscard = true }) { Text(stringResource(R.string.discard_workout)) }
+        }
         "finished" -> {
-            Text(stringResource(R.string.upload_pending))
-            Button(onClick = vm::finish) { Text(stringResource(R.string.retry_upload)) }
+            if (uploadEnabled) {
+                Text(stringResource(R.string.upload_pending))
+                Button(onClick = vm::finish) { Text(stringResource(R.string.retry_upload)) }
+            } else {
+                Text(stringResource(R.string.saved_upload_off))
+            }
             OutlinedButton(onClick = vm::done) { Text(stringResource(R.string.done)) }
         }
         "pushed" -> {
@@ -257,6 +266,13 @@ private fun FinishSection(status: String, vm: WorkoutViewModel) {
             }
         }
     }
+    if (confirmDiscard && status == "in_progress") AlertDialog(
+        onDismissRequest = { confirmDiscard = false },
+        title = { Text(stringResource(R.string.discard_confirm_title)) },
+        text = { Text(stringResource(R.string.discard_confirm_message)) },
+        confirmButton = { TextButton(onClick = { vm.discard(); confirmDiscard = false }) { Text(stringResource(R.string.discard)) } },
+        dismissButton = { TextButton(onClick = { confirmDiscard = false }) { Text(stringResource(R.string.cancel)) } },
+    )
     if (status != "in_progress") Row {
         OutlinedButton(onClick = { vm.share { text ->
             val send = Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, text)

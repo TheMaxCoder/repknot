@@ -61,6 +61,11 @@
     <string name="error_sign_in">Sign-in failed. Check email and password.</string>
     <string name="error_cloud">Cloud request failed. Check your connection and try again.</string>
     <string name="finish_workout">Finish workout</string>
+    <string name="discard_workout">Discard workout</string>
+    <string name="discard_confirm_title">Discard this workout?</string>
+    <string name="discard_confirm_message">Logged sets on this phone will be deleted.</string>
+    <string name="discard">Discard</string>
+    <string name="saved_upload_off">Saved on this phone. Upload is off (Settings).</string>
     <string name="session_notes">Session notes</string>
     <string name="save_notes">Save notes</string>
     <string name="sync_conflict">Changed elsewhere · choose which version to keep</string>
