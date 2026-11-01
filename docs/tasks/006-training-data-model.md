@@ -34,7 +34,8 @@ importer. Out: check-in UI, web companion, ChatGPT connector identity (1a), anal
    [008](008-cli-seed-and-publish.md) (done; real exercises + PPL v1 published to dev).
 6. [x] Domain: today's-workout selection and prefill as pure Kotlin with unit tests —
    delegated as [007](007-domain-today-and-prefill.md) (done).
-7. [ ] Data/Room: cache programs/exercises; session_exercises; nested push/pull.
+7. [ ] Data/Room: cache programs/exercises ([009](009-room-reference-cache.md), delegated);
+   session_exercises + nested push/pull (010, lead).
 8. [ ] App: workout screen (exercise list, set rows, previous values, add/remove/substitute).
 9. [ ] Importer (dev, synthetic-shaped fixture first); derive the previous Upper/Lower
    program version from the Airtable Exercises table — its roles are free text, so the
