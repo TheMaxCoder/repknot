@@ -23,6 +23,14 @@
     <string name="next_workout">Next workout</string>
     <string name="preview_workout">Preview %1$s</string>
     <string name="start_workout">Start workout</string>
+    <plurals name="preview_exercises">
+        <item quantity="one">%d exercise</item>
+        <item quantity="other">%d exercises</item>
+    </plurals>
+    <string name="preview_sets_reps">Sets × reps</string>
+    <string name="preview_plan">Plan</string>
+    <string name="preview_last">Last</string>
+    <string name="no_previous_session">No previous session</string>
     <string name="other_workouts">Other workouts</string>
     <string name="add_exercise">Add exercise</string>
     <string name="up_next">UP NEXT</string>

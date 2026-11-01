@@ -31,7 +31,6 @@ import com.repknot.data.SetRow
 import com.repknot.domain.LoadUnit
 import com.repknot.domain.Prefill
 import com.repknot.domain.SetDelta
-import com.repknot.domain.TodayTarget
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
@@ -41,7 +40,16 @@ fun WorkoutScreen(vm: WorkoutViewModel, openProgress: () -> Unit, openSettings: 
     val state by vm.state.collectAsState()
     val error by vm.error.collectAsState()
     val session = state as? WorkoutUiState.Session
-    Scaffold(bottomBar = { if (session != null) SessionActions(session, vm) }) { padding ->
+    val preview = state as? WorkoutUiState.Preview
+    Scaffold(bottomBar = {
+        if (session != null) SessionActions(session, vm)
+        if (preview != null) Surface(color = MaterialTheme.colorScheme.surfaceContainer, tonalElevation = 3.dp) {
+            Button(onClick = { vm.start(preview.workout.key) }, modifier = Modifier.fillMaxWidth()
+                .navigationBarsPadding().padding(horizontal = 18.dp, vertical = 12.dp)) {
+                Text(stringResource(R.string.start_workout))
+            }
+        }
+    }) { padding ->
         Column(Modifier.fillMaxSize().padding(padding).imePadding().verticalScroll(rememberScrollState()).padding(24.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
@@ -76,25 +84,59 @@ fun WorkoutScreen(vm: WorkoutViewModel, openProgress: () -> Unit, openSettings: 
 @Composable
 private fun PreviewScreen(preview: WorkoutUiState.Preview, vm: WorkoutViewModel) {
     BackHandler(onBack = vm::closePreview)
-    Text(preview.programName, color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.titleSmall)
-    if (preview.suggested) Text(stringResource(R.string.next_workout))
-    Text(preview.workout.name, style = MaterialTheme.typography.headlineMedium)
-    preview.exercises.forEach { exercise ->
-        Card(Modifier.fillMaxWidth()) {
-            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                val prescription = exercise.prescription
-                Text(prescription.exerciseName, style = MaterialTheme.typography.titleLarge)
-                PrescriptionLine(prescription.sets, prescription.repMin, prescription.repMax,
-                    prescription.rirMin, prescription.rirMax, prescription.load, prescription.unit.name.lowercase())
-                PreviousHint(exercise.previous, exercise.previousOn)
-                TargetHint(exercise.target)
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom) {
+        Column(Modifier.weight(1f)) {
+            if (preview.suggested) Text(stringResource(R.string.next_workout), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(preview.workout.name, style = MaterialTheme.typography.headlineMedium)
+        }
+        Text(pluralStringResource(R.plurals.preview_exercises, preview.exercises.size, preview.exercises.size),
+            style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+    preview.exercises.forEachIndexed { index, exercise ->
+        Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            HorizontalDivider()
+            Row(Modifier.padding(top = 6.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text((index + 1).toString().padStart(2, '0'), color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelMedium)
+                Text(exercise.prescription.exerciseName, style = MaterialTheme.typography.titleSmall)
+            }
+            val last = previewLast(exercise.previous)
+            val date = previewDate(exercise.previousOn, LocalDate.now())
+            BoxWithConstraints {
+                val stacked = maxWidth < 330.dp || LocalDensity.current.fontScale > 1.3f
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    if (!stacked) PreviewTableRow("", PreviewValues(stringResource(R.string.preview_sets_reps), stringResource(R.string.label_rir), stringResource(R.string.label_load)), "", header = true)
+                    PreviewTableRow(stringResource(R.string.preview_plan), previewPlan(exercise.prescription), "", stacked = stacked)
+                    if (last.isEmpty()) Text(stringResource(R.string.no_previous_session), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    else last.forEachIndexed { i, values ->
+                        PreviewTableRow(stringResource(R.string.preview_last), values, if (i == 0) date else "", stacked = stacked)
+                    }
+                }
             }
         }
     }
-    Button(onClick = { vm.start(preview.workout.key) }, modifier = Modifier.fillMaxWidth()) {
-        Text(stringResource(R.string.start_workout))
+}
+
+@Composable
+private fun PreviewTableRow(label: String, values: PreviewValues, date: String, stacked: Boolean = false, header: Boolean = false) {
+    val color = if (header) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface
+    val style = if (header) MaterialTheme.typography.labelSmall else MaterialTheme.typography.bodySmall
+    if (stacked) {
+        Column(Modifier.fillMaxWidth()) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Text(label, style = style, color = color)
+                Text(date, style = style, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            Text("${stringResource(R.string.preview_sets_reps)}: ${values.reps}", style = style, color = color)
+            Text("${stringResource(R.string.label_rir)}: ${values.rir}", style = style, color = color)
+            Text("${stringResource(R.string.label_load)}: ${values.load}", style = style, color = color)
+        }
+    } else Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+        Text(label, Modifier.weight(0.75f), style = style, color = color)
+        Text(values.reps, Modifier.weight(1.8f), style = style, color = color)
+        Text(values.rir, Modifier.weight(1.1f), style = style, color = color)
+        Text(values.load, Modifier.weight(1.25f), style = style, color = color)
+        Text(date, Modifier.weight(1.1f), style = style, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = androidx.compose.ui.text.style.TextAlign.End)
     }
-    OutlinedButton(onClick = vm::closePreview, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.back)) }
 }
 
 @Composable
@@ -132,7 +174,6 @@ private fun SessionScreen(session: WorkoutUiState.Session, vm: WorkoutViewModel)
                 Text(next.row.exerciseName, style = MaterialTheme.typography.titleMedium)
                 Prescription(next.row)
                 PreviousHint(next.previous, next.previousOn)
-                TargetHint(next.target)
             }
         }
     }
@@ -210,7 +251,6 @@ private fun ExerciseCard(exercise: ExerciseUi, choices: List<ExerciseRow>, index
             }
             Prescription(row)
             PreviousHint(exercise.previous, exercise.previousOn)
-            TargetHint(exercise.target)
             exercise.sets.forEachIndexed { setIndex, set ->
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     val description = buildString {
@@ -279,11 +319,6 @@ private fun PreviousHint(previous: Prefill, previousOn: LocalDate?) {
         Text(lastLabel(previousOn, LocalDate.now()), color = MaterialTheme.colorScheme.onSurfaceVariant)
         Text(previousSummary(previous.sets), color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
-}
-
-@Composable
-private fun TargetHint(target: TodayTarget?) {
-    if (target != null) Text(targetText(target), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary)
 }
 
 @Composable
