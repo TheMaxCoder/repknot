@@ -1,6 +1,6 @@
 # 016 — Workout card polish: last-time summary, RIR stepper, compact actions
 
-Status: in progress
+Status: done
 Updated: 2026-11-01
 Starting commit: 9766ddd
 Delegated: yes (see [delegation](../delegation/README.md)). Owner feedback after using the
@@ -91,5 +91,8 @@ rule 1). Diff read against items 1–4: start-load line removed; `Last · …` +
 tested helpers; `⋯` menu with move/substitute/remove; collapsible exercise and session
 notes; RIR stepper default 1, upper bound max(10, current). `scripts/check --offline`
 passed (PreviousSummaryTest 2/2, WorkoutStateTest 4/4).
-Pending: device check — the phone disconnected from adb during install. Check the ~390 dp
-row fit, the menu, notes toggle, and the stepper on the owner's open Pull 1 session.
+Test phone (wireless adb), owner's open Push 1 session, UI-only interactions: load,
+reps and RIR stepper fit one row; start-load line gone; `⋯` menu shows ↑ (disabled on the
+first card), ↓, Substitute, Remove; RIR `+` 1→2 then `−` back; Notes expands/collapses; no
+crashes. `Last · …` lines not visible (no earlier finished session for these exercises on
+the phone) — covered by PreviousSummaryTest/WorkoutStateTest.
