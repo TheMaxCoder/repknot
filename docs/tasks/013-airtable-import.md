@@ -114,3 +114,12 @@ Results (linked project ref matched the configured dev URL; no credential values
 
 ## Handoff
 - Task complete; lead should review importer, especially source-ref conflict/revision behavior and exercise updates. Real history import remains out of scope and belongs on prod later. The lead updates `private-data/README.md`.
+
+## Lead review (2026-11-01)
+Accepted (second run; the first stopped on a spec contradiction about reading `supabase/`).
+Importer read against items 5–11; re-import into sessions that already have exercises
+continues positions and skips existing refs. Lead check on the real export (private-data,
+nothing imported): re-running the changed normalizer kept every existing column identical
+in all six files (same set and flagged counts as before) and filled `ref` for all check-ins,
+health-state and habit rows; `readiness` is empty in every session in this export.
+`private-data/README.md` updated (git-ignored). Real history import waits for prod.

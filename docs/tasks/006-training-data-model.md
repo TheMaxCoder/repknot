@@ -1,6 +1,6 @@
 # 006 — Training data model and program-driven workouts
 
-Status: in progress
+Status: done
 Updated: 2026-11-01
 Starting commit: 78296df
 
@@ -37,7 +37,7 @@ importer. Out: check-in UI, web companion, ChatGPT connector identity (1a), anal
 7. [x] Data/Room: cache programs/exercises ([009](009-room-reference-cache.md), delegated);
    session_exercises + nested push/pull ([010](010-nested-session-sync.md), lead).
 8. [x] App: workout screen — logic [011](011-workout-logic.md), Compose [012](012-workout-screen.md) (both delegated).
-9. [ ] Importer ([013](013-airtable-import.md), delegated; context table added by lead) (dev, synthetic-shaped fixture first); derive the previous Upper/Lower
+9. [x] Importer ([013](013-airtable-import.md), delegated; context table added by lead) (dev, synthetic-shaped fixture first); derive the previous Upper/Lower
    program version from the Airtable Exercises table — its roles are free text, so the
    derived version needs user review before import.
 
@@ -78,5 +78,11 @@ importer. Out: check-in UI, web companion, ChatGPT connector identity (1a), anal
   read back (1 exercise, 1 set). `deno check` on a .ts copy of the CLI passed.
 
 ## Handoff
-Next action: step 8 — workout screen (today's workout, set rows with prefill, add/remove/
-substitute, finish/share/conflict UI reusing `SyncViewModel`). Local ids must be uuids. `save_session` always records `source = 'chatgpt'` (cosmetic).
+Done (2026-11-01): acceptance met on dev — schema + pgTAP (6 files, 109 tests), real
+exercises + PPL v1 published, the phone runs today's workout → log/edit → finish → upload
+(device smoke in 012), importer verified with the synthetic fixture (013).
+Open, owner-owned: review `private-data/programs/upper-lower-2026-09.json` (draft of the
+previous program; see its `review_notes`), then publish it inactive with
+`scripts/repknot publish-program … --inactive`. Real history import goes to prod once a
+prod project exists (ADR 002). Cosmetic: `save_session` always records source `chatgpt`;
+the cloud section's session count is only taken at sign-in.
