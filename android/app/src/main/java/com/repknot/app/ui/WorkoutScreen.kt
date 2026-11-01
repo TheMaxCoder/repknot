@@ -80,6 +80,10 @@ private fun ExerciseCard(exercise: ExerciseUi, choices: List<ExerciseRow>, index
     val row = exercise.row
     var editing by rememberSaveable(row.id) { mutableStateOf<String?>(null) }
     var remove by rememberSaveable(row.id) { mutableStateOf(false) }
+    // An update succeeded when the edited set's values change in state: leave edit mode then.
+    val edited = exercise.sets.firstOrNull { it.id == editing }
+    var editStart by remember(editing) { mutableStateOf(edited) }
+    LaunchedEffect(edited) { if (editing != null && edited != editStart) { editing = null; editStart = null } }
     Card(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(row.exerciseName, style = MaterialTheme.typography.titleLarge)

@@ -36,8 +36,8 @@ importer. Out: check-in UI, web companion, ChatGPT connector identity (1a), anal
    delegated as [007](007-domain-today-and-prefill.md) (done).
 7. [x] Data/Room: cache programs/exercises ([009](009-room-reference-cache.md), delegated);
    session_exercises + nested push/pull ([010](010-nested-session-sync.md), lead).
-8. [ ] App: workout screen — logic [011](011-workout-logic.md), Compose 012 (both delegated).
-9. [ ] Importer (dev, synthetic-shaped fixture first); derive the previous Upper/Lower
+8. [x] App: workout screen — logic [011](011-workout-logic.md), Compose [012](012-workout-screen.md) (both delegated).
+9. [ ] Importer ([013](013-airtable-import.md), delegated; context table added by lead) (dev, synthetic-shaped fixture first); derive the previous Upper/Lower
    program version from the Airtable Exercises table — its roles are free text, so the
    derived version needs user review before import.
 

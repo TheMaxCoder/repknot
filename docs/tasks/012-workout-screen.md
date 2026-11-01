@@ -1,6 +1,6 @@
 # 012 — Workout screen (Compose)
 
-Status: in progress
+Status: done
 Updated: 2026-11-01
 Starting commit: f25a2ab
 Parent: [006](006-training-data-model.md) step 8 (UI half; logic is task 011) · Delegated:
@@ -90,3 +90,17 @@ Every state ends with the existing `CloudSection` below a divider. Errors from
 ## Handoff
 - Implementation and offline checks complete; task remains in progress until the lead's device smoke test.
 - Next action: lead reviews the commit and tests start, log, edit, invalid input, rotation, exercise actions, notes, finish/retry, sharing and conflicts on a device. Review the retained editing mode after Update and state-keyed input reset, particularly unchanged edits and failures.
+
+## Lead review (2026-11-01)
+Accepted after one clarification (spec gap: reset signal). Lead fix: **Update set** now
+leaves edit mode when the edited set changes in state (the worker had flagged it stayed in
+edit mode). Device smoke on the test phone with the real program cache: Today shows the next workout
+→ Start shows its prescriptions (plates chip preselected) and start loads → Log set
+resets the input → Edit → change reps → Update set saves and exits edit mode →
+Finish workout → "Uploaded" → Done → Today suggests Pull 1. Server copy checked with
+`scripts/repknot show` (android, edited set). Test sessions #70/#39 and the
+`synthetic-bench` exercise were then deleted from dev; after relaunch the phone dropped
+the deleted session and suggests Push 1 again. No crash-buffer entries.
+Not exercised on device: substitute/add/remove/move via the UI (covered by DAO device
+test), conflict buttons, share/copy, rotation. Known cosmetic: the cloud section's session
+count is taken at sign-in and does not update.
