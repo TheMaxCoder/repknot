@@ -7,7 +7,8 @@
     <string name="upload_on_description">Finished workouts upload to the cloud.</string>
     <string name="no_program">Sign in and sync to load your program.</string>
     <string name="next_workout">Next workout</string>
-    <string name="start_workout">Start %1$s</string>
+    <string name="preview_workout">Preview %1$s</string>
+    <string name="start_workout">Start workout</string>
     <string name="other_workouts">Other workouts</string>
     <string name="add_exercise">Add exercise</string>
     <string name="instead_of">instead of %1$s</string>

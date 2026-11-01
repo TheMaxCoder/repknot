@@ -3,6 +3,7 @@ package com.repknot.app
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Intent
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -43,19 +44,42 @@ fun WorkoutScreen(vm: WorkoutViewModel, openSettings: () -> Unit) {
                     Text(current.programName, color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.titleSmall)
                     Text(stringResource(R.string.next_workout))
                     Text(current.suggested.name, style = MaterialTheme.typography.headlineMedium)
-                    Button(onClick = { vm.start(current.suggested.key) }, modifier = Modifier.fillMaxWidth()) {
-                        Text(stringResource(R.string.start_workout, current.suggested.name))
+                    Button(onClick = { vm.preview(current.suggested.key) }, modifier = Modifier.fillMaxWidth()) {
+                        Text(stringResource(R.string.preview_workout, current.suggested.name))
                     }
                     Text(stringResource(R.string.other_workouts), style = MaterialTheme.typography.titleMedium)
                     current.workouts.filter { it.key != current.suggested.key }.forEach { workout ->
-                        OutlinedButton(onClick = { vm.start(workout.key) }, modifier = Modifier.fillMaxWidth()) { Text(workout.name) }
+                        OutlinedButton(onClick = { vm.preview(workout.key) }, modifier = Modifier.fillMaxWidth()) { Text(workout.name) }
                     }
                 }
                 is WorkoutUiState.Session -> SessionScreen(current, vm)
-                is WorkoutUiState.Preview -> Text(current.workout.name)  // interim; task 015 builds the preview
+                is WorkoutUiState.Preview -> PreviewScreen(current, vm)
             }
         }
     }
+}
+
+@Composable
+private fun PreviewScreen(preview: WorkoutUiState.Preview, vm: WorkoutViewModel) {
+    BackHandler(onBack = vm::closePreview)
+    Text(preview.programName, color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.titleSmall)
+    if (preview.suggested) Text(stringResource(R.string.next_workout))
+    Text(preview.workout.name, style = MaterialTheme.typography.headlineMedium)
+    preview.exercises.forEach { exercise ->
+        Card(Modifier.fillMaxWidth()) {
+            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                val prescription = exercise.prescription
+                Text(prescription.exerciseName, style = MaterialTheme.typography.titleLarge)
+                PrescriptionLine(prescription.sets, prescription.repMin, prescription.repMax,
+                    prescription.rirMin, prescription.rirMax, prescription.load, prescription.unit.name.lowercase())
+                PreviousHint(exercise.previous)
+            }
+        }
+    }
+    Button(onClick = { vm.start(preview.workout.key) }, modifier = Modifier.fillMaxWidth()) {
+        Text(stringResource(R.string.start_workout))
+    }
+    OutlinedButton(onClick = vm::closePreview, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.back)) }
 }
 
 @Composable
@@ -142,11 +166,17 @@ private fun loadText(load: Double?, unit: String?): String? = when (unit) {
 
 @Composable
 private fun Prescription(row: SessionExerciseRow) {
+    PrescriptionLine(row.plannedSets, row.plannedRepMin, row.plannedRepMax, row.plannedRirMin,
+        row.plannedRirMax, row.plannedLoad, row.plannedUnit)
+}
+
+@Composable
+private fun PrescriptionLine(sets: Int?, repMin: Int?, repMax: Int?, rirMin: Int?, rirMax: Int?, load: Double?, unit: String?) {
     val parts = listOfNotNull(
-        row.plannedSets?.let { pluralStringResource(R.plurals.prescription_sets, it, it) },
-        range(row.plannedRepMin, row.plannedRepMax)?.let { stringResource(R.string.prescription_reps, it) },
-        range(row.plannedRirMin, row.plannedRirMax)?.let { stringResource(R.string.prescription_rir, it) },
-        loadText(row.plannedLoad, row.plannedUnit),
+        sets?.let { pluralStringResource(R.plurals.prescription_sets, it, it) },
+        range(repMin, repMax)?.let { stringResource(R.string.prescription_reps, it) },
+        range(rirMin, rirMax)?.let { stringResource(R.string.prescription_rir, it) },
+        loadText(load, unit),
     )
     if (parts.isNotEmpty()) Text(parts.joinToString(" · "), color = MaterialTheme.colorScheme.onSurfaceVariant)
 }

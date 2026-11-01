@@ -56,7 +56,7 @@ Out of scope (do not modify): `WorkoutViewModel.kt`, `AppSettings.kt`,
 
 ## Plan / progress
 1. [x] Navigation + settings screen (items 1–2).
-2. [ ] Today → preview, preview screen (3–4).
+2. [x] Today → preview, preview screen (3–4).
 3. [ ] Discard + finished-status copy (5); cleanup (6).
 4. [ ] `scripts/check --offline`; commit(s) with task 015 in the subject.
 
@@ -64,7 +64,7 @@ Out of scope (do not modify): `WorkoutViewModel.kt`, `AppSettings.kt`,
 - Settings retains the existing cloud divider and uses the same Scaffold/inset and scroll padding as workouts.
 
 ## Verification
-- `scripts/check --offline` — passed after step 1 (debug build, lint, unit tests).
+- `scripts/check --offline` — passed after steps 1 and 2 (debug build, lint, unit tests).
 
 ## Handoff
-Step 1 verified; next implement Today and preview. Device smoke test belongs to the lead.
+Steps 1–2 verified; next implement discard and finished-status copy. Device smoke test belongs to the lead. The step 1 commit message omitted the pending device check due to a shell command formatting error; it remains pending.
