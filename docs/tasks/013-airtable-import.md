@@ -1,6 +1,6 @@
 # 013 — Airtable history importer (synthetic-verified on dev)
 
-Status: in progress
+Status: done
 Updated: 2026-11-01
 Starting commit: 5643b25
 Parent: [006](006-training-data-model.md) step 9 · Delegated: yes (see
@@ -87,8 +87,8 @@ batched (≤ 500 rows per call):
 Scope clarification received: reading migrations is allowed; private-data remains off-limits.
 
 1. [x] Normalizer changes (1–3); fixture (4); normalizer runs on a temp copy.
-2. [ ] Importer (5–11).
-3. [ ] Verification (below); commit(s) with task 013 in the subject.
+2. [x] Importer (5–11).
+3. [x] Verification (below); commit(s) with task 013 in the subject.
 
 ## Verification (worker: run, record actual output)
 - Step 1: temp-copy normalization succeeded: 2 sessions, 4 logs, 4 sets, 1 flagged. Headers: `date,session_ref,title,workout,soreness,readiness,notes,exercise_logs`; `date,session_ref,log_ref,exercise,set,load,unit,reps,duration_s,rir,rir_raw,notes,review`; `ref,date,weight_kg,waist_cm,chest_cm,arms_cm,arms_flexed_cm,legs_cm,height_cm,notes`; `ref,name,type,status,effective_from,value,rationale`; `ref,date,event,session,session_ref,behavior,direction,impact,evidence,next_session_rule`.
@@ -99,11 +99,18 @@ Scope clarification received: reading migrations is allowed; private-data remain
 4. `scripts/repknot --as test2 list 5` and `show` one imported session → nested exercises
    and sets with the expected positions; the flagged and unit-less sets carry `raw`.
 5. `deno check` on `.ts` copies of `scripts/airtable-import`.
-Synthetic test2 rows stay on dev.
+Results (linked project ref matched the configured dev URL; no credential values printed):
+- Temp-copy normalize command above succeeded, with headers recorded above.
+- First `scripts/airtable-import --as test2 $d/airtable-synthetic/normalized`: exercises 3/3 new; workout_sessions 2/2; session_exercises 4/4; session_sets 4/4; checkins 2/2; context_entries 2/2.
+- Same command again: respectively 3, 2, 4, 4, 2, 2 in file; all 0 new, all already imported. Repeated after final argument parsing change with the same results.
+- `scripts/repknot --as test2 list 5` showed synthetic sessions #71 and #72. `scripts/repknot --as test2 show '#71'` and `show '#72'` showed exercises at positions 0 and 1 and sets at position 0. #71 has 5.5 reps and raw review plus `rir_raw: 1-2`, and a 30-second set; #72 has bodyweight and a unit-less set with `raw.review: incomplete source row`.
+- `t=$(mktemp --suffix=.ts) && cp scripts/airtable-import "$t" && deno check "$t"` passed.
+- `git diff --check` passed. Synthetic test2 rows stay on dev.
 
 ## Decisions and discoveries
 - Lead (2026-11-01): importer writes through RLS as the user (no service key); bodyweight
   loads go to `raw` rather than guessing "added weight" semantics.
+- Review: direct child inserts bump session revisions via server triggers; repeat imports ignore existing source refs. Exercise seeding intentionally updates matching slugs per CLI behavior. Concurrent imports and bodyweight-with-load branch were not separately tested.
 
 ## Handoff
-- Step 1 verified; next implement importer and execute dev/test2 verification.
+- Task complete; lead should review importer, especially source-ref conflict/revision behavior and exercise updates. Real history import remains out of scope and belongs on prod later. The lead updates `private-data/README.md`.

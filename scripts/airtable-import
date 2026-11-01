@@ -1,0 +1,135 @@
+#!/usr/bin/env -S deno run --ext=ts --allow-net --allow-env --allow-read
+// Import normalized Airtable CSVs as a signed-in user; RLS applies.
+import { createClient } from "npm:@supabase/supabase-js@2";
+import { parse } from "jsr:@std/csv@1";
+
+type CsvRow = Record<string, string>;
+type Row = Record<string, unknown>;
+function fail(error: unknown): never {
+  console.error(error instanceof Error ? error.message : JSON.stringify(error));
+  Deno.exit(1);
+}
+async function main() {
+  const args = [...Deno.args];
+  const asTest2 = args[0] === "--as" && args[1] === "test2";
+  if (asTest2) args.splice(0, 2);
+  if (args.length !== 1 || args[0].startsWith("--")) {
+    throw new Error("usage: scripts/airtable-import [--as test2] <normalized-dir>");
+  }
+  const dir = args[0];
+  const root = new URL("..", import.meta.url).pathname;
+  const env: Record<string, string> = {};
+  for (const line of (await Deno.readTextFile(`${root}.env`)).split("\n")) {
+    const m = line.match(/^([A-Za-z0-9_]+)=(.*)$/);
+    if (m) env[m[1]] = m[2].trim();
+  }
+  function need(name: string): string {
+    if (!env[name]) throw new Error(`${name} is empty in .env`);
+    return env[name];
+  }
+  const db = createClient(need("SUPABASE_URL"), need("SUPABASE_PUBLISHABLE_KEY"), {
+    auth: { persistSession: false },
+  });
+  const { error: authError } = await db.auth.signInWithPassword({
+    email: need(asTest2 ? "REPKNOT_TEST2_EMAIL" : "REPKNOT_EMAIL"),
+    password: need(asTest2 ? "REPKNOT_TEST2_PASSWORD" : "REPKNOT_PASSWORD"),
+  });
+  if (authError) throw authError;
+  async function csv(name: string): Promise<CsvRow[]> {
+    return parse(await Deno.readTextFile(`${dir}/${name}.csv`), { skipFirstRow: true });
+  }
+  async function all(table: string, columns: string): Promise<Row[]> {
+    const rows: Row[] = [];
+    for (let offset = 0;; offset += 1000) {
+      const { data, error } = await db.from(table).select(columns).order("id").range(offset, offset + 999);
+      if (error) throw error;
+      rows.push(...data as unknown as Row[]);
+      if (data.length < 1000) return rows;
+    }
+  }
+  async function upsert(table: string, rows: Row[], conflict: string, ignoreDuplicates: boolean) {
+    for (let i = 0; i < rows.length; i += 500) {
+      const { error } = await db.from(table).upsert(rows.slice(i, i + 500), {
+        onConflict: conflict, ignoreDuplicates,
+      });
+      if (error) throw error;
+    }
+  }
+  async function insert(table: string, rows: Row[], existing: Row[]) {
+    const refs = new Set(existing.map((r) => r.source_ref));
+    const count = rows.filter((r) => refs.has(r.source_ref)).length;
+    await upsert(table, rows, "user_id,source_ref", true);
+    console.log(`${table}: ${rows.length} in file, ${rows.length - count} new, ${count} already imported`);
+  }
+  const nullable = (value: string) => value || null;
+  const numeric = (value: string) => value === "" ? null : Number(value);
+  function details(row: CsvRow, keys: string[]): Row {
+    return Object.fromEntries(keys.filter((key) => row[key]).map((key) => [key, row[key]]));
+  }
+  const exercises = await csv("exercises");
+  const oldExercises = await all("exercises", "id,slug,name");
+  const oldSlugs = new Set(oldExercises.map((r) => r.slug));
+  const oldCount = exercises.filter((r) => oldSlugs.has(r.slug)).length;
+  await upsert("exercises", exercises.map((r) => ({ slug: r.slug, name: r.name,
+    default_unit: nullable(r.default_unit), notes: nullable(r.airtable_notes) })), "user_id,slug", false);
+  console.log(`exercises: ${exercises.length} in file, ${exercises.length - oldCount} new, ${oldCount} already imported`);
+  const exerciseMap = new Map((await all("exercises", "id,slug,name")).map((r) => [r.slug, r]));
+
+  const sessions = await csv("sessions");
+  await insert("workout_sessions", sessions.map((r) => {
+    const raw = details(r, ["workout", "soreness", "readiness"]);
+    return { performed_on: r.date, title: nullable(r.title), notes: nullable(r.notes), source: "import",
+      source_ref: r.session_ref, raw: Object.keys(raw).length ? raw : null };
+  }), await all("workout_sessions", "id,source_ref"));
+  const sessionMap = new Map((await all("workout_sessions", "id,source_ref")).map((r) => [r.source_ref, r.id]));
+  const sets = await csv("sets");
+  const existingExercises = await all("session_exercises", "id,source_ref,session_id,position");
+  const existingRefs = new Set(existingExercises.map((r) => r.source_ref));
+  const next = new Map<unknown, number>();
+  for (const r of existingExercises) next.set(r.session_id, Math.max(next.get(r.session_id) ?? 0, Number(r.position) + 1));
+  const seen = new Set<string>();
+  const sessionExercises: Row[] = [];
+  for (const r of sets) {
+    if (seen.has(r.log_ref)) continue;
+    seen.add(r.log_ref);
+    const sessionId = sessionMap.get(r.session_ref);
+    const ex = exerciseMap.get(r.exercise);
+    if (!sessionId || !ex) throw new Error(`unknown session or exercise in log ${r.log_ref}`);
+    const position = next.get(sessionId) ?? 0;
+    if (!existingRefs.has(r.log_ref)) next.set(sessionId, position + 1);
+    sessionExercises.push({ session_id: sessionId, position, exercise_id: ex.id,
+      exercise_name: ex.name, source_ref: r.log_ref });
+  }
+  await insert("session_exercises", sessionExercises, existingExercises);
+  const exerciseRefs = new Map((await all("session_exercises", "id,source_ref,session_id")).map((r) => [r.source_ref, r]));
+  const setRows = sets.map((r) => {
+    const ex = exerciseRefs.get(r.log_ref);
+    if (!ex || ex.session_id !== sessionMap.get(r.session_ref)) throw new Error(`invalid session exercise ${r.log_ref}`);
+    let load = numeric(r.load);
+    const unit = nullable(r.unit), reps = numeric(r.reps), duration = numeric(r.duration_s);
+    const raw: Row = details(r, ["rir_raw", "review"]);
+    if (unit === "bodyweight" && load !== null) { raw.load = load; load = null; }
+    if ((!unit || (reps === null && duration === null) || (unit !== "bodyweight" && load === null)) && !Object.keys(raw).length) {
+      raw.review = "incomplete source row";
+    }
+    return { session_exercise_id: ex.id, session_id: ex.session_id, position: Number(r.set) - 1,
+      load, unit, reps, duration_s: duration, rir: numeric(r.rir), notes: nullable(r.notes),
+      source_ref: `${r.log_ref}#${r.set}`, raw: Object.keys(raw).length ? raw : null };
+  });
+  await insert("session_sets", setRows, await all("session_sets", "id,source_ref"));
+  const checks = await csv("checkins");
+  const measures = ["weight_kg", "waist_cm", "chest_cm", "arms_cm", "arms_flexed_cm", "legs_cm", "height_cm"];
+  await insert("checkins", checks.map((r) => ({ checked_on: r.date,
+    ...Object.fromEntries(measures.map((key) => [key, numeric(r[key])])), notes: nullable(r.notes),
+    source: "import", source_ref: r.ref })), await all("checkins", "id,source_ref"));
+  const health = await csv("health_state"), habits = await csv("training_habits");
+  const context: Row[] = [
+    ...health.map((r) => ({ kind: "health_state", recorded_on: nullable(r.effective_from), title: r.name,
+      details: details(r, ["type", "status", "value", "rationale"]), source: "import", source_ref: r.ref })),
+    ...habits.map((r) => ({ kind: "training_habit", recorded_on: nullable(r.date), title: r.event,
+      details: details(r, ["session", "session_ref", "behavior", "direction", "impact", "evidence", "next_session_rule"]),
+      source: "import", source_ref: r.ref })),
+  ];
+  await insert("context_entries", context, await all("context_entries", "id,source_ref"));
+}
+try { await main(); } catch (error) { fail(error); }
