@@ -63,12 +63,14 @@ class MainActivity : ComponentActivity() {
                 if (screen == "settings") {
                     BackHandler { screen = "workout" }
                     val uploadEnabled by app.settings.uploadEnabled.collectAsState()
-                    SettingsScreen(uploadEnabled, app::setUploadEnabled, { screen = "workout" }) {
+                    val waistGoal by app.settings.waistGoalCm.collectAsState()
+                    SettingsScreen(uploadEnabled, app::setUploadEnabled, waistGoal, app.settings::setWaistGoalCm, { screen = "workout" }) {
                         CloudSection(cloudState, cloud::signIn, cloud::signOut)
                     }
                 } else if (screen == "progress" || screen.startsWith("exercise:")) {
                     val progress: ProgressViewModel = viewModel(factory = ProgressViewModel.Factory(
-                        app.database.sessions(), app.database.reference(),
+                        app.database.sessions(), app.database.reference(), app.database.checkIns(),
+                        app.settings.waistGoalCm, app::requestRefresh,
                     ))
                     val progressState by progress.state.collectAsState()
                     if (screen == "progress") {
@@ -88,6 +90,7 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 private fun SettingsScreen(uploadEnabled: Boolean, setUploadEnabled: (Boolean) -> Unit,
+                           waistGoal: Double, setWaistGoal: (Double) -> Unit,
                            back: () -> Unit, cloud: @Composable () -> Unit) {
     Scaffold { padding ->
         Column(Modifier.fillMaxSize().padding(padding).imePadding().verticalScroll(rememberScrollState()).padding(24.dp),
@@ -103,6 +106,17 @@ private fun SettingsScreen(uploadEnabled: Boolean, setUploadEnabled: (Boolean) -
             }
             Text(stringResource(if (uploadEnabled) R.string.upload_on_description else R.string.upload_off_description),
                 color = MaterialTheme.colorScheme.onSurfaceVariant)
+            var goalText by rememberSaveable { mutableStateOf(waistGoal.toString()) }
+            val parsedGoal = goalText.replace(',', '.').toDoubleOrNull()
+            val invalidGoal = parsedGoal == null || parsedGoal !in 40.0..200.0
+            OutlinedTextField(goalText, { value ->
+                goalText = value
+                value.replace(',', '.').toDoubleOrNull()?.takeIf { it in 40.0..200.0 }?.let(setWaistGoal)
+            }, label = { Text(stringResource(R.string.waist_goal)) }, singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                isError = invalidGoal,
+                supportingText = if (invalidGoal) ({ Text(stringResource(R.string.waist_goal_range)) }) else null,
+                modifier = Modifier.fillMaxWidth())
             cloud()
         }
     }

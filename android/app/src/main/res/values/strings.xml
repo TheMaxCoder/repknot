@@ -5,6 +5,8 @@
     <string name="settings">Settings</string>
     <string name="back">Back</string>
     <string name="workouts">Workouts</string>
+    <string name="waist_goal">Waist goal (cm)</string>
+    <string name="waist_goal_range">40–200 cm</string>
     <string name="upload_workouts">Upload workouts</string>
     <string name="upload_off_description">Workouts stay on this phone. Programs still download when signed in.</string>
     <string name="upload_on_description">Finished workouts upload to the cloud.</string>

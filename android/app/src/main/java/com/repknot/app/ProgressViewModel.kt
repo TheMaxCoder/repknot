@@ -3,18 +3,18 @@ package com.repknot.app
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.repknot.data.CheckInDao
+import com.repknot.data.CheckInRow
 import com.repknot.data.ReferenceDao
 import com.repknot.data.SessionDao
-import com.repknot.domain.ExerciseProgress
-import com.repknot.domain.SessionDip
-import com.repknot.domain.attentionOrder
-import com.repknot.domain.progress
-import com.repknot.domain.sessionDips
+import com.repknot.domain.*
 import java.time.LocalDate
+import java.util.UUID
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -23,11 +23,19 @@ data class ProgressUiState(
     val items: List<ExerciseProgress> = emptyList(),
     val dips: List<SessionDip> = emptyList(),
     val names: Map<String, String> = emptyMap(),
+    val body: BodySummary? = null,
+    val checkIns: List<CheckInRow> = emptyList(),
+    val declines: Int = 0,
+    val recentDip: Boolean = false,
+    val today: LocalDate = LocalDate.now(),
 )
 
 class ProgressViewModel(
     private val sessions: SessionDao,
     private val reference: ReferenceDao,
+    private val checkIns: CheckInDao,
+    private val waistGoal: StateFlow<Double>,
+    private val onCheckInAdded: () -> Unit,
     private val today: () -> LocalDate = LocalDate::now,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow(ProgressUiState())
@@ -35,28 +43,54 @@ class ProgressViewModel(
 
     init {
         viewModelScope.launch {
-            sessions.observeAllSessions().collect {
-                mutableState.value = withContext(Dispatchers.Default) {
-                    val history = sessions.history()
-                    val prescriptions = reference.activeProgram()?.workouts?.flatMap { it.exercises }.orEmpty()
-                    val now = today()
-                    val items = attentionOrder(progress(history, prescriptions, now))
-                    ProgressUiState(
-                        loading = false,
-                        items = items,
-                        dips = sessionDips(history).filter { it.date >= now.minusDays(28) && it.date <= now }
-                            .sortedByDescending { it.date },
-                        names = items.associate { it.exerciseId to it.name },
-                    )
+            combine(sessions.observeAllSessions(), checkIns.observeAll(), waistGoal) { _, rows, goal -> rows to goal }
+                .collect { (rows, goal) ->
+                    mutableState.value = withContext(Dispatchers.Default) {
+                        val history = sessions.history()
+                        val prescriptions = reference.activeProgram()?.workouts?.flatMap { it.exercises }.orEmpty()
+                        val now = today()
+                        val items = attentionOrder(progress(history, prescriptions, now))
+                        val allDips = sessionDips(history)
+                        val declines = items.count { it.status == ProgressStatus.POSSIBLE_DECLINE && it.daysSinceLast <= 14 }
+                        val recentDip = allDips.any { it.date >= now.minusDays(14) && it.date <= now }
+                        ProgressUiState(
+                            loading = false, items = items,
+                            dips = allDips.filter { it.date >= now.minusDays(28) && it.date <= now }.sortedByDescending { it.date },
+                            names = items.associate { it.exerciseId to it.name },
+                            body = if (rows.isEmpty()) null else bodySummary(rows.map {
+                                CheckIn(LocalDate.parse(it.checkedOn), it.weightKg, it.waistCm)
+                            }, now, goal, declines, recentDip),
+                            checkIns = rows.sortedByDescending { it.checkedOn }, declines = declines,
+                            recentDip = recentDip, today = now,
+                        )
+                    }
                 }
-            }
         }
     }
 
-    class Factory(private val sessions: SessionDao, private val reference: ReferenceDao) : ViewModelProvider.Factory {
+    fun addCheckIn(date: String, weight: String, waist: String, notes: String): Boolean {
+        val row = parseCheckIn(date, weight, waist, notes) ?: return false
+        viewModelScope.launch { checkIns.add(row); onCheckInAdded() }
+        return true
+    }
+
+    class Factory(
+        private val sessions: SessionDao, private val reference: ReferenceDao,
+        private val checkIns: CheckInDao, private val waistGoal: StateFlow<Double>,
+        private val onCheckInAdded: () -> Unit,
+    ) : ViewModelProvider.Factory {
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
             require(modelClass.isAssignableFrom(ProgressViewModel::class.java))
-            @Suppress("UNCHECKED_CAST") return ProgressViewModel(sessions, reference) as T
+            @Suppress("UNCHECKED_CAST") return ProgressViewModel(sessions, reference, checkIns, waistGoal, onCheckInAdded) as T
         }
     }
+}
+
+internal fun parseCheckIn(date: String, weight: String, waist: String, notes: String): CheckInRow? {
+    val parsedDate = runCatching { LocalDate.parse(date) }.getOrNull() ?: return null
+    fun parse(value: String): Double? = value.trim().replace(',', '.').toDoubleOrNull()?.takeIf { it > 0 && it < 1000 }
+    val w = parse(weight)
+    val c = parse(waist)
+    if ((weight.isNotBlank() && w == null) || (waist.isNotBlank() && c == null) || (w == null && c == null)) return null
+    return CheckInRow(UUID.randomUUID().toString(), parsedDate.toString(), w, c, notes = notes.trim().ifEmpty { null })
 }

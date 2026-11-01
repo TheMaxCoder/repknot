@@ -1,6 +1,6 @@
 # 023 — Body card: waist goal, trends, cut check, check-in entry
 
-Status: blocked
+Status: in progress
 Updated: 2026-11-01
 Starting commit: 4bc409f
 Parent: [019](019-progress-milestone.md) step 5 · Delegated: yes (see
@@ -117,22 +117,22 @@ validity; on true it launches the write in `viewModelScope` (`checkIns.add(...)`
 
 ## Plan / progress
 1. [x] `Body.kt` + `BodyTest`.
-2. [ ] Settings goal, ViewModel, `BodyText` + tests.
+2. [x] Settings goal, ViewModel, `BodyText` + tests.
 3. [ ] Card, dialog, body screen.
 4. [ ] `scripts/check --offline`; commit(s) with task 023 in the subject.
 
 ## Decisions and discoveries
 
 - Projection cutoff is measured from today, as “more than 365 days away” describes the date; review this interpretation.
-- `CheckInDao.add` is suspending, while the specified `addCheckIn` returns a synchronous Boolean and calls for a successful write before returning. See Handoff.
+- Lead clarified that validation returns synchronously and the write runs asynchronously; a write failure may occur after the dialog closes.
+- Conservative text for inconsistent partial summaries: omit a missing remaining distance or weight percentage. Equal-date check-ins retain DAO order in the newest-first list.
 
 ## Verification
 
 - `cd android && ./gradlew :domain:test --offline` passed (21 tests). An initial test used a non-exact floating-point rate and expected 30 rather than the specified `ceil` result; changed its fixture to an exactly representable slope.
 - `scripts/check --offline` passed for the domain-only checkpoint; this is not verification of the unfinished app integration. Device verification remains with the lead.
+- `cd android && ./gradlew :app:testDebugUnitTest :app:assembleDebug --offline` passed for step 2.
 
 ## Handoff
 
-Blocked on a question: `CheckInDao.add` is `suspend`, but the specified `addCheckIn(...): Boolean` must write successfully before returning true and closing the dialog. Should the API become suspending (with the dialog saving asynchronously and handling write failures), or should true mean input was valid and a background write was merely launched, even though a failed write would close the dialog without saving? Please specify desired failure behavior.
-
-Next after clarification: settings, ViewModel and text (step 2), then UI and rerun the full offline check. Device check belongs to lead. No unfinished implementation changes remain; untracked `work/` pre-existed and was untouched.
+Next: implement card, dialog and body screen (step 3), then rerun the full offline check. Device check belongs to lead. Untracked `work/` pre-existed and is untouched.
