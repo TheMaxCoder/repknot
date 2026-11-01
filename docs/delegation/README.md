@@ -69,3 +69,5 @@ One line each: date · task · category (1–4) · what happened · action.
 
 ## Kept with the lead
 (none beyond the defaults above)
+- 2026-11-01 · 020 · 1 · lineage unit undefined when the latest session lists the exercise
+  with no sets; worker stopped and asked (affects statuses, correct stop) · spec fixed, resumed.

@@ -47,7 +47,8 @@ data class Exposure(val sessionId: String, val date: LocalDate, val name: String
 `name`: the first matching `PastExercise.exerciseName`; `plannedSets`: its `plannedSets`.
 
 **Lineage.** One per exercise id that has any exposure. The lineage unit is the unit of
-the first set of that exercise in the most recent session containing it. `exposures`
+the first set of that exercise in the most recent session that has at least one set
+for it (sessions where the exercise has no sets are skipped). `exposures`
 (chronological, light ones included) vs `normal` = exposures with `light == false`; every
 rule below uses `normal` only, except that `ExerciseProgress.exposures` returns all.
 
