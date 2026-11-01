@@ -6,6 +6,8 @@
 # Progress (one line per tool call / message) streams to .delegate-logs/<run>.progress;
 # follow it with scripts/delegate-watch. The raw event stream is kept as <run>.jsonl.
 # stdin is closed: pi -p otherwise waits on a non-terminal stdin and never starts.
+# MISE_QUIET: a mise activation banner on stdout would corrupt the JSON event stream.
+export MISE_QUIET=1
 set -euo pipefail
 repo_root="$(git rev-parse --show-toplevel)"
 cd "$repo_root"

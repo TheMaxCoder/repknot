@@ -120,3 +120,12 @@ No schema or domain changes. Proceed with the UI implementation.
 Implemented and installed. Next: owner tries the revised workout screen and reports visual
 or in-gym friction. Core unit/state behaviors have JVM coverage; the manual limitations
 above remain. Untracked work/ from exploration is preserved. Nothing pushed.
+
+## Follow-up (2026-11-01, Claude session)
+The codex session left an uncommitted, compiled follow-up: Previous / "N of M" / Next
+controls under the selected exercise, and a tappable Up next block. Finished and committed
+by the Claude session. Test phone: Today → Preview Push 1 (prescriptions, nothing
+stored) → Start → Previous disabled on 1 of 5 → Next → 2 of 5 → tap Up next → 3 of 5 →
+Previous → 2 of 5 → Discard workout → confirm → back to Today (Preview Push 1); no
+crashes. This was the first on-device preview→start and real discard (task 015 had left
+them unexercised). `scripts/delegate` now exports `MISE_QUIET=1` (codex had to rerun with it).

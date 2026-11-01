@@ -4,6 +4,8 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Intent
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.clickable
+import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
@@ -105,11 +107,27 @@ private fun SessionScreen(session: WorkoutUiState.Session, vm: WorkoutViewModel)
         holder.SaveableStateProvider(exercise.row.id) {
             ExerciseCard(exercise, session.choices, index, session.exercises.size, vm) { picker = exercise.row.id }
         }
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically) {
+            TextButton(enabled = index > 0, onClick = {
+                session.exercises.getOrNull(index - 1)?.let { selected = it.row.id; showAll = false }
+            }) { Text(stringResource(R.string.previous_exercise)) }
+            Text(stringResource(R.string.exercise_position, index + 1, session.exercises.size),
+                style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            TextButton(enabled = index < session.exercises.lastIndex, onClick = {
+                session.exercises.getOrNull(index + 1)?.let { selected = it.row.id; showAll = false }
+            }) { Text(stringResource(R.string.next_exercise)) }
+        }
         session.exercises.getOrNull(index + 1)?.let { next ->
-            Text(stringResource(R.string.up_next), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Text(next.row.exerciseName, style = MaterialTheme.typography.titleMedium)
-            Prescription(next.row)
-            PreviousHint(next.previous, next.previousOn)
+            Column(Modifier.fillMaxWidth().clickable(role = Role.Button,
+                onClickLabel = stringResource(R.string.open_exercise, next.row.exerciseName),
+                onClick = { selected = next.row.id; showAll = false }).padding(vertical = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(stringResource(R.string.up_next), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(next.row.exerciseName, style = MaterialTheme.typography.titleMedium)
+                Prescription(next.row)
+                PreviousHint(next.previous, next.previousOn)
+            }
         }
     }
     TextButton(onClick = { showAll = !showAll }) { Text(stringResource(if (showAll) R.string.hide_exercises else R.string.view_all_exercises)) }
