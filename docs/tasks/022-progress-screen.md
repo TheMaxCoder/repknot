@@ -1,6 +1,6 @@
 # 022 — Progress screen and exercise history
 
-Status: in progress
+Status: done
 Updated: 2026-11-01
 Starting commit: 1e2482e
 Parent: [019](019-progress-milestone.md) step 3 · Delegated: yes (see
@@ -82,18 +82,22 @@ ViewModel and screens are checked by the lead on the device.
 
 ## Plan / progress
 1. [x] `ProgressText.kt` + tests.
-2. [ ] `ProgressViewModel` + navigation + screens.
-3. [ ] `scripts/check --offline`; commit(s) with task 022 in the subject.
+2. [x] `ProgressViewModel` + navigation + screens.
+3. [x] `scripts/check --offline`; commit(s) with task 022 in the subject.
 
 ## Decisions and discoveries
 
 - Pre-existing untracked `work/` is unrelated and left untouched.
 - For unusual bodyweight MovedUp/LoadDown inputs, omit load values and use “Moved up on …” / “Load down for 2 sessions”; normal engine output does not generate these. Exposure summaries use `previousSummary` exactly as specified, including its bodyweight label.
+- Recent dips include today and the date 28 days before today; future dates are excluded. Same-date dips retain engine order.
+- Review: first commit `dd871d7` omitted its Not verified and Review lines due to a shell command typo; device/full checks were pending then, and the unusual bodyweight fallback above needs review.
 
 ## Verification
 
 - `cd android && ./gradlew --offline :app:testDebugUnitTest` — passed, including ProgressText tests.
+- `scripts/check --offline` — initially failed due to ambiguous R import, fixed; subsequently passed twice (debug build, lint, JVM tests), including after loading layout adjustment.
+- Device check not run; delegated to lead.
 
 ## Handoff
 
-- Text functions complete; next implement ViewModel, navigation and screens, then run offline checks. Review: conservative text for unusual bodyweight reason inputs described above.
+- Implementation and offline checks complete; lead should review the diff and run the specified device check, including loading, navigation/back, grouping, and exercise history. Review the edge-case formatting and recent-dip boundary above. No unfinished task changes. Untracked `work/` remains untouched.

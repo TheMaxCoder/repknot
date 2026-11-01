@@ -1,4 +1,7 @@
 <resources>
+    <string name="progress">Progress</string>
+    <string name="no_finished_workouts">No finished workouts yet.</string>
+    <string name="exercise_not_found">Exercise not found</string>
     <string name="settings">Settings</string>
     <string name="back">Back</string>
     <string name="workouts">Workouts</string>

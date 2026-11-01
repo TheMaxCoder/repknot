@@ -36,7 +36,7 @@ import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 
 @Composable
-fun WorkoutScreen(vm: WorkoutViewModel, openSettings: () -> Unit) {
+fun WorkoutScreen(vm: WorkoutViewModel, openProgress: () -> Unit, openSettings: () -> Unit) {
     val state by vm.state.collectAsState()
     val error by vm.error.collectAsState()
     val session = state as? WorkoutUiState.Session
@@ -44,8 +44,9 @@ fun WorkoutScreen(vm: WorkoutViewModel, openSettings: () -> Unit) {
         Column(Modifier.fillMaxSize().padding(padding).imePadding().verticalScroll(rememberScrollState()).padding(24.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                if (session != null) Text(runCatching { LocalDate.parse(session.row.performedOn).format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)) }.getOrDefault(session.row.performedOn), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                if (session != null) Text(runCatching { LocalDate.parse(session.row.performedOn).format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)) }.getOrDefault(session.row.performedOn), modifier = Modifier.weight(1f), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 else Spacer(Modifier.weight(1f))
+                TextButton(onClick = openProgress) { Text(stringResource(R.string.progress)) }
                 TextButton(onClick = openSettings) { Text(stringResource(R.string.settings)) }
             }
             error?.let { Text(stringResource(it), color = MaterialTheme.colorScheme.error) }

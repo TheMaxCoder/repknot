@@ -34,6 +34,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.repknot.app.ui.ExerciseProgressScreen
+import com.repknot.app.ui.ProgressScreen
 import com.repknot.app.ui.theme.RepknotTheme
 import com.repknot.data.CloudState
 
@@ -64,8 +66,20 @@ class MainActivity : ComponentActivity() {
                     SettingsScreen(uploadEnabled, app::setUploadEnabled, { screen = "workout" }) {
                         CloudSection(cloudState, cloud::signIn, cloud::signOut)
                     }
+                } else if (screen == "progress" || screen.startsWith("exercise:")) {
+                    val progress: ProgressViewModel = viewModel(factory = ProgressViewModel.Factory(
+                        app.database.sessions(), app.database.reference(),
+                    ))
+                    val progressState by progress.state.collectAsState()
+                    if (screen == "progress") {
+                        BackHandler { screen = "workout" }
+                        ProgressScreen(progressState, { screen = "workout" }) { screen = "exercise:$it" }
+                    } else {
+                        BackHandler { screen = "progress" }
+                        ExerciseProgressScreen(progressState, screen.removePrefix("exercise:")) { screen = "progress" }
+                    }
                 } else {
-                    WorkoutScreen(workout) { screen = "settings" }
+                    WorkoutScreen(workout, { screen = "progress" }) { screen = "settings" }
                 }
             }
         }
