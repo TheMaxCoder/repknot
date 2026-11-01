@@ -91,3 +91,10 @@ logged set; preview target present. `ExerciseSelectionTest` compiles after the r
 ## Handoff
 
 Implementation complete. Next: lead review and device check of target placement, set indicators and accessibility, and planned/done header. Review the documented catch-all for unexpected numeric bodyweight loads. No unfinished tracked changes; pre-existing untracked `work/` remains untouched.
+
+## Lead review (2026-11-01)
+Accepted (one stop for unspecified wording; spec fixed, Loop rule added). Diff read against
+items 0–5; `scripts/check --offline` passed. Test phone with the real history:
+Push 1 preview targets matched the history. A throwaway Push 1 session (started, one set,
+light toggled on, then discarded — never uploaded) showed `1/3` in the header and `▲` on
+the set; no crashes.
