@@ -1,8 +1,8 @@
 # 020 — Progress engine (domain)
 
-Status: ready
+Status: blocked
 Updated: 2026-11-01
-Starting commit: (worker: record `git rev-parse --short HEAD` when you start)
+Starting commit: 7aa6770
 Parent: [019](019-progress-milestone.md) step 1 · Delegated: yes (see
 [delegation](../delegation/README.md))
 
@@ -176,6 +176,22 @@ sessionDips emit and not-emit (2 of 3 below; 3 of 7 below).
 
 ## Decisions and discoveries
 
+- `startRows` snapshots all prescribed exercises into a session before sets are logged;
+  consequently a finished session can contain an exercise with no sets. The lineage
+  definition does not specify a unit when the most recent session containing that
+  exercise has no sets.
+- Pre-existing untracked `work/` was left untouched.
+
 ## Verification
 
+- `git status --short && git log -1 --oneline`: starting commit `7aa6770`, with
+  pre-existing untracked `work/`. No implementation or build checks run.
+
 ## Handoff
+
+Blocked pending clarification: if the most recent finished session containing an
+exercise has no sets for that exercise, should lineage selection skip that session
+and use the most recent session with at least one set, or should it do something else?
+This affects progress, target, and dip results. After clarification, implement plan
+step 1, verify and commit it, then implement and verify step 2. No implementation
+changes are unfinished.
