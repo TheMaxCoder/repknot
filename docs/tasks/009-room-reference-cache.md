@@ -113,3 +113,11 @@ Lead: wire the fetch in task 010 and verify `replaceAll` and `activeProgram` on 
 No dev backend was contacted. Review: v4 fallback destructively resets synthetic v1–v3
 schemas; JUnit test dependency added as specified. `docs/architecture.md` still describes
 the v3 fallback; update it when integrating task 010 (outside this task's stated scope).
+
+## Lead review (2026-11-01)
+Accepted without retry. Diff read against rules 1–8 and the exact API: matches. Re-ran
+`scripts/check --offline` (BUILD SUCCESSFUL) and `:data:testDebugUnitTest --rerun`
+(ReferenceMappingTest 4/4); `4.json` exported. Worker flagged the destructive v3 fallback
+and the JUnit test dependency, left the lead's untracked 010 file alone, and noted the
+architecture doc update (done in 010). Device Room behavior and the live fetch are
+verified in 010. No miss logged.
