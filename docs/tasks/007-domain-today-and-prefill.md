@@ -1,6 +1,6 @@
 # 007 — Domain: today's workout and previous-value prefill
 
-Status: in progress
+Status: done
 Updated: 2026-11-01
 Starting commit: 1686b5c
 Parent: [006](006-training-data-model.md) step 6 · Delegated: yes (first trial, see
@@ -81,8 +81,8 @@ fun prefill(prescription: Prescription, sessions: List<PastSession>): Prefill
 
 ## Plan / progress
 1. [x] Add units + picker change; build passes.
-2. [ ] `Program.kt` + `ProgramTest.kt` covering rules 1–9.
-3. [ ] `scripts/check --offline`; commit (task 007 in subject).
+2. [x] `Program.kt` + `ProgramTest.kt` covering rules 1–9.
+3. [x] `scripts/check --offline`; commit (task 007 in subject).
 
 ## Decisions and discoveries
 - Lead decisions (2026-11-01): unfinished sessions don't advance "today" (resuming an
@@ -91,6 +91,8 @@ fun prefill(prescription: Prescription, sessions: List<PastSession>): Prefill
 
 ## Verification
 - `cd android && ./gradlew --offline :app:assembleDebug` — passed.
+- `cd android && ./gradlew --offline :domain:test` — passed; test compiler reports redundant spread warnings.
+- `scripts/check --offline` — passed (debug build, lint, available unit tests). Device checks not run.
 
 ## Handoff
-Units and picker updated; next implement the domain API and rule tests. No known blockers.
+Implemented the domain API and rule tests; units added and existing picker restricted to KG/LB. No unresolved questions. Next: return to parent task 006 to integrate the domain logic; device UI verification was not in scope.
