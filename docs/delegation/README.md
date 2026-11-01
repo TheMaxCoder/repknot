@@ -29,6 +29,7 @@ Keep it with the lead:
    Pin versions of any new dependency, and keep acceptance and plan consistent: each
    rule is assigned to exactly one verifier (worker JVM test or lead device check).
    "Out of scope" means do not modify; list paths that must not even be read separately.
+   Text/format functions: cover every input combination or give an explicit catch-all.
 2. `scripts/delegate docs/tasks/NNN-*.md` (run one task per worktree if parallel).
    Progress streams one line per tool call/message to `.delegate-logs/latest.progress`;
    inside herdr it shows in a "worker" tab automatically, elsewhere run
@@ -73,3 +74,6 @@ One line each: date · task · category (1–4) · what happened · action.
   with no sets; worker stopped and asked (affects statuses, correct stop) · spec fixed, resumed.
 - 2026-11-01 · 020 · 3 · second stop in the task, over a same-date sort tie that rule 1
   already covers · rule 1 sharpened with this example; spec clarified; resumed.
+- 2026-11-01 · 021 · 1 · target text had no wording for rirMax-only and null loads; worker
+  stopped (third stop over formatting-level gaps) · spec fixed; Loop rule: catch-all for
+  text functions.

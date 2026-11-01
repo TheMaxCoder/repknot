@@ -44,6 +44,11 @@ libraries. Do not read `private-data/`.
      bodyweight `Target · bodyweight at RIR 1–2, …`; RIR part `at RIR 1` when min == max,
      `at RIR 1+` when only min, omitted when both null; `(last …)` omitted when `lastReps`
      is empty. Reps keep `.5` (`8.5`).
+   - Added 2026-11-01 (worker question): only `rirMax` → `at RIR ≤2`. A null load with a
+     non-bodyweight unit: `Repeat` omits the load (`Target · repeat at RIR 1–2, add a rep
+     where it's there (last …)`); `MoveUp` with `from == null` and `to == null` reads
+     `Target · top of the range — pick the next load`; `to != null` behaves as above.
+   - Any other combination not listed: the most conservative readable text; record it.
 3. **Card.** Under the `Last · …` lines: `targetText(target)` in `MaterialTheme.colorScheme.primary`
    (bodyMedium), when `target != null`. Same in preview cards and in the "Up next" block.
 4. **Set rows.** After the existing description, a separate `Text`: `▲` (primary) for UP,
