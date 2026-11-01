@@ -1,8 +1,8 @@
 # 012 — Workout screen (Compose)
 
-Status: ready (starts after 011 is accepted)
+Status: blocked
 Updated: 2026-11-01
-Starting commit: (worker: record `git rev-parse --short HEAD` when you start)
+Starting commit: f25a2ab
 Parent: [006](006-training-data-model.md) step 8 (UI half; logic is task 011) · Delegated:
 yes (see [delegation](../delegation/README.md))
 
@@ -76,10 +76,16 @@ Every state ends with the existing `CloudSection` below a divider. Errors from
 ## Plan / progress
 1. [ ] Today / NoProgram / Loading + wiring in `MainActivity`.
 2. [ ] Session screen: exercise cards, set input, picker, notes, finish/sync section.
-3. [ ] `scripts/check --offline`; commit(s) with task 012 in the subject.
+3. [ ] `scripts/check --offline` on the implementation; commit(s) with task 012 in the subject.
+
+## Decisions and discoveries
+- `logSet` launches an asynchronous action and exposes no per-action completion or success result. The error flow alone cannot distinguish a successful save from an action that has not yet completed or silently returned, and the session state may remain equal when editing a set to the same values. Inferring success from state changes would therefore be unreliable.
 
 ## Verification
-(worker: exact commands and results)
+- `scripts/check --offline` — passed on the unchanged starting implementation (build, lint and unit tests); this is not verification of the requested screen.
+- Device smoke test not run; assigned to the lead after implementation.
 
 ## Handoff
-(worker: what was done, anything unresolved or questioned)
+- No screen changes made. Blocked before implementation because the specified reset after a successful log requires an observable completion result outside the permitted UI scope.
+- Question for the lead: May `WorkoutViewModel.logSet` be changed to expose a reliable per-action success/completion signal (including unchanged edits and failures), or what explicit alternative behavior should the screen use?
+- Next action: resolve the question and adjust the scope/contract, then implement plan step 1. Review: this blocker concerns a required ViewModel contract outside the task scope; no implementation deviation has been made.
