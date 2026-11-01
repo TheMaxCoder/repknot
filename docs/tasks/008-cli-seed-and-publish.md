@@ -1,8 +1,8 @@
 # 008 — CLI: seed exercises and publish a program
 
-Status: ready
+Status: done
 Updated: 2026-11-01
-Starting commit: (worker: record `git rev-parse --short HEAD` when you start)
+Starting commit: 20e3804
 Parent: [006](006-training-data-model.md) step 5 · Delegated: yes (see
 [delegation](../delegation/README.md))
 
@@ -56,9 +56,9 @@ copy, or pass anything from `private-data/` — the lead runs the real data afte
 8. Update the header comment and the usage line for both commands.
 
 ## Plan / progress
-1. [ ] Implement both commands.
-2. [ ] Verify with synthetic fixtures as test2 (below); record outputs.
-3. [ ] Commit (task 008 in subject).
+1. [x] Implement both commands.
+2. [x] Verify with synthetic fixtures as test2 (below); record outputs.
+3. [x] Commit (task 008 in subject).
 
 ## Verification (worker: run these, record actual output)
 Create fixtures in a fresh `mktemp -d` directory outside the repo:
@@ -76,9 +76,22 @@ Then, in order (all with `--as test2`):
 6. `deno check`: `d=$(mktemp -d) && cp scripts/repknot $d/repknot.ts && deno check $d/repknot.ts`.
 Test-user data stays on dev (synthetic; there is no delete for programs).
 
+Actual results (fresh synthetic fixtures, all commands `scripts/repknot --as test2`):
+- `seed-exercises ex.csv`: `seeded 3 exercises (3 new, 0 updated)`; exit 0.
+- Repeat: `seeded 3 exercises (0 new, 3 updated)`; exit 0.
+- `publish-program prog.json`: `published syn v1 (409112b9-ffcc-421a-bbc9-ea68659de7d9) · active`; exit 0.
+- Repeat: `syn v1 is already published; bump "version" to publish a change`; exit 1.
+- `publish-program prog-v2.json --inactive`: `published syn v2 (08a01b23-c3db-46f5-8a29-d2f694087e80) · inactive · supersedes 409112b9-ffcc-421a-bbc9-ea68659de7d9`; exit 0.
+- `publish-program missing.json`: Postgres code `22023`, message `unknown exercises: syn-missing`; exit 1.
+- Additional missing-header CSV: `missing CSV columns: default_unit`; exit 1.
+- `d=$(mktemp -d) && cp scripts/repknot $d/repknot.ts && deno check $d/repknot.ts`: passed.
+- Confirmed configured Supabase URL matches the linked dev project before writes.
+
 ## Decisions and discoveries
 - Lead (2026-11-01): `active_in_airtable=false` exercises are seeded unarchived — history
   import (step 9) references them. Airtable role text is not stored.
+- Review: adds the requested `jsr:@std/csv` dependency, resolved during verification to 1.0.6.
 
 ## Handoff
-(worker: what was done, outputs, anything unresolved or questioned)
+Complete. Synthetic exercises and program versions remain on dev for test2 as specified.
+No unresolved questions. Next: lead reviews the commit and proceeds with task 006.

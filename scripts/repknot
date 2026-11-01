@@ -8,8 +8,11 @@
 //   scripts/repknot set-notes <#number|uuid> <notes>
 //   scripts/repknot log-test            # synthetic session: one exercise, one set (save_session)
 //   scripts/repknot delete <#number|uuid>
+//   scripts/repknot seed-exercises <exercises.csv>
+//   scripts/repknot publish-program <program.json> [--inactive]
 //   add --as test2 to act as the second (test) user
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { parse } from "jsr:@std/csv";
 
 const root = new URL("..", import.meta.url).pathname;
 const env: Record<string, string> = {};
@@ -115,7 +118,46 @@ switch (command) {
     break;
   }
 
+  case "seed-exercises": {
+    if (!arg) fail("give an exercises CSV file");
+    const csv = await Deno.readTextFile(arg);
+    const header = parse(csv)[0] ?? [];
+    const missing = ["slug", "name", "default_unit"].filter((column) => !header.includes(column));
+    if (missing.length) fail(`missing CSV columns: ${missing.join(", ")}`);
+    const rows = parse(csv, { skipFirstRow: true }).map((row) => ({
+      slug: row.slug, name: row.name, default_unit: row.default_unit || null,
+      notes: row.airtable_notes || null,
+    }));
+    const existing = new Set<string>();
+    for (let offset = 0;; offset += 1000) {
+      const { data, error } = await supabase.from("exercises").select("slug")
+        .order("slug").range(offset, offset + 999);
+      if (error) fail(error);
+      for (const exercise of data) existing.add(exercise.slug);
+      if (data.length < 1000) break;
+    }
+    const updated = rows.filter((row) => existing.has(row.slug)).length;
+    const { error } = await supabase.from("exercises").upsert(rows, { onConflict: "user_id,slug" });
+    if (error) fail(error);
+    console.log(`seeded ${rows.length} exercises (${rows.length - updated} new, ${updated} updated)`);
+    break;
+  }
+
+  case "publish-program": {
+    if (!arg) fail("give a program JSON file");
+    const payload = JSON.parse(await Deno.readTextFile(arg));
+    const { data, error } = await supabase.rpc("publish_program", {
+      payload, activate: !args.includes("--inactive"),
+    });
+    if (error) {
+      if (error.code === "23505") fail(`${payload.program} v${payload.version} is already published; bump "version" to publish a change`);
+      fail(error);
+    }
+    console.log(`published ${data.key} v${data.version} (${data.id}) · ${data.is_active ? "active" : "inactive"}${data.supersedes ? ` · supersedes ${data.supersedes}` : ""}`);
+    break;
+  }
+
   default:
-    console.log("usage: scripts/repknot [--as test2] whoami | list [n] | show <#n|uuid> | set-notes <#n|uuid> <notes> | log-test | delete <#n|uuid>");
+    console.log("usage: scripts/repknot [--as test2] whoami | list [n] | show <#n|uuid> | set-notes <#n|uuid> <notes> | log-test | delete <#n|uuid> | seed-exercises <exercises.csv> | publish-program <program.json> [--inactive]");
     Deno.exit(command ? 1 : 0);
 }
