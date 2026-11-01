@@ -69,3 +69,14 @@ Out of scope (do not modify): `WorkoutViewModel.kt`, `AppSettings.kt`,
 
 ## Handoff
 Implementation complete; next the lead reviews the commits and runs the device smoke test, including navigation/back, preview, upload switch, and discard confirmation. No device verification was run by the worker. The step 1 commit message omitted the pending device check due to a shell command formatting error; it remains pending.
+
+## Lead review (2026-11-01)
+Accepted without retry or clarification. Diff matches items 1–6 (shared `PrescriptionLine`
+for preview and session cards is a good refactor). Test phone: Settings opens from
+the header, shows **Upload workouts** off by default with the off description and the
+account section; system back returns; the session shows **Discard workout** under
+**Finish workout**; the confirm dialog opens and **Cancel** keeps the session; no crashes.
+Not exercised on device: Today → Preview → Start, and an actual discard — the phone
+had a Pull 1 workout in progress that the owner started on the previous build, which the
+lead did not discard. Preview state is JVM-tested (`WorkoutStateTest`) and discard is
+device-tested at the DAO level.

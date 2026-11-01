@@ -25,8 +25,9 @@ and the signed-in user's session; RLS restricts every table to its owner. Schema
   refreshed transactionally after a complete fetch; local drafts and pending edits are
   retained. Server and phone share the ADR 002 shape (sessions → session exercises →
   sets, exercises referenced by uuid on push). Programs and exercises are read-only on
-  the phone and refreshed before sessions. Until task 006 step 8 the app has no logging
-  screen (account/sync only).
+  the phone and refreshed before sessions. Upload is a device setting (Settings → Upload
+  workouts), off by default: refresh still downloads, finished sessions stay local
+  until it is enabled.
 - Persist edits and pending sync together, retain stable IDs, and handle retries without duplicates.
 - Upload acknowledgements must not discard newer local edits, and no writer (Android,
   web, ChatGPT, CLI) may silently overwrite another's change. Revision rules are in

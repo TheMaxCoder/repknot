@@ -1,6 +1,6 @@
 # 014 — Settings page, workout preview, discard, upload switch
 
-Status: in progress
+Status: done
 Updated: 2026-11-01
 Starting commit: a93df78
 Lead task; the screens are delegated as [015](015-settings-preview-screens.md).
@@ -27,8 +27,8 @@ workout without starting it; stop a started one. Accepted when:
    `uploadEnabled` flow, `finish` only syncs when enabled. Tests: `WorkoutStateTest`
    preview; device `discardRemovesOnlyANeverUploadedWorkoutInProgress`; integration test
    step "upload disabled keeps a finished session local".
-2. [ ] Screens (task 015, delegated).
-3. [ ] Device smoke + run device/integration tests.
+2. [x] Screens (task 015, delegated).
+3. [x] Device tests + integration + smoke (see Verification).
 
 ## Decisions
 - "Online logging" = upload of workouts. Downloading programs/sessions stays on so the
@@ -39,9 +39,11 @@ workout without starting it; stop a started one. Accepted when:
 
 ## Verification
 - `scripts/check --offline`: BUILD SUCCESSFUL; WorkoutStateTest 4/4.
-- Not run: device tests and integration test — the phone disconnected (`adb devices` empty).
+- Test phone: `:data:connectedDebugAndroidTest` — SessionStoreTest 5/5,
+  WorkoutDatabaseTest 6/6 (incl. discard); `scripts/test-sync-integration` — OK (1 test),
+  incl. "upload disabled keeps a finished session local" against dev.
+- Smoke: see task 015 review (preview→start and a real discard not exercised: owner's
+  in-progress Pull 1 was left alone).
 
 ## Handoff
-Next: task 015 screens; then run `:data:connectedDebugAndroidTest`,
-`scripts/test-sync-integration`, and a device smoke (upload off: start → finish → stays
-local; switch on → uploads) once the phone is connected.
+Done. Turn on **Upload workouts** in Settings when ready to log online.
