@@ -120,7 +120,7 @@ fun attentionOrder(items: List<ExerciseProgress>): List<ExerciseProgress>
 ```
 Groups, in order: POSSIBLE_DECLINE; then `readyStreak ≥ 2` (any other status); IMPROVING;
 MAINTAINING; NOT_ENOUGH_DATA; and finally — overriding all others — `daysSinceLast > 14`.
-Within a group: most recent exposure first, then name.
+Within a group: most recent exposure date first (same date ties), then name.
 
 ```kotlin
 sealed interface TodayTarget {
