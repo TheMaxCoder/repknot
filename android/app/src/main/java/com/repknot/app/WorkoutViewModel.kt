@@ -12,6 +12,8 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import java.time.Instant
+import java.time.ZoneOffset
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -26,15 +28,22 @@ sealed interface WorkoutUiState {
     data class Preview(val programName: String, val workout: ProgramWorkout, val suggested: Boolean,
                        val exercises: List<PreviewExerciseUi>) : WorkoutUiState
 }
-data class ExerciseUi(val row: SessionExerciseRow, val sets: List<SetRow>, val previous: Prefill, val suggestion: SetSuggestion)
+data class ExerciseUi(val row: SessionExerciseRow, val sets: List<SetRow>, val previous: Prefill, val suggestion: SetSuggestion, val previousOn: LocalDate?)
 data class SetSuggestion(val load: Double?, val unit: LoadUnit, val reps: Double?)
-data class PreviewExerciseUi(val prescription: Prescription, val previous: Prefill)
+data class PreviewExerciseUi(val prescription: Prescription, val previous: Prefill, val previousOn: LocalDate?)
+
+private fun previousDate(previous: Prefill, history: List<PastSession>): LocalDate? =
+    (previous as? Prefill.Previous)?.let { p -> history.firstOrNull { it.id == p.sessionId }?.finishedAtMillis }
+        ?.let { Instant.ofEpochMilli(it).atZone(ZoneOffset.UTC).toLocalDate() }
 
 /** Preview of one program workout with previous values; null if the key is not in the program. */
 fun previewState(program: Program, programName: String?, workoutKey: String, history: List<PastSession>): WorkoutUiState.Preview? {
     val workout = program.workouts.firstOrNull { it.key == workoutKey } ?: return null
     return WorkoutUiState.Preview(programName ?: "Program", workout, todaysWorkout(program, history).key == workoutKey,
-        workout.exercises.sortedBy { it.position }.map { PreviewExerciseUi(it, prefill(it, history)) })
+        workout.exercises.sortedBy { it.position }.map {
+            val previous = prefill(it, history)
+            PreviewExerciseUi(it, previous, previousDate(previous, history))
+        })
 }
 
 fun todayState(program: Program?, programName: String?, history: List<PastSession>): WorkoutUiState =
@@ -65,7 +74,7 @@ fun sessionState(snapshot: SessionSnapshot, history: List<PastSession>, exercise
         val unit = row.plannedUnit?.let(::parseUnit) ?: byId[row.exerciseId]?.defaultUnit?.let(::parseUnit) ?: LoadUnit.KG
         val logged = sets[row.id].orEmpty().sortedBy { it.position }
         val previous = prefill(prescriptionFor(row, unit), previousHistory)
-        ExerciseUi(row, logged, previous, suggestionFor(previous, logged.size, row, unit))
+        ExerciseUi(row, logged, previous, suggestionFor(previous, logged.size, row, unit), previousDate(previous, previousHistory))
     }, exercises)
 }
 

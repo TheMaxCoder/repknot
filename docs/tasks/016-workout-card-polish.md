@@ -70,24 +70,16 @@ absent / partially missing, singular "1 set"). `WorkoutStateTest`: `previousOn` 
 `Previous` and null for `StartLoad` (session and preview).
 
 ## Plan / progress
-1. [ ] `previousOn` + `PreviousSummary.kt` + tests.
+1. [x] `previousOn` + `PreviousSummary.kt` + tests.
 2. [ ] Card UI items 1–4.
 3. [ ] `scripts/check --offline`; commit(s) with task 016 in the subject.
 
 ## Decisions and discoveries
-- Existing sets may have RIR above 10: the database checks only `rir >= 0`, and the
-  current input accepts non-negative integers. The specified edit initial value and
-  stepper range therefore conflict for those sets. Review: requirement clarification
-  needed before implementing the stepper; no behavior was guessed.
+- Existing sets may have RIR above 10. Owner clarified the edit upper bound is
+  max(10, the existing RIR); do not clamp.
 
 ## Verification
-- `scripts/check --offline` — passed on the unchanged implementation (baseline;
-  106 tasks, 2 executed and 104 up-to-date). Task acceptance remains unverified.
+- `scripts/check --offline` — passed after step 1 (106 tasks, 19 executed, 87 up-to-date). UI and device acceptance remain unverified.
 
 ## Handoff
-- No implementation changes made; all plan steps remain open.
-- Question: when editing an existing set with RIR greater than 10, should the stepper
-  retain and display that value (temporarily outside 0–10), clamp it to 10, or use
-  another behavior? Clamping could silently change an existing value on save.
-- Next: obtain the answer, then implement plan step 1 and continue in order. The lead
-  still needs to run the device check. No unfinished code changes.
+- Next: implement card UI, then rerun checks. The lead still needs to run the device check.

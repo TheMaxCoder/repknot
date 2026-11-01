@@ -30,6 +30,8 @@ class WorkoutStateTest {
         assertEquals(listOf("Deck", "Press"), preview.exercises.map { it.prescription.exerciseName })
         assertEquals(Prefill.Previous("old", listOf(pastSet)), preview.exercises[1].previous)
         assertEquals(Prefill.StartLoad(12.0, LoadUnit.PLATES), preview.exercises[0].previous)
+        assertNull(preview.exercises[0].previousOn)
+        assertEquals(java.time.LocalDate.of(1970, 1, 1), preview.exercises[1].previousOn)
         assertTrue(previewState(program, null, "b", listOf(past))!!.suggested)
         assertNull(previewState(program, null, "missing", emptyList()))
     }
@@ -54,6 +56,8 @@ class WorkoutStateTest {
         assertEquals(listOf("1", "2"), state.exercises[1].sets.map { it.id })
         assertEquals(Prefill.Previous("old", listOf(pastSet)), state.exercises[1].previous)
         assertEquals(SetSuggestion(30.0, LoadUnit.LB, 8.5), state.exercises[1].suggestion)
+        assertNull(state.exercises[0].previousOn)
+        assertEquals(java.time.LocalDate.of(1970, 1, 1), state.exercises[1].previousOn)
         assertEquals(LoadUnit.KG, state.exercises[0].suggestion.unit)
         assertEquals(choices, state.choices)
     }
