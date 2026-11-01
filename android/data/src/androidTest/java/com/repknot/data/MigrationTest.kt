@@ -15,6 +15,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class MigrationTest {
     private val name = "migration-test.db"
+    private val name6 = "migration-test-6.db"
     @get:Rule val helper = MigrationTestHelper(InstrumentationRegistry.getInstrumentation(), WorkoutDatabase::class.java)
 
     @Test fun v4WorkoutSurvivesUpgradeToV5WithLightOff() {
@@ -30,7 +31,7 @@ class MigrationTest {
         }
         helper.runMigrationsAndValidate(name, 5, true, WorkoutDatabase.MIGRATION_4_5).close()
         val db = Room.databaseBuilder(InstrumentationRegistry.getInstrumentation().targetContext,
-            WorkoutDatabase::class.java, name).addMigrations(WorkoutDatabase.MIGRATION_4_5).build()
+            WorkoutDatabase::class.java, name).addMigrations(WorkoutDatabase.MIGRATION_4_5, WorkoutDatabase.MIGRATION_5_6).build()
         try {
             runBlocking {
                 val row = db.sessions().get("s1")!!
@@ -41,6 +42,26 @@ class MigrationTest {
                 db.sessions().setLight("s1", true)
                 assertEquals(true, db.sessions().get("s1")!!.light)
                 assertEquals(6L, db.sessions().get("s1")!!.localRevision)
+            }
+        } finally { db.close() }
+    }
+
+    @Test fun v5UpgradesToV6WithAnEmptyCheckInTable() {
+        helper.createDatabase(name6, 5).apply {
+            execSQL("""INSERT INTO sessions (id, performedOn, title, notes, status, localRevision, pushedLocalRevision,
+                baseRevision, sharedLocalRevision, number, serverSnapshot, programId, programWorkoutKey, light)
+                VALUES ('s1', '2026-11-02', 'Push 1', NULL, 'in_progress', 2, 0, NULL, NULL, NULL, NULL, NULL, NULL, 1)""")
+            close()
+        }
+        helper.runMigrationsAndValidate(name6, 6, true, WorkoutDatabase.MIGRATION_5_6).close()
+        val db = Room.databaseBuilder(InstrumentationRegistry.getInstrumentation().targetContext,
+            WorkoutDatabase::class.java, name6).addMigrations(WorkoutDatabase.MIGRATION_4_5, WorkoutDatabase.MIGRATION_5_6).build()
+        try {
+            runBlocking {
+                assertEquals(true, db.sessions().get("s1")!!.light)
+                assertEquals(0, db.checkIns().all().size)
+                db.checkIns().add(CheckInRow("c1", "2026-11-02", waistCm = 91.0))
+                assertEquals(true, db.checkIns().pending().single().pending)
             }
         } finally { db.close() }
     }

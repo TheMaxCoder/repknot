@@ -125,4 +125,43 @@ class SharedSessionIntegrationTest {
             cloud.signOut()
         }
     }
+
+    @Test fun checkInsDownloadAndUploadOnlyWhenEnabled() = runBlocking {
+        val args = InstrumentationRegistry.getArguments()
+        fun value(name: String): String = args.getString(name)?.let {
+            String(android.util.Base64.decode(it, android.util.Base64.NO_WRAP), Charsets.UTF_8)
+        }.orEmpty()
+        val url = value("supabase_url"); val key = value("supabase_key")
+        val email = value("test_email"); val password = value("test_password")
+        assumeTrue("Synthetic account credentials not supplied", listOf(url, key, email, password).all { it.isNotBlank() })
+        val cloud = CloudAccount(url, key)
+        cloud.signIn(email, password)
+        withTimeout(30000) { cloud.state.first { it is CloudState.SignedIn } }
+        val client = cloud.requireClient()
+        val db = Room.inMemoryDatabaseBuilder(InstrumentationRegistry.getInstrumentation().targetContext, WorkoutDatabase::class.java).build()
+        val serverId = UUID.randomUUID().toString(); val phoneId = UUID.randomUUID().toString()
+        try {
+            client.from("checkins").insert(buildJsonObject { put("id", serverId); put("checked_on", "2026-10-30"); put("waist_cm", 90.5); put("source", "cli") })
+            db.checkIns().add(CheckInRow(phoneId, "2026-10-31", weightKg = 70.25, waistCm = 90.0))
+            // Upload off: the server row is downloaded, the phone row stays pending and local.
+            SessionSync(cloud, db.sessions(), db.reference(), db.checkIns(), uploadEnabled = { false }).refreshAndPush()
+            assertEquals(90.5, db.checkIns().all().single { it.id == serverId }.waistCm!!, 0.0)
+            assertTrue(db.checkIns().all().single { it.id == phoneId }.pending)
+            assertEquals(0, client.from("checkins").select { filter { eq("id", phoneId) } }.decodeList<ServerCheckIn>().size)
+            // Upload on: the phone row reaches the server once, even when refreshed again.
+            val sync = SessionSync(cloud, db.sessions(), db.reference(), db.checkIns())
+            sync.refreshAndPush(); sync.refreshAndPush()
+            assertEquals(listOf(false), db.checkIns().all().filter { it.id == phoneId }.map { it.pending })
+            val remote = client.from("checkins").select { filter { eq("id", phoneId) } }.decodeList<ServerCheckIn>()
+            assertEquals(70.25, remote.single().weightKg!!, 0.0)
+            // A server deletion removes the cached row on the next refresh.
+            client.from("checkins").delete { filter { eq("id", serverId) } }
+            sync.refreshAndPush()
+            assertNull(db.checkIns().all().firstOrNull { it.id == serverId })
+        } finally {
+            for (id in listOf(serverId, phoneId)) client.from("checkins").delete { filter { eq("id", id) } }
+            db.close()
+            cloud.signOut()
+        }
+    }
 }

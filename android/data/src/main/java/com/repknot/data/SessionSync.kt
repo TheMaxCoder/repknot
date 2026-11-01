@@ -20,6 +20,7 @@ private data class PushResult(val status: String, val session: ServerSession? = 
 
 class SessionSync(
     private val cloud: CloudAccount, private val dao: SessionDao, private val reference: ReferenceDao,
+    private val checkIns: CheckInDao? = null,
     /** When false, refresh still downloads programs and sessions but nothing is uploaded. */
     private val uploadEnabled: () -> Boolean = { true },
     private val checkOwner: (String) -> Boolean = { true },
@@ -34,8 +35,18 @@ class SessionSync(
         reference.replaceAll(fetchReference(cloud))
         val remote = client.from("workout_sessions").select(Columns.raw(SESSION_COLUMNS)).decodeList<ServerSession>()
         dao.replaceCache(remote)
+        checkIns?.replaceCache(client.from("checkins").select(Columns.raw(CHECKIN_COLUMNS)).decodeList<ServerCheckIn>())
         if (!uploadEnabled()) return@withLock
         var firstFailure: Exception? = null
+        // Check-ins carry the phone's id, so a retried upload is a no-op on the server.
+        for (row in checkIns?.pending().orEmpty()) {
+            try {
+                client.from("checkins").upsert(row.toServer()) { onConflict = "id"; ignoreDuplicates = true }
+                checkIns?.uploaded(row.id)
+            }
+            catch (e: CancellationException) { throw e }
+            catch (e: Exception) { if (firstFailure == null) firstFailure = e }
+        }
         for (row in dao.pending()) {
             try { push(row) }
             catch (e: CancellationException) { throw e }
