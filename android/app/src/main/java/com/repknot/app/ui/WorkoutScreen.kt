@@ -24,6 +24,7 @@ import com.repknot.data.SessionExerciseRow
 import com.repknot.data.SetRow
 import com.repknot.domain.LoadUnit
 import com.repknot.domain.Prefill
+import java.time.LocalDate
 
 @Composable
 fun WorkoutScreen(vm: WorkoutViewModel, openSettings: () -> Unit) {
@@ -72,7 +73,7 @@ private fun PreviewScreen(preview: WorkoutUiState.Preview, vm: WorkoutViewModel)
                 Text(prescription.exerciseName, style = MaterialTheme.typography.titleLarge)
                 PrescriptionLine(prescription.sets, prescription.repMin, prescription.repMax,
                     prescription.rirMin, prescription.rirMax, prescription.load, prescription.unit.name.lowercase())
-                PreviousHint(exercise.previous)
+                PreviousHint(exercise.previous, exercise.previousOn)
             }
         }
     }
@@ -94,8 +95,12 @@ private fun SessionScreen(session: WorkoutUiState.Session, vm: WorkoutViewModel)
     }
     OutlinedButton(onClick = { picker = "add" }) { Text(stringResource(R.string.add_exercise)) }
     var notes by rememberSaveable(session.row.id) { mutableStateOf(session.row.notes.orEmpty()) }
-    OutlinedTextField(notes, { notes = it }, label = { Text(stringResource(R.string.session_notes)) }, modifier = Modifier.fillMaxWidth())
-    OutlinedButton(onClick = { vm.saveSessionNotes(notes) }) { Text(stringResource(R.string.save_notes)) }
+    var notesExpanded by rememberSaveable(session.row.id) { mutableStateOf(false) }
+    TextButton(onClick = { notesExpanded = !notesExpanded }) { Text(notesLabel(session.row.notes)) }
+    if (notesExpanded) {
+        OutlinedTextField(notes, { notes = it }, label = { Text(stringResource(R.string.session_notes)) }, modifier = Modifier.fillMaxWidth())
+        OutlinedButton(onClick = { vm.saveSessionNotes(notes) }) { Text(stringResource(R.string.save_notes)) }
+    }
     FinishSection(session.row.status, vm)
     if (picker != null) ExercisePicker(session.choices, onDismiss = { picker = null }) { id ->
         if (picker == "add") vm.addExercise(id) else picker?.let { vm.substitute(it, id) }
@@ -115,13 +120,25 @@ private fun ExerciseCard(exercise: ExerciseUi, choices: List<ExerciseRow>, index
     LaunchedEffect(edited) { if (editing != null && edited != editStart) { editing = null; editStart = null } }
     Card(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(row.exerciseName, style = MaterialTheme.typography.titleLarge)
+            var menuExpanded by remember { mutableStateOf(false) }
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Text(row.exerciseName, modifier = Modifier.weight(1f), style = MaterialTheme.typography.titleLarge)
+                Box {
+                    TextButton(onClick = { menuExpanded = true }) { Text("⋯") }
+                    DropdownMenu(expanded = menuExpanded, onDismissRequest = { menuExpanded = false }) {
+                        DropdownMenuItem(text = { Text(stringResource(R.string.move_up)) }, enabled = index > 0, onClick = { menuExpanded = false; vm.moveExercise(row.id, -1) })
+                        DropdownMenuItem(text = { Text(stringResource(R.string.move_down)) }, enabled = index < count - 1, onClick = { menuExpanded = false; vm.moveExercise(row.id, 1) })
+                        DropdownMenuItem(text = { Text(stringResource(R.string.substitute)) }, onClick = { menuExpanded = false; substitute() })
+                        DropdownMenuItem(text = { Text(stringResource(R.string.remove)) }, onClick = { menuExpanded = false; remove = true })
+                    }
+                }
+            }
             row.substitutedFor?.let { id ->
                 Text(stringResource(R.string.instead_of, choices.firstOrNull { it.id == id }?.name
                     ?: stringResource(R.string.prescribed_exercise)))
             }
             Prescription(row)
-            PreviousHint(exercise.previous)
+            PreviousHint(exercise.previous, exercise.previousOn)
             exercise.sets.forEachIndexed { setIndex, set ->
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     val description = buildString {
@@ -135,15 +152,13 @@ private fun ExerciseCard(exercise: ExerciseUi, choices: List<ExerciseRow>, index
                 }
             }
             SetInput(exercise, exercise.sets.firstOrNull { it.id == editing }, vm) { editing = null }
-            Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.SpaceBetween) {
-                TextButton(onClick = { vm.moveExercise(row.id, -1) }, enabled = index > 0) { Text(stringResource(R.string.move_up)) }
-                TextButton(onClick = { vm.moveExercise(row.id, 1) }, enabled = index < count - 1) { Text(stringResource(R.string.move_down)) }
-                TextButton(onClick = substitute) { Text(stringResource(R.string.substitute)) }
-                TextButton(onClick = { remove = true }) { Text(stringResource(R.string.remove)) }
-            }
             var notes by rememberSaveable(row.id) { mutableStateOf(row.notes.orEmpty()) }
-            OutlinedTextField(notes, { notes = it }, label = { Text(stringResource(R.string.exercise_notes)) }, modifier = Modifier.fillMaxWidth())
-            OutlinedButton(onClick = { vm.saveExerciseNotes(row.id, notes) }) { Text(stringResource(R.string.save_notes)) }
+            var notesExpanded by rememberSaveable(row.id) { mutableStateOf(false) }
+            TextButton(onClick = { notesExpanded = !notesExpanded }) { Text(notesLabel(row.notes)) }
+            if (notesExpanded) {
+                OutlinedTextField(notes, { notes = it }, label = { Text(stringResource(R.string.exercise_notes)) }, modifier = Modifier.fillMaxWidth())
+                OutlinedButton(onClick = { vm.saveExerciseNotes(row.id, notes) }) { Text(stringResource(R.string.save_notes)) }
+            }
         }
     }
     if (remove) AlertDialog(onDismissRequest = { remove = false }, title = { Text(stringResource(R.string.remove_exercise)) },
@@ -151,6 +166,10 @@ private fun ExerciseCard(exercise: ExerciseUi, choices: List<ExerciseRow>, index
         confirmButton = { TextButton(onClick = { vm.removeExercise(row.id); remove = false }) { Text(stringResource(R.string.remove)) } },
         dismissButton = { TextButton(onClick = { remove = false }) { Text(stringResource(R.string.cancel)) } })
 }
+
+@Composable
+private fun notesLabel(notes: String?): String = stringResource(R.string.notes) +
+    if (notes.isNullOrEmpty()) "" else " · ${notes.take(30)}${if (notes.length > 30) "…" else ""}"
 
 private fun number(value: Double?): String = value?.let { if (it % 1.0 == 0.0) it.toLong().toString() else it.toString() }.orEmpty()
 private fun range(min: Int?, max: Int?): String? = when {
@@ -182,14 +201,11 @@ private fun PrescriptionLine(sets: Int?, repMin: Int?, repMax: Int?, rirMin: Int
 }
 
 @Composable
-private fun PreviousHint(previous: Prefill) {
-    val text = when (previous) {
-        is Prefill.Previous -> stringResource(R.string.previous_sets, previous.sets.joinToString(", ") { set ->
-            formatSet(SetRow("", "", "", set.position, set.load, set.unit.name.lowercase(), set.reps, set.durationS, set.rir))
-        })
-        is Prefill.StartLoad -> if (previous.load == null) null else loadText(previous.load, previous.unit.name.lowercase())?.let { stringResource(R.string.start_load, it) }
+private fun PreviousHint(previous: Prefill, previousOn: LocalDate?) {
+    if (previous is Prefill.Previous && previousOn != null) {
+        Text(lastLabel(previousOn, LocalDate.now()), color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(previousSummary(previous.sets), color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
-    text?.let { Text(it, color = MaterialTheme.colorScheme.onSurfaceVariant) }
 }
 
 @Composable
@@ -199,13 +215,21 @@ private fun SetInput(exercise: ExerciseUi, set: SetRow?, vm: WorkoutViewModel, c
     val keys = arrayOf<Any?>(exercise.row.id, exercise.sets.size, set?.id, suggestion.load, suggestion.unit.name, suggestion.reps)
     var load by rememberSaveable(*keys) { mutableStateOf(number(set?.load ?: if (set == null) suggestion.load else null)) }
     var reps by rememberSaveable(*keys) { mutableStateOf(number(set?.reps ?: if (set == null) suggestion.reps else null)) }
-    var rir by rememberSaveable(*keys) { mutableStateOf(set?.rir?.toString().orEmpty()) }
+    var rir by rememberSaveable(*keys) { mutableIntStateOf(set?.rir ?: 1) }
+    val rirMax = maxOf(10, set?.rir ?: 1)
     var unit by rememberSaveable(*keys) { mutableStateOf(set?.unit?.uppercase() ?: suggestion.unit.name) }
     if (set == null && exercise.previous is Prefill.Previous) Text(stringResource(R.string.suggested_previous), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
         if (unit != LoadUnit.BODYWEIGHT.name) OutlinedTextField(load, { load = it }, modifier = Modifier.weight(1f), label = { Text(stringResource(R.string.label_load)) }, singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal))
         OutlinedTextField(reps, { reps = it }, modifier = Modifier.weight(1f), label = { Text(stringResource(R.string.label_reps)) }, singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal))
-        OutlinedTextField(rir, { rir = it }, modifier = Modifier.weight(1f), label = { Text(stringResource(R.string.label_rir)) }, singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(stringResource(R.string.label_rir), style = MaterialTheme.typography.labelSmall)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                FilledTonalIconButton(onClick = { rir-- }, enabled = rir > 0, modifier = Modifier.size(40.dp)) { Text("−") }
+                Text(rir.toString(), modifier = Modifier.padding(horizontal = 4.dp))
+                FilledTonalIconButton(onClick = { rir++ }, enabled = rir < rirMax, modifier = Modifier.size(40.dp)) { Text("+") }
+            }
+        }
     }
     Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
         listOf(LoadUnit.KG to R.string.unit_kg, LoadUnit.LB to R.string.unit_lb, LoadUnit.PLATES to R.string.unit_plates, LoadUnit.BODYWEIGHT to R.string.unit_bodyweight).forEach { (choice, label) ->
@@ -213,7 +237,7 @@ private fun SetInput(exercise: ExerciseUi, set: SetRow?, vm: WorkoutViewModel, c
         }
     }
     Row {
-        Button(onClick = { vm.logSet(exercise.row.id, set?.id, load, LoadUnit.valueOf(unit), reps, rir) }) { Text(stringResource(if (set == null) R.string.log_set else R.string.update_set)) }
+        Button(onClick = { vm.logSet(exercise.row.id, set?.id, load, LoadUnit.valueOf(unit), reps, rir.toString()) }) { Text(stringResource(if (set == null) R.string.log_set else R.string.update_set)) }
         if (set != null) TextButton(onClick = cancel) { Text(stringResource(R.string.cancel)) }
     }
 }

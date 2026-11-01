@@ -71,15 +71,16 @@ absent / partially missing, singular "1 set"). `WorkoutStateTest`: `previousOn` 
 
 ## Plan / progress
 1. [x] `previousOn` + `PreviousSummary.kt` + tests.
-2. [ ] Card UI items 1–4.
-3. [ ] `scripts/check --offline`; commit(s) with task 016 in the subject.
+2. [x] Card UI items 1–4.
+3. [x] `scripts/check --offline`; commit(s) with task 016 in the subject.
 
 ## Decisions and discoveries
 - Existing sets may have RIR above 10. Owner clarified the edit upper bound is
   max(10, the existing RIR); do not clamp.
 
 ## Verification
-- `scripts/check --offline` — passed after step 1 (106 tasks, 19 executed, 87 up-to-date). UI and device acceptance remain unverified.
+- `scripts/check --offline` — passed after step 1 (106 tasks, 19 executed, 87 up-to-date).
+- `scripts/check --offline` — passed after UI changes (106 tasks, 25 executed, 81 up-to-date). Device check remains pending.
 
 ## Handoff
-- Next: implement card UI, then rerun checks. The lead still needs to run the device check.
+- Implementation and automated checks complete; no unfinished code changes. Next: lead runs the device check, including ~390 dp layout, menu, notes, and RIR editing above 10. Keep task in progress pending that check.
