@@ -28,6 +28,7 @@ Keep it with the lead:
    explicit "Out of scope", file pointers, acceptance, exact verification commands.
    Pin versions of any new dependency, and keep acceptance and plan consistent: each
    rule is assigned to exactly one verifier (worker JVM test or lead device check).
+   "Out of scope" means do not modify; list paths that must not even be read separately.
 2. `scripts/delegate docs/tasks/NNN-*.md` (run one task per worktree if parallel).
    Progress streams one line per tool call/message to `.delegate-logs/latest.progress`;
    inside herdr it shows in a "worker" tab automatically, elsewhere run
@@ -61,6 +62,8 @@ One line each: date · task · category (1–4) · what happened · action.
   change · lead fixed in review.
 - 2026-11-01 · 012 · 1 · spec asked to reset fields "after a successful log" without a signal;
   worker stopped (as told to for ViewModel gaps) · answered: derive from set count in state.
+- 2026-11-01 · 013 · 1 · out-of-scope line said "do not read" for supabase/ while Context
+  required reading two migrations · wording fixed; Loop rule on read vs modify.
 
 ## Kept with the lead
 (none beyond the defaults above)

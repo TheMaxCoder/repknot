@@ -1,6 +1,6 @@
 # 013 — Airtable history importer (synthetic-verified on dev)
 
-Status: blocked
+Status: in progress
 Updated: 2026-11-01
 Starting commit: 5643b25
 Parent: [006](006-training-data-model.md) step 9 · Delegated: yes (see
@@ -19,8 +19,9 @@ to prod later (ADR 002) and is not part of this task. Accepted when:
 In: `scripts/airtable-normalize` (additive column changes only), new fixture directory
 `scripts/fixtures/airtable-synthetic/source/` (synthetic CSVs, committed), new
 `scripts/airtable-import`, `private-data/README.md` is **out** (lead updates it), this file.
-Out of scope: anything under `android/`, `supabase/`, `private-data/` (do not read, copy, or
-write it), `scripts/repknot`, new libraries beyond `npm:@supabase/supabase-js@2` and
+Out of scope (do not modify): anything under `android/` and `supabase/` — reading them is
+fine and the migrations below are required reading. Do not read, copy, or write anything
+under `private-data/`. Also out of scope: `scripts/repknot`, new libraries beyond `npm:@supabase/supabase-js@2` and
 `jsr:@std/csv@1` (both already used). Never run the importer without `--as test2`.
 
 ## Context to read
