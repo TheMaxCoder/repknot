@@ -1,6 +1,6 @@
 # 020 — Progress engine (domain)
 
-Status: blocked
+Status: done
 Updated: 2026-11-01
 Starting commit: 7aa6770
 Parent: [019](019-progress-milestone.md) step 1 · Delegated: yes (see
@@ -172,8 +172,8 @@ sessionDips emit and not-emit (2 of 3 below; 3 of 7 below).
 
 ## Plan / progress
 1. [x] Model fields + mapping + mapping test.
-2. [ ] `Progress.kt` + `ProgressTest.kt`.
-3. [ ] `scripts/check --offline`; commit(s) with task 020 in the subject.
+2. [x] `Progress.kt` + `ProgressTest.kt`.
+3. [x] `scripts/check --offline`; commit verified engine and tests with task 020 in the subject.
 
 ## Decisions and discoveries
 
@@ -183,16 +183,15 @@ sessionDips emit and not-emit (2 of 3 below; 3 of 7 below).
   exercise has no sets.
 - Clarification in `749be69`: skip sessions with no sets when selecting lineage unit.
 - Pre-existing untracked `work/` and `docs/tasks/021-workout-card-targets.md` left untouched. An untracked `supabase/migrations/20261101070000_session_light_flag.sql` appeared during work and was also left untouched.
-- Review: the uncommitted attention-order draft sorts by `daysSinceLast` and name, so it cannot distinguish different finish times on the same UTC date. This is a provisional assumption requiring clarification, not an accepted decision.
+- Clarification in `9d886cd`: same-date exposures tie and sort by name; no timestamps added. Attention ordering uses the latest exposure date, then name.
+- For externally constructed `ExerciseProgress` with no exposures, attention ordering places its missing date after dated entries within its group. Normal `progress` results always contain an exposure. Review: this is a conservative choice for an unspecified edge case.
 
 ## Verification
 
 - `cd android && ./gradlew --offline :domain:test :data:testDebugUnitTest`: passed after model and mapping changes.
 - `cd android && ./gradlew --offline :domain:test`: passed on the initial engine draft.
-- `scripts/check --offline`: passed with the uncommitted engine draft and tests. Tests do not yet cover every rule and edge case required for acceptance.
+- `scripts/check --offline`: passed after the engine review and expanded tests (debug build, lint, and JVM tests); Kotlin reported two unnecessary non-null assertion warnings. Earlier draft also passed the command.
 
 ## Handoff
 
-Blocked on attention ordering clarification: “Within a group: most recent exposure first, then name” could require distinguishing finish timestamps on the same UTC date, but `attentionOrder` receives only `ExerciseProgress` and its `Exposure` has a `LocalDate`, not the finish timestamp. Should same-date exposures tie and sort by name, or should the model retain the finish timestamp for ordering? The latter would expand the specified public model.
-
-Step 1 was committed as `4acc5f8`. Step 2 has uncommitted drafts in `android/domain/src/main/kotlin/com/repknot/domain/Progress.kt` and `android/domain/src/test/kotlin/com/repknot/domain/ProgressTest.kt`; the offline check passes but coverage is incomplete and the draft has not been fully reviewed. After clarification, resolve ordering, review all rules and add missing tests, run `scripts/check --offline`, then commit the verified step. Do not overwrite unrelated untracked files.
+Step 1 was committed as `4acc5f8`. Engine and tests are complete after the same-date clarification. No blockers or unfinished task changes. Next: lead review of task 020 and proceed with milestone 019's dependent UI work. Unrelated untracked files remain untouched.
