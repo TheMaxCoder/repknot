@@ -1,20 +1,23 @@
 package com.repknot.app
 
 import com.repknot.domain.LoadUnit
-import com.repknot.domain.SetValues
 
-/**
- * Parses text fields into set values, or returns null if any field is invalid.
- * Accepts a comma decimal separator because some keyboards/locales only offer ",".
- */
-fun parseSetInput(load: String, unit: LoadUnit, reps: String, rir: String): SetValues? {
-    val loadValue = load.trim().replace(',', '.').toDoubleOrNull() ?: return null
-    val repsValue = reps.trim().toIntOrNull() ?: return null
+data class SetInput(val load: Double?, val unit: LoadUnit, val reps: Double, val rir: Int?)
+
+fun parseSetInput(load: String, unit: LoadUnit, reps: String, rir: String): SetInput? {
+    val text = load.trim()
+    val loadValue = if (unit == LoadUnit.BODYWEIGHT) {
+        if (text.isNotEmpty()) return null
+        null
+    } else {
+        val value = text.replace(',', '.').toDoubleOrNull() ?: return null
+        if (!value.isFinite() || value < 0) return null
+        value
+    }
+    val repsValue = reps.trim().replace(',', '.').toDoubleOrNull() ?: return null
+    if (!repsValue.isFinite() || repsValue <= 0 || repsValue % 0.5 != 0.0) return null
     val rirText = rir.trim()
     val rirValue = if (rirText.isEmpty()) null else rirText.toIntOrNull() ?: return null
-    return try {
-        SetValues(loadValue, unit, repsValue, rirValue)
-    } catch (e: IllegalArgumentException) {
-        null
-    }
+    if (rirValue != null && rirValue < 0) return null
+    return SetInput(loadValue, unit, repsValue, rirValue)
 }

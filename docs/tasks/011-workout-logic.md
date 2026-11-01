@@ -146,11 +146,16 @@ interim `MainActivity` compiling (it does not use the new ViewModel yet).
 
 ## Plan / progress
 1. [x] DAO additions + reference queries; compile (incl. androidTest).
-2. [ ] `SetInput`, `CurrentSession`, pure helpers + `WorkoutViewModel`; cleanup; wiring. Blocked on `todayState` null-name behavior below; no step 2 implementation started.
-3. [ ] JVM tests: `SetInputTest` (1–3), `WorkoutStateTest` (4, 7, 8 and `sessionState`
+2. [x] `SetInput`, `CurrentSession`, pure helpers + `WorkoutViewModel`; cleanup; wiring.
+3. [x] JVM tests: `SetInputTest` (1–3), `WorkoutStateTest` (4, 7, 8 and `sessionState`
    ordering/choices), `SessionShareTest` still passing. Rules 5, 6, 10–14 and the DAO
-   methods are verified on device by the lead; note anything you could not test.
-4. [ ] `scripts/check --offline`; androidTest compile; commit(s) with task 011 in subject.
+   methods require device verification by the lead.
+4. [x] `scripts/check --offline`; androidTest compile; commit(s) with task 011 in subject.
+
+## Decisions and discoveries
+- Per clarification, a null program name falls back to `Program`.
+- An empty `Prefill.Previous` (not produced by `prefill` normally) falls back to the planned load and reps; edits of an existing set retain its duration and notes. Notes are trimmed and blank notes become null, following the existing ViewModel.
+- Review: workout actions now drive session sync/conflict resolution and current-session persistence; device behavior and DAO revision/reordering still need the lead's review.
 
 ## Verification
 - `cd android && ./gradlew --offline :data:compileDebugKotlin :data:compileDebugAndroidTestKotlin` — passed.
@@ -158,9 +163,9 @@ interim `MainActivity` compiling (it does not use the new ViewModel yet).
 - `cd android && ./gradlew --offline :data:compileDebugAndroidTestKotlin` — passed on DAO-only checkpoint.
 - `scripts/check --offline` — passed again on the pre-step-2 checkpoint (mostly up-to-date).
 - `cd android && ./gradlew --offline :data:compileDebugAndroidTestKotlin` — passed again on the pre-step-2 checkpoint (up-to-date).
+- `scripts/check --offline` — passed after implementation (build, lint and JVM tests).
+- `cd android && ./gradlew --offline :data:compileDebugAndroidTestKotlin` — passed after implementation.
 - DAO behavior still requires lead's device verification; review revision bump and reorder logic. Rules 5, 6 and 10–14 also require lead's device verification.
 
 ## Handoff
-DAO additions committed as `c7b87e4` and accepted by the lead. The prior verification-scope question is resolved: JVM tests cover rules 1–4 and 7–9; the lead verifies rules 5, 6 and 10–14 on device. Steps 2–4 remain unfinished; no implementation changes were made in this continuation. Review DAO revision bumps and reorder logic; device verification remains pending.
-
-**Question / blocker:** `todayState(program: Program?, programName: String?, ...)` requires `Today.programName: String` when `program` is non-null, but the rules do not specify what happens if `programName` is null. Should this be rejected as an invalid argument, or should a particular fallback name be used? After clarification, start step 2, add the planned tests, and rerun both acceptance commands.
+DAO additions committed as `c7b87e4` and accepted by the lead. Steps 2–4 are implemented and local acceptance commands passed. Next: lead reviews the diff, especially sync/conflict handling and DAO revision bumps/reordering, and verifies rules 5, 6, 10–14 and DAO behavior on device as specified. No backend or device operations were run. Task remains in progress pending that verification; task 012 supplies the Compose screen.

@@ -16,14 +16,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 class RepknotApplication : Application() {
-    /** The single working session until the workout screen (task 006 step 8) manages sessions. */
-    private val ids by lazy {
-        val prefs = getSharedPreferences("workout_ids", MODE_PRIVATE)
-        val session = prefs.getString("session", null) ?: java.util.UUID.randomUUID().toString()
-        check(prefs.edit().putString("session", session).commit())
-        session
-    }
-    val sessionId get() = ids
+    val current: CurrentSession by lazy { PrefsCurrentSession(this) }
     val database by lazy { WorkoutDatabase.open(this) }
     val cloud by lazy { CloudAccount(BuildConfig.SUPABASE_URL, BuildConfig.SUPABASE_PUBLISHABLE_KEY) }
     val sync by lazy { SessionSync(cloud, database.sessions(), database.reference()) { userId ->

@@ -1,5 +1,7 @@
 package com.repknot.domain
 
+enum class LoadUnit { KG, LB, PLATES, BODYWEIGHT }
+
 data class Prescription(
     val position: Int, val exerciseId: String, val exerciseName: String, val sets: Int,
     val repMin: Int?, val repMax: Int?, val rirMin: Int?, val rirMax: Int?,
