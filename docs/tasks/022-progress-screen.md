@@ -90,7 +90,7 @@ ViewModel and screens are checked by the lead on the device.
 - Pre-existing untracked `work/` is unrelated and left untouched.
 - For unusual bodyweight MovedUp/LoadDown inputs, omit load values and use “Moved up on …” / “Load down for 2 sessions”; normal engine output does not generate these. Exposure summaries use `previousSummary` exactly as specified, including its bodyweight label.
 - Recent dips include today and the date 28 days before today; future dates are excluded. Same-date dips retain engine order.
-- Review: first commit `dd871d7` omitted its Not verified and Review lines due to a shell command typo; device/full checks were pending then, and the unusual bodyweight fallback above needs review.
+- Review: commits `dd871d7` and `3a8add1` omitted their Not verified and Review lines due to commit command mistakes. Device verification remains pending; review the unusual bodyweight fallback and recent-dip boundary above.
 
 ## Verification
 
