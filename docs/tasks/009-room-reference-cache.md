@@ -1,6 +1,6 @@
 # 009 — Room reference cache: exercises and programs
 
-Status: in progress
+Status: done
 Updated: 2026-11-01
 Starting commit: 94118c1
 Parent: [006](006-training-data-model.md) step 7 (first half) · Delegated: yes (see
@@ -100,14 +100,16 @@ device later; no JVM test is needed for them.
 1. [x] `testImplementation(libs.junit)`; entities + primitive DAO queries + database version/fallback; build. Transaction and domain helpers follow DTOs/mapping.
 2. [x] DTOs + `fetchReference`; mapping functions and DAO helpers.
 3. [x] JVM tests for rules 1–6 and 8 (`ReferenceMappingTest.kt`).
-4. [ ] `scripts/check --offline`; confirm `schemas/.../4.json` exists; commit (task 009 in subject).
+4. [x] `scripts/check --offline`; confirmed `schemas/.../4.json` exists and is committed.
 
 ## Verification
 - `cd android && ./gradlew :data:assembleDebug --offline` — passed twice; Room generated schema 4 and compiled DAO helpers.
 - `cd android && ./gradlew :data:testDebugUnitTest --offline` — passed (4 tests).
+- `scripts/check --offline && test -f android/data/schemas/com.repknot.data.WorkoutDatabase/4.json && echo 'Schema 4 exists'` — passed; schema exists.
 
 ## Handoff
 DTOs, fetch, transactional replacement and domain mapping are implemented and unit-tested.
-Next run `scripts/check --offline` and confirm the schema. Review: v4 fallback destructively
-resets synthetic v1–v3 databases; JUnit test dependency added as specified. Room transaction
-behavior and the backend fetch require later device verification; no dev backend used.
+Lead: wire the fetch in task 010 and verify `replaceAll` and `activeProgram` on a device.
+No dev backend was contacted. Review: v4 fallback destructively resets synthetic v1–v3
+schemas; JUnit test dependency added as specified. `docs/architecture.md` still describes
+the v3 fallback; update it when integrating task 010 (outside this task's stated scope).
