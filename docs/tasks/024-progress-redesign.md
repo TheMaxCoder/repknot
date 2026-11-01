@@ -17,14 +17,15 @@ Implement in `android/app/src/main/java/com/repknot/app/ui/ProgressScreen.kt` an
 - [x] Build the body summary and grouped training cards, preserving functionality.
 - [x] Run `scripts/check --offline`; record results and commit verified changes under AGENTS.md.
 - [x] Address review feedback: responsive side-by-side body metrics, preserving existing body detail and actions.
-- [ ] Lead reviews follow-up diff, repeats checks, and assesses device verification.
+- [x] Lead reviewed the implementation and repeated offline checks.
+- [ ] Verify the installed screen visually on the phone, including scaled text and actions.
 
 ## Decisions / discoveries
 - The user selected the body card from the first concept and grouped training history from the second, then removed all introductory copy.
 - Body metrics use two columns when both measurements exist and available width divided by font scale is at least 250 dp; otherwise they stack. Goal caption and weight trend remain separate from the prominent measurements. BodyScreen retains its original presentation. The body-history tap region and check-in button are separate siblings. Group counts follow contiguous attention-ordered groups.
 
 ## Verification
-`scripts/check --offline` passed for the original implementation and again for the follow-up (debug build, lint, and unit tests); Gradle reported deprecated features. The first follow-up run failed on a Kotlin cross-module smart cast; corrected before the passing run. Added formatting tests for metric precision, configured goal and weight trend. No device or visual verification was run.
+`scripts/check --offline` passed for the original implementation and again for the follow-up (debug build, lint, and unit tests); Gradle reported deprecated features. The first follow-up run failed on a Kotlin cross-module smart cast; corrected before the passing run. Added formatting tests for metric precision, configured goal and weight trend. Lead reran `scripts/check --offline` successfully and `git diff 6d0fcb7..HEAD --check` passed. `cd android && ./gradlew :app:installDebug --offline` installed successfully on the test phone. The phone was locked; no visual or interaction verification was performed.
 
 ## Handoff
-Review feedback implemented and offline checks complete. Lead should review the follow-up diff, repeat checks, and assess device verification, including narrow screens, scaled text, missing metrics, and independent body-history/check-in actions. No known blockers or unfinished implementation changes. Unrelated untracked `work/` was left untouched.
+Open Progress on the unlocked phone and verify the layout, scrolling, scaled text, missing metrics, body-history navigation, check-in action, and exercise navigation; obtain owner feedback. Implementation and offline checks are complete; device visual verification remains pending. Unrelated untracked `work/` was left untouched.
