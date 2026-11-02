@@ -8,21 +8,19 @@ import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import android.media.AudioAttributes
-import android.provider.Settings
 import android.os.Build
 
 /**
  * End-of-rest alert (task 027). One exact alarm at a time: each Log replaces it, leaving the
- * workout cancels it. The notification sounds and vibrates so that a mirrored watch
- * (the paired smartwatch) treats it as an alert; the sound can be changed in system channel settings.
+ * workout cancels it. High importance with vibration and no sound, so music keeps playing and
+ * a mirrored smartwatch gets an alerting notification.
  */
 object RestAlert {
-    // Channel settings are fixed once created. v1 ("rest_timer", silent) and v2 ("rest_alert",
-    // vibration only) both reached the watch notification list but the watch never buzzed,
-    // so v3 also plays the default notification sound (it ducks music briefly).
-    private const val CHANNEL = "rest_alert_sound"
-    private val OLD_CHANNELS = listOf("rest_timer", "rest_alert")
+    // Channel settings are fixed once created, and a deleted id comes back with its old
+    // settings, so each change needs a new id. History: rest_timer (silent), rest_alert
+    // (vibration), rest_alert_sound (sound + vibration; owner asked to drop the sound again).
+    private const val CHANNEL = "rest_alert_quiet"
+    private val OLD_CHANNELS = listOf("rest_timer", "rest_alert", "rest_alert_sound")
     private const val EXTRA_TEXT = "text"
 
     fun schedule(context: Context, atMillis: Long, text: String) {
@@ -55,8 +53,7 @@ object RestAlert {
         manager.createNotificationChannel(NotificationChannel(CHANNEL,
             context.getString(R.string.rest_channel_name), NotificationManager.IMPORTANCE_HIGH).apply {
             description = context.getString(R.string.rest_channel_description)
-            setSound(Settings.System.DEFAULT_NOTIFICATION_URI, AudioAttributes.Builder()
-                .setUsage(AudioAttributes.USAGE_NOTIFICATION).setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION).build())
+            setSound(null, null)
             enableVibration(true)
             vibrationPattern = longArrayOf(0, 300, 150, 300)
         })
