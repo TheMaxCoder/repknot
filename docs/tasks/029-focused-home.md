@@ -1,6 +1,6 @@
 # 029 — Focused Home
 
-Status: in progress
+Status: blocked
 Starting commit: e6eea0950212e3fa3a9f5f1cc2338cb32d7d9d52
 Date: 2026-11-02
 Interrupts: [027](027-workout-timing.md) remains paused at its watch handoff;
@@ -62,7 +62,8 @@ Lead owns status/architecture updates after review.
 ## Plan / progress
 
 - [ ] Worker implements Home and native chooser, runs checks, inspects staged diff,
-  commits a coherent verified UI step using AGENTS.md, updates this task.
+  commits a coherent verified UI step using AGENTS.md, updates this task. Blocked before
+  implementation on program identity question below; baseline inspection completed.
 - [ ] Lead reviews full diff, independently runs checks, resolves review findings.
 - [ ] Lead installs on phone; verifies Home, chooser apply/cancel, alternate preview,
   Progress/Settings navigation, and narrow/large-text layout without starting workouts.
@@ -76,6 +77,12 @@ Flat means the approved mock's low-radius tonal blocks without elevation. The pr
 button retains native Material shape. The decorative dumbbell icon is optional;
 Settings accessibility and visual hierarchy take priority. Chooser apply/cancel behavior
 is explicitly specified above rather than copying the prototype's immediate underlay update.
+
+`WorkoutUiState.Today` exposes the program name, suggested workout and workout list,
+not `Program.id`. Distinct programs may share the same name and workout keys/content;
+therefore Home cannot reliably detect every program change using this state alone.
+Changing `WorkoutViewModel` is outside scope; reading the DAO directly in UI would cross
+an architecture boundary. Review: resolving this requires an explicit scope decision.
 
 ## Verification responsibilities
 
@@ -91,11 +98,21 @@ Existing real workouts must be preserved. Screenshot success alone is not intera
 
 ## Verification
 
-Not run yet. Before implementation: `git status --short` clean; connected test phone
-currently shows Home with Pull 1 next, no active workout visible. No app state mutated.
+Before implementation: `git status --short` clean; connected test phone
+currently shows Home with Pull 1 next, no active workout visible (reported by lead; worker
+used no device). No app state mutated.
+
+Worker baseline: `scripts/check --offline` passed (debug build, lint, JVM tests;
+95 tasks up-to-date); `git diff --check` passed before task-note changes. No UI changes
+or device checks performed.
 
 ## Handoff
 
-Next: worker implementation via `scripts/delegate docs/tasks/029-focused-home.md`.
-No known blocker. Phone checks and lead review pending. Keep task in progress until
-acceptance and relevant checks are complete; list remaining manual limitations honestly.
+Blocked — question for lead: may the scope be expanded to expose `Program.id` in
+`WorkoutUiState.Today` (and test it), so Home can reset its transient selection when
+program identity changes even if name and workout content are identical? Alternatively,
+what explicit behavior should apply in that case? The current scope forbids changing
+`WorkoutViewModel` and gives Home no reliable program identity.
+
+Next: resolve the scope question, then implement the worker step and rerun checks.
+No implementation changes are unfinished. Lead review and phone checks remain pending.
