@@ -151,8 +151,12 @@ interface SessionDao {
     fun observeAllSessions(): Flow<List<SessionRow>>
     @Query("SELECT * FROM session_exercises")
     suspend fun allExercises(): List<SessionExerciseRow>
+    @Query("SELECT * FROM session_exercises")
+    fun observeAllExercises(): Flow<List<SessionExerciseRow>>
     @Query("SELECT * FROM logged_sets")
     suspend fun allSets(): List<SetRow>
+    @Query("SELECT * FROM logged_sets")
+    fun observeAllSets(): Flow<List<SetRow>>
 
     /** Read the archive as one consistent snapshot, without changing any records. */
     @Transaction

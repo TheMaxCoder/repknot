@@ -3,7 +3,6 @@ package com.repknot.app
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
-import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.*
@@ -24,7 +23,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -34,9 +32,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.repknot.app.ui.BodyScreen
-import com.repknot.app.ui.ExerciseProgressScreen
-import com.repknot.app.ui.ProgressScreen
 import com.repknot.app.ui.theme.RepknotTheme
 import com.repknot.data.CloudState
 
@@ -65,29 +60,11 @@ class MainActivity : ComponentActivity() {
                     app.database.sessions(), app.database.reference(), app.database.checkIns(),
                     app.settings.waistGoalCm, app::requestRefresh,
                 ))
-                val progressState by progress.state.collectAsState()
-                val workoutStateHolder = rememberSaveableStateHolder()
-                var screen by rememberSaveable { mutableStateOf("workout") }
-                if (screen == "settings") {
-                    BackHandler { screen = "workout" }
+                val history: HistoryViewModel = viewModel(factory = HistoryViewModel.Factory(app.database.sessions()))
+                AppNavigation(workout, progress, history) { back ->
                     val waistGoal by app.settings.waistGoalCm.collectAsState()
-                    SettingsScreen(waistGoal, app.settings::setWaistGoalCm, { screen = "workout" }) {
+                    SettingsScreen(waistGoal, app.settings::setWaistGoalCm, back) {
                         CloudSection(cloudState, cloud::signIn, cloud::signOut)
-                    }
-                } else if (screen == "progress" || screen == "body" || screen.startsWith("exercise:")) {
-                    if (screen == "progress") {
-                        BackHandler { screen = "workout" }
-                        ProgressScreen(progressState, { screen = "workout" }, { screen = "body" }, progress::addCheckIn) { screen = "exercise:$it" }
-                    } else if (screen == "body") {
-                        BackHandler { screen = "progress" }
-                        BodyScreen(progressState, { screen = "progress" }, progress::addCheckIn, progress::uploadCheckIn, progress::deleteCheckIn)
-                    } else {
-                        BackHandler { screen = "progress" }
-                        ExerciseProgressScreen(progressState, screen.removePrefix("exercise:")) { screen = "progress" }
-                    }
-                } else {
-                    workoutStateHolder.SaveableStateProvider("workout") {
-                        WorkoutScreen(workout, progressState, { screen = "progress" }) { screen = "settings" }
                     }
                 }
             }

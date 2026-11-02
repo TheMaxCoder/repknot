@@ -34,6 +34,16 @@ class HistoryMappingTest {
         assertTrue(historyExercises(rows, "Old").isEmpty())
     }
 
+    @Test fun snapshotRowsUsePositionThenIdForTies() {
+        val exercises = listOf(SessionExerciseRow("b", "s", 0, "e", "Exercise"), SessionExerciseRow("a", "s", 0, "e", "Exercise"))
+        val sets = listOf(SetRow("z", "s", "b", 0, null, null, null), SetRow("a", "s", "a", 0, 1.25, "plates", 2.5))
+        val result = completedHistory(listOf(snapshot("s", exercises = exercises, sets = sets))).single()
+        assertEquals(listOf("a", "b"), result.exercises.map { it.id })
+        assertEquals(listOf("a", "z"), result.sets.map { it.id })
+        assertEquals(2.5, result.sets.first().reps!!, 0.0)
+        assertEquals("plates", result.sets.first().unit)
+    }
+
     @Test fun directoryUsesRecordedInstancesAndRetainsPartialSets() {
         val exercises = listOf(SessionExerciseRow("x2", "s", 1, "ex", "Squat"),
             SessionExerciseRow("x1", "s", 0, "ex", "Squat"), SessionExerciseRow("x3", "s", 2, "unused", "Unused"))

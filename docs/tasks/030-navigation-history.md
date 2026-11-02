@@ -94,12 +94,11 @@ Do not use adb/install on the owner's phone as worker. Preserve unrelated change
 
 ## Plan / progress
 
-Partial checkpoint: basic pure history mappings and navigation transitions have JVM tests;
-additional coverage and all UI integration remain. No acceptance item is complete yet.
+Worker implementation and offline checks are complete; lead review and device checks remain.
 
-- [ ] Worker implements/test pure history mappings and navigation transitions; run
+- [x] Worker implements/test pure history mappings and navigation transitions; run
   scripts/check --offline and commit this coherent step before wiring UI if feasible.
-- [ ] Worker implements native shell/history/shared details and safe current-workout
+- [x] Worker implements native shell/history/shared details and safe current-workout
   routing, runs scripts/check --offline, inspects staged diff and commits verified UI.
 - [ ] Lead reviews full diff, independently reruns checks and handles review findings
   through one bounded worker feedback retry, then fixes locally if necessary.
@@ -118,6 +117,11 @@ an exercise prescribed but never logged is not. This does not change analysis ru
 Navigation/library choice is recorded by the lead, not left to the worker to decide.
 Use conservative native presentation choices without stopping over routine spacing,
 icon or helper naming. Expose small presentation metadata if needed within scope.
+The worker used a saveable per-tab stack with depth-qualified detail state, a separate
+focused-logger flag, and a transactionally reloaded archive triggered by all three tables.
+Home uses a current-workout card while the focused logger is closed. Review the shell's
+insets, focus transitions, state retention, archive presentation, and rest-alert continuity
+on device; these interaction/layout behaviors have not been device-verified.
 
 ## Verification responsibilities
 
@@ -138,7 +142,7 @@ test creation and clean up only that exact test record through existing Discard 
 
 ## Verification
 
-Resumed worker: `scripts/check --offline` and `git diff --check` passed after transactional archive read and expanded directory tests; no device operations.
+Resumed worker: `scripts/check --offline` and `git diff --check` passed after transactional archive read and expanded directory tests. UI integration initially failed compilation due to a cross-module smart cast; fixed and subsequent `scripts/check --offline` passed. Final integrated check and diff check recorded in the UI commit. No device operations.
 
 Worker: `scripts/check --offline` passed after correcting a navigation test assertion;
 initial run failed that assertion. `git diff --check` passed. No device operations run.
@@ -147,9 +151,9 @@ directory search and navigation transitions; additional cases and UI verificatio
 
 ## Handoff
 
-Partial implementation only: `HistoryMapping.kt` and `NavigationState.kt` plus focused
-JVM tests are present but not wired to the app. No UI or DAO changes yet. Next: extend
-mapping tests for directory ordering/latest names and tie cases, then implement transactional
-snapshot access, reactive history ViewModel, shell and details per acceptance criteria.
-Review mapping behavior as it is integrated, including repeated exercise snapshots. Lead
-review and all device checks remain pending. Do not mark done on worker build alone.
+Worker implementation is ready for lead review, not yet accepted on device. Next: review
+the full diff from the starting commit, independently run `scripts/check --offline`, then
+perform the lead phone checks above, particularly logger leave/resume with unsaved input,
+rest alerts, nested origin Back and large/narrow layouts. No phone data was touched.
+Review repeated exercise snapshots and the conservative native archive presentation.
+No known blocker; do not mark done on the worker build alone.

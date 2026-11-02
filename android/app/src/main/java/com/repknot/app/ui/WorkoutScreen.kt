@@ -93,20 +93,17 @@ fun WorkoutScreen(vm: WorkoutViewModel, progress: ProgressUiState, openProgress:
         if (session != null) SessionActions(session, vm, { now }, overrides)
         if (preview != null) Surface(color = MaterialTheme.colorScheme.surfaceContainer, tonalElevation = 3.dp) {
             Button(onClick = { vm.start(preview.workout.key) }, modifier = Modifier.fillMaxWidth()
-                .navigationBarsPadding().padding(horizontal = 18.dp, vertical = 12.dp)) {
+                .padding(horizontal = 18.dp, vertical = 12.dp)) {
                 Text(stringResource(R.string.start_workout))
             }
         }
     }) { padding ->
         Column(Modifier.fillMaxSize().padding(padding).imePadding().verticalScroll(rememberScrollState()).padding(24.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            if (session == null) Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
-                TextButton(onClick = openProgress) { Text(stringResource(R.string.progress)) }
-                if (today != null) {
-                    IconButton(onClick = openSettings) {
-                        Icon(androidx.compose.ui.res.painterResource(R.drawable.ic_settings), contentDescription = stringResource(R.string.settings))
-                    }
-                } else TextButton(onClick = openSettings) { Text(stringResource(R.string.settings)) }
+            if (session == null && preview != null) Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                IconButton(onClick = openSettings) {
+                    Icon(androidx.compose.ui.res.painterResource(R.drawable.ic_settings), contentDescription = stringResource(R.string.settings))
+                }
             }
             error?.let { Text(stringResource(it), color = MaterialTheme.colorScheme.error) }
             when (val current = state) {
