@@ -257,6 +257,7 @@ private fun SessionActions(session: WorkoutUiState.Session, vm: WorkoutViewModel
     var notesOpen by rememberSaveable(session.row.id) { mutableStateOf(false) }
     var menuOpen by rememberSaveable(session.row.id) { mutableStateOf(false) }
     var confirmDiscard by rememberSaveable(session.row.id) { mutableStateOf(false) }
+    var confirmFinish by rememberSaveable(session.row.id) { mutableStateOf(false) }
     var notes by rememberSaveable(session.row.id) { mutableStateOf(session.row.notes.orEmpty()) }
     val keyboardOpen = WindowInsets.ime.getBottom(LocalDensity.current) > 0
     if (!keyboardOpen) Surface(color = MaterialTheme.colorScheme.surface) {
@@ -279,10 +280,18 @@ private fun SessionActions(session: WorkoutUiState.Session, vm: WorkoutViewModel
                         }
                     }
                 }
-                FinishSection(session.row.status, vm)
+                FinishSection(session.row, vm) { confirmFinish = true }
             }
         }
     }
+    // Finish sits at the bottom of a footer whose height changes, so one stray tap must not end the workout.
+    if (confirmFinish && session.row.status == "in_progress") AlertDialog(
+        onDismissRequest = { confirmFinish = false }, title = { Text(stringResource(R.string.finish_confirm_title)) },
+        text = { Text(pluralStringResource(R.plurals.finish_confirm_message, session.exercises.sumOf { it.sets.size },
+            session.exercises.sumOf { it.sets.size })) },
+        confirmButton = { TextButton(onClick = { vm.finish(); confirmFinish = false }) { Text(stringResource(R.string.finish)) } },
+        dismissButton = { TextButton(onClick = { confirmFinish = false }) { Text(stringResource(R.string.cancel)) } },
+    )
     if (confirmDiscard && session.row.status == "in_progress") AlertDialog(
         onDismissRequest = { confirmDiscard = false }, title = { Text(stringResource(R.string.discard_confirm_title)) },
         text = { Text(stringResource(R.string.discard_confirm_message)) },
@@ -489,14 +498,15 @@ private fun ExercisePicker(choices: List<ExerciseRow>, onDismiss: () -> Unit, on
 }
 
 @Composable
-private fun FinishSection(status: String, vm: WorkoutViewModel) {
+private fun FinishSection(row: SessionRow, vm: WorkoutViewModel, requestFinish: () -> Unit) {
+    val status = row.status
     val context = LocalContext.current
     val shareTitle = stringResource(R.string.share_workout)
     val clipboardLabel = stringResource(R.string.clipboard_workout)
     val uploadEnabled by vm.uploadEnabled.collectAsState()
     when (status) {
         "in_progress" -> {
-            OutlinedButton(onClick = vm::finish, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.finish_workout)) }
+            OutlinedButton(onClick = requestFinish, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.finish_workout)) }
         }
         "finished" -> {
             if (uploadEnabled) {
@@ -505,7 +515,11 @@ private fun FinishSection(status: String, vm: WorkoutViewModel) {
             } else {
                 Text(stringResource(R.string.saved_upload_off))
             }
-            OutlinedButton(onClick = vm::done) { Text(stringResource(R.string.done)) }
+            Row {
+                if (row.number == null && row.baseRevision == null)
+                    OutlinedButton(onClick = vm::resume) { Text(stringResource(R.string.resume_workout)) }
+                OutlinedButton(onClick = vm::done) { Text(stringResource(R.string.done)) }
+            }
         }
         "pushed" -> {
             Text(stringResource(R.string.sync_uploaded))

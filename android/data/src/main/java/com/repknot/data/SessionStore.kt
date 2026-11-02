@@ -156,6 +156,12 @@ interface SessionDao {
     @Query("UPDATE sessions SET status = 'finished', finishedAt = COALESCE(finishedAt, :now) WHERE id = :id AND status NOT IN ('conflict', 'conflict_deleted')")
     suspend fun finishAt(id: String, now: Long)
     suspend fun finish(id: String) = finishAt(id, System.currentTimeMillis())
+    /**
+     * Reopens a finished workout that was never uploaded (e.g. Finish tapped by accident), so
+     * it can be continued or discarded. Clears the finish time; returns whether it reopened.
+     */
+    @Query("UPDATE sessions SET status = 'in_progress', finishedAt = NULL WHERE id = :id AND status = 'finished' AND number IS NULL AND baseRevision IS NULL")
+    suspend fun resume(id: String): Int
     /** Every local edit bumps the local revision; an uploaded session becomes pending again. */
     @Query("UPDATE sessions SET localRevision = localRevision + 1, status = CASE WHEN status = 'pushed' THEN 'finished' ELSE status END WHERE id = :id")
     suspend fun bump(id: String)

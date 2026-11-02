@@ -160,6 +160,18 @@ vibration at target, elapsed header, nothing shown on preview/finished screens.
   with no sound and no vibration is non-alerting and the watch does not forward/buzz for it.
   Fix: new channel `rest_alert` (old `rest_timer` deleted; channel settings are
   immutable) with vibration 300/150/300 ms and no sound. VIBRATE permission restored.
+- Owner test 2: phone alerts fired on time on `rest_alert` with the vibration pattern
+  (12:58:51, 13:01:07; dumpsys vibrator_manager), but the watch still did not buzz.
+  Forwarding works (test 1 showed it in the watch's notification list). Open: watch
+  side settings, or the watch not buzzing while the phone is in use; next owner check is a
+  rest with the phone locked and whether other apps (e.g. WhatsApp) buzz the watch.
+- Discovery during test 2: the test workout became "finished" without the owner meaning to
+  (between ~13:07 and ~13:09, inferred from the missing alert for the Lateral raise set).
+  Finish was a single unconfirmed tap at the bottom of a footer whose height changes
+  (rest line, IME). Fix: Finish asks for confirmation ("N sets logged"); finished workouts
+  that were never uploaded show "Resume workout" (`SessionDao.resume`: back to in_progress,
+  finishedAt cleared; refused once uploaded). Verified on phone: resumed the stuck test
+  workout, confirmation shown and cancelled, test workout discarded.
 
 ## Verification
 - Step 1a: `scripts/db push` applied `20261102010000_workout_timing.sql` to dev
@@ -189,8 +201,8 @@ vibration at target, elapsed header, nothing shown on preview/finished screens.
 ## Handoff
 Implemented, installed on the phone, and checked. Commits: 3c0c00d (server), 5812eb0
 (phone timing), 748443a (spec), 1c6a025 (worker UI), 0ea7a93 (lead fixes).
-Next: install the vibrating-channel build (owner was mid-workout; waiting for a gap), then
-owner reports whether the watch buzzes.
+Next: owner checks whether the watch buzzes for other apps and for a rest alert with the
+phone locked; adjust watch settings or the channel (sound) based on that.
 If not: check watch companion app → Notifications → Repknot and the phone's autostart/battery
 settings for the watch app; then try a channel with phone vibration. A lock-screen countdown
 (chronometer notification) is a possible follow-up. Time analysis UI later, once data exists.

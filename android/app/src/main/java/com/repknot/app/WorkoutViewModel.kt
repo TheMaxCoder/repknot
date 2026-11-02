@@ -189,6 +189,8 @@ class WorkoutViewModel(
     }
     /** Marks the workout finished; it is uploaded only while upload is enabled in settings. */
     fun finish() = action { current.get()?.let { sessions.finishAt(it, now()); if (uploadEnabled.value) sync.refreshAndPush() } }
+    /** Back to in progress if the workout was never uploaded. */
+    fun resume() = action { current.get()?.let { sessions.resume(it) } }
     fun keepMine() = action { current.get()?.let { sync.keepMine(it) } }
     fun takeTheirs() = action { current.get()?.let { sync.takeTheirs(it) } }
     fun share(deliver: (String) -> Unit) = action {

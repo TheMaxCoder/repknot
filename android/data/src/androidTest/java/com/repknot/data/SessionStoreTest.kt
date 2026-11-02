@@ -20,6 +20,17 @@ class SessionStoreTest {
         exercises = listOf(exercise("ex-remote", "Bench", ServerSet("00000000-0000-4000-a000-000000000003", 0, 32.5, "kg", 7.0, rir = 3, notes = "set note"))))
     private suspend fun edit(load: Double) = db.logSet(id, db.sessions().sets(id).firstOrNull()?.id ?: setId, load)
 
+    @Test fun resumeReopensOnlyAFinishedWorkoutThatWasNeverUploaded() = runBlocking {
+        edit(20.0); db.sessions().finishAt(id, 1000L)
+        assertEquals(1, db.sessions().resume(id))
+        val row = db.sessions().get(id)!!
+        assertEquals("in_progress", row.status); assertNull(row.finishedAt)
+        assertEquals(0, db.sessions().pending().size)
+        assertTrue(db.sessions().discard(id))
+        // Uploaded once (server number + base revision): it cannot be reopened.
+        edit(20.0); db.sessions().finish(id); db.sessions().acknowledge(id, 1, 5, 42)
+        assertEquals(0, db.sessions().resume(id)); assertEquals("pushed", db.sessions().get(id)!!.status)
+    }
     @Test fun acknowledgementDoesNotClearAnEditMadeDuringUpload() = runBlocking {
         edit(20.0); db.sessions().finish(id)
         val uploading = db.sessions().snapshot(id)!!.row.localRevision

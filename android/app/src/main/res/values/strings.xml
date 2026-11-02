@@ -124,4 +124,11 @@
     <string name="rest_alert_text">%1$s · %2$s</string>
     <string name="rest_channel_name">Rest timer</string>
     <string name="rest_channel_description">Vibrates (no sound) when a rest reaches its target, so a connected watch buzzes too.</string>
+    <string name="finish_confirm_title">Finish this workout?</string>
+    <plurals name="finish_confirm_message">
+        <item quantity="one">%1$d set logged.</item>
+        <item quantity="other">%1$d sets logged.</item>
+    </plurals>
+    <string name="finish">Finish</string>
+    <string name="resume_workout">Resume workout</string>
 </resources>
