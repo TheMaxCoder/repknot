@@ -22,6 +22,9 @@ Updated: 2026-11-02
 
 ## Current task
 
+[030 — Navigation and history](tasks/030-navigation-history.md) is in progress: approved
+Home/History/Progress shell, recorded workout/exercise browsing, and origin-aware Back.
+
 [029 — Focused Home](tasks/029-focused-home.md) is done: flat cards, native workout chooser,
 and live Progress summary implemented through the worker, reviewed, checked and installed.
 Phone navigation/selection and large/narrow layouts verified; owner visual review is next.
