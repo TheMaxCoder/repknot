@@ -22,7 +22,7 @@ Updated: 2026-11-02
 
 ## Current task
 
-[027 — Workout timing and rest timer](tasks/027-workout-timing.md): timestamps (server + phone v7), rest timer with program-based 2:00/3:00 targets and vibration are implemented and phone-checked. Pending owner choice: screen-off behavior during rests.
+[027 — Workout timing and rest timer](tasks/027-workout-timing.md): timestamps (server + phone v7), rest timer with program-based 2:00/3:00 targets and vibration are implemented and phone-checked. Rest alert: phone notification (vibration, no sound) works; the paired smartwatch does not buzz for it yet — investigation paused, next experiments in the task.
 
 [026 — Flat focused workout logger](tasks/026-flat-workout-logger.md) is done: flat session layout, compact Plan/Last, simplified footer and Light day/Discard menu. Installed and phone-tested (log/edit/delete, RIR, keyboard, notes and selection).
 

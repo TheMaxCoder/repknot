@@ -231,8 +231,24 @@ Implemented, installed on the phone, and checked. Commits: 3c0c00d (server), 581
   notification` fields for Repknot vs WhatsApp; later try CATEGORY_MESSAGE then
   MessagingStyle, one variable at a time; no public API to buzz a smartwatch directly, the
   watch's own timer is the reliable fallback.
-Next: when the owner allows installs: clear watch + phone notifications, one alert with the
-phone locked and no WhatsApp activity; then repeat without clearing. Also confirm via View all exercises that the earlier sets still exist (if not, this
+- Probe tooling: debug-only `DebugRestAlertReceiver` (src/debug, exported) lets adb post an
+  alert through the real channel: `adb shell am broadcast -n com.repknot.app/.DebugRestAlertReceiver
+  --ei id 101 --es text Probe` (no spaces/parentheses in text: the device shell re-parses it),
+  `--ez clear true` clears. Owner-proposed test: three unique ids 10 s apart, then three
+  posts with one id (updates), watch cleared before each group.
+- Probe runs 2026-11-02 (installed build af8331a+8e024c9: rest_alert_quiet, high, vibration,
+  no sound, unique titles). Run 1 (14:40): phone vibrated A1, A2, B1–B3 but not A3 (Android
+  notification cooldown for a 3rd alert in 20 s). Run 2 (14:51): phone vibrated all six.
+  Watch: not a single buzz in either group. So neither unique ids nor updates matter; the
+  watch does not buzz for Repknot's alerting notifications while WhatsApp's first
+  message does. Remaining ideas: CATEGORY_MESSAGE, MessagingStyle (looks like a chat app),
+  checking the watch app's own per-app settings, comparing `dumpsys notification` for a WhatsApp
+  message; fallback is the watch's native timer.
+- State for the owner's next workout: the phone alert works (quiet vibration at rest end);
+  the watch does not buzz yet. Finish confirmation, Resume and last-exercise selection are
+  installed.
+Next (paused by owner): try CATEGORY_MESSAGE then MessagingStyle with the probe receiver;
+owner to confirm via View all exercises that the earlier sets still exist (if not, this
 is real data loss and needs investigation), and tests a rest alert with the per-alert id.
 If not: check watch companion app → Notifications → Repknot and the phone's autostart/battery
 settings for the watch app; then try a channel with phone vibration. A lock-screen countdown

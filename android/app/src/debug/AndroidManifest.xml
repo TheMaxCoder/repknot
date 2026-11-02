@@ -1,0 +1,6 @@
+<!-- Debug builds only: lets adb post a rest alert on demand for watch testing (task 027). -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application>
+        <receiver android:name=".DebugRestAlertReceiver" android:exported="true" />
+    </application>
+</manifest>

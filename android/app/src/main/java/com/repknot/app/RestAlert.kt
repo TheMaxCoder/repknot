@@ -46,7 +46,7 @@ object RestAlert {
         context, 0, Intent(context, RestAlertReceiver::class.java).putExtra(EXTRA_TEXT, text),
         PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
 
-    internal fun post(context: Context, text: String) {
+    internal fun post(context: Context, text: String, id: Int? = null) {
         val manager = context.getSystemService(NotificationManager::class.java)
         if (!manager.areNotificationsEnabled()) return
         OLD_CHANNELS.forEach(manager::deleteNotificationChannel)
@@ -65,7 +65,7 @@ object RestAlert {
         // A new id per alert: reusing one id made each alert an update of the previous
         // notification, which a mirrored watch may show without buzzing.
         val now = System.currentTimeMillis()
-        manager.notify((now / 1000).toInt(), Notification.Builder(context, CHANNEL)
+        manager.notify(id ?: (now / 1000).toInt(), Notification.Builder(context, CHANNEL)
             .setSmallIcon(R.drawable.ic_notification)
             // Unique text per alert in case the watch de-duplicates identical notifications.
             .setContentTitle(context.getString(R.string.rest_done_at,
