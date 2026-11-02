@@ -12,11 +12,14 @@ import android.os.Build
 
 /**
  * End-of-rest alert (task 027). One exact alarm at a time: each Log replaces it, leaving the
- * workout cancels it. The notification is silent on the phone (music keeps playing) so that a
- * mirrored smartwatch is the one that buzzes.
+ * workout cancels it. The notification has no sound (music keeps playing) but vibrates, which
+ * makes it an alerting notification that a mirrored smartwatch buzzes for.
  */
 object RestAlert {
-    private const val CHANNEL = "rest_timer"
+    // Channel settings are fixed once created; v1 ("rest_timer") was fully silent and the watch
+    // did not forward it. Alerts must vibrate to count as alerting; still no sound.
+    private const val CHANNEL = "rest_alert"
+    private const val OLD_CHANNEL = "rest_timer"
     private const val NOTIFICATION_ID = 27
     private const val EXTRA_TEXT = "text"
 
@@ -45,11 +48,13 @@ object RestAlert {
     internal fun post(context: Context, text: String) {
         val manager = context.getSystemService(NotificationManager::class.java)
         if (!manager.areNotificationsEnabled()) return
+        manager.deleteNotificationChannel(OLD_CHANNEL)
         manager.createNotificationChannel(NotificationChannel(CHANNEL,
             context.getString(R.string.rest_channel_name), NotificationManager.IMPORTANCE_HIGH).apply {
             description = context.getString(R.string.rest_channel_description)
             setSound(null, null)
-            enableVibration(false)
+            enableVibration(true)
+            vibrationPattern = longArrayOf(0, 300, 150, 300)
         })
         val open = PendingIntent.getActivity(context, 0,
             Intent(context, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP),

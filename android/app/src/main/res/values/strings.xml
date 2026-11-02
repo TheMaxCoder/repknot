@@ -123,5 +123,5 @@
     <string name="rest_done">Rest done</string>
     <string name="rest_alert_text">%1$s · %2$s</string>
     <string name="rest_channel_name">Rest timer</string>
-    <string name="rest_channel_description">Silent alert when a rest reaches its target, for mirroring to a watch.</string>
+    <string name="rest_channel_description">Vibrates (no sound) when a rest reaches its target, so a connected watch buzzes too.</string>
 </resources>

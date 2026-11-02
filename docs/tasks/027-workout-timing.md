@@ -155,6 +155,11 @@ vibration at target, elapsed header, nothing shown on preview/finished screens.
   `SCHEDULE_EXACT_ALARM` maxSdk 32. POST_NOTIFICATIONS is requested when a session is in
   progress. Unknown: whether the watch forwards a notification that is silent on the phone;
   fallback is a channel with sound/vibration.
+- Owner test 1 (2026-11-02): the alarm fired and the notification appeared on the phone
+  on time, but the watch did not buzz (watch DND/sleep off). Cause assumed: a channel
+  with no sound and no vibration is non-alerting and the watch does not forward/buzz for it.
+  Fix: new channel `rest_alert` (old `rest_timer` deleted; channel settings are
+  immutable) with vibration 300/150/300 ms and no sound. VIBRATE permission restored.
 
 ## Verification
 - Step 1a: `scripts/db push` applied `20261102010000_workout_timing.sql` to dev
@@ -184,7 +189,8 @@ vibration at target, elapsed header, nothing shown on preview/finished screens.
 ## Handoff
 Implemented, installed on the phone, and checked. Commits: 3c0c00d (server), 5812eb0
 (phone timing), 748443a (spec), 1c6a025 (worker UI), 0ea7a93 (lead fixes).
-Next: owner logs a set, waits for the target and reports whether the watch buzzes.
+Next: install the vibrating-channel build (owner was mid-workout; waiting for a gap), then
+owner reports whether the watch buzzes.
 If not: check watch companion app → Notifications → Repknot and the phone's autostart/battery
 settings for the watch app; then try a channel with phone vibration. A lock-screen countdown
 (chronometer notification) is a possible follow-up. Time analysis UI later, once data exists.
