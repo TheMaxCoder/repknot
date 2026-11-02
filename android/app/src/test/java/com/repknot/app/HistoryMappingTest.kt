@@ -22,6 +22,15 @@ class HistoryMappingTest {
             listOf(snapshot("1", "pushed"), snapshot("2", upload = true), snapshot("3"), snapshot("4", "conflict"), snapshot("5", "conflict_deleted")).map(::historyStatus))
     }
 
+    @Test fun lightAndEmptyWorkoutsRemainAndTimestampsDoNotImplyCompletion() {
+        val light = snapshot("light").let { it.copy(row = it.row.copy(light = true)) }
+        val rows = listOf(light, snapshot("empty"), snapshot("active", "in_progress", finish = 123),
+            snapshot("unknown", "other", finish = 456))
+        assertEquals(listOf("empty", "light"), completedHistory(rows).map { it.row.id })
+        assertTrue(completedHistory(rows).last().row.light)
+        assertTrue(historyExercises(rows).isEmpty())
+    }
+
     @Test fun directoryOrdersLatestNamesAndStableTies() {
         fun recorded(session: String, date: String, id: String, name: String) = snapshot(session, date = date,
             exercises = listOf(SessionExerciseRow("x$session", session, 0, id, name)),

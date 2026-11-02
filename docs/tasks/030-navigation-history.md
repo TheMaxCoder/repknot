@@ -142,7 +142,7 @@ test creation and clean up only that exact test record through existing Discard 
 
 ## Verification
 
-Resumed worker: `scripts/check --offline` and `git diff --check` passed after transactional archive read and expanded directory tests. UI integration initially failed compilation due to a cross-module smart cast; fixed and subsequent `scripts/check --offline` passed. Final integrated check and diff check recorded in the UI commit. No device operations.
+Resumed worker: `scripts/check --offline` and `git diff --check` passed after transactional archive read and expanded directory tests. UI integration initially failed compilation due to a cross-module smart cast; fixed and subsequent `scripts/check --offline` passed. Final integrated check and diff check passed; an additional test confirms light/empty workouts and that timestamps alone do not imply completion. No device operations.
 
 Worker: `scripts/check --offline` passed after correcting a navigation test assertion;
 initial run failed that assertion. `git diff --check` passed. No device operations run.
