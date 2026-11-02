@@ -74,6 +74,9 @@ object RestAlert {
             .setContentText(text)
             .setCategory(Notification.CATEGORY_REMINDER)
             .setWhen(now).setShowWhen(true)
+            // The watch buzzes only while no earlier notification from the app is still present,
+            // so an alert never lingers: it expires on its own (and the next Log clears it).
+            .setTimeoutAfter(90_000)
             .setContentIntent(open)
             .setAutoCancel(true)
             .build())

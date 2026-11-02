@@ -217,7 +217,11 @@ Implemented, installed on the phone, and checked. Commits: 3c0c00d (server), 581
   while the sets are stored. Unconfirmed (phone locked; owner to check View all exercises).
   Fix: with no explicit selection, select the exercise of the newest logged set; the
   notification intent uses NEW_TASK|CLEAR_TOP|SINGLE_TOP to reuse the existing screen.
-Next: owner confirms via View all exercises that the earlier sets still exist (if not, this
+- Owner discovery: WhatsApp also stops buzzing the watch until its earlier notification is
+  cleared — the watch buzzes only for the first notification of an app while older ones are
+  present. Repknot alerts had stayed in the watch list since test 1. Alerts now expire after
+  90 s (`setTimeoutAfter`) in addition to being cleared on the next Log.
+Next: owner clears Repknot (and other) notifications on the watch, then tests; and confirms via View all exercises that the earlier sets still exist (if not, this
 is real data loss and needs investigation), and tests a rest alert with the per-alert id.
 If not: check watch companion app → Notifications → Repknot and the phone's autostart/battery
 settings for the watch app; then try a channel with phone vibration. A lock-screen countdown
