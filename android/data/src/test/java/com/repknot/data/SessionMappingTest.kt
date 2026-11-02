@@ -69,6 +69,31 @@ class SessionMappingTest {
     private val pull = ProgramWorkout("pull-1", "Pull 1", 1, emptyList())
     private val program = Program("p1", listOf(push, pull))
 
+    @Test fun timingRoundTripsBetweenServerTimestampsAndPhoneMillis() {
+        // Postgres renders timestamptz with an offset and up to microseconds; omitted fields stay null.
+        val timed = codec.decodeFromString<ServerSession>("""
+            {"id":"t1","number":9,"performed_on":"2026-11-02","revision":1,
+             "started_at":"2026-11-02T10:00:00+00:00","finished_at":"2026-11-02T16:05:30.123456+05:00",
+             "exercises":[{"id":"x","exercise_id":"e","exercise_name":"E","sets":[
+               {"id":"s1","unit":"kg","load":20,"reps":10,"logged_at":"2026-11-02T10:05:00.5+00:00"},
+               {"id":"s2","unit":"kg","load":20,"reps":9}]}]}
+        """.trimIndent())
+        val started = java.time.Instant.parse("2026-11-02T10:00:00Z").toEpochMilli()
+        assertEquals(started, timed.startedAt.toMillis())
+        assertEquals(started + 3_930_123L, timed.finishedAt.toMillis())
+        assertEquals(listOf(started + 300_500L, null), timed.setRows().map { it.loggedAt })
+
+        val row = SessionRow("t1", "2026-11-02", "E", null, "finished", 1, 0, null, null, null, null,
+            startedAt = started, finishedAt = started + 3_930_123L)
+        val payload = codec.encodeToJsonElement(SessionSnapshot(row, timed.exerciseRows(), timed.setRows()).pushPayload()).jsonObject
+        assertEquals("2026-11-02T10:00:00Z", payload["started_at"]!!.jsonPrimitive.content)
+        assertEquals("2026-11-02T11:05:30.123Z", payload["finished_at"]!!.jsonPrimitive.content)
+        val sets = payload["exercises"]!!.jsonArray[0].jsonObject["sets"]!!.jsonArray
+        assertEquals("2026-11-02T10:05:00.500Z", sets[0].jsonObject["logged_at"]!!.jsonPrimitive.content)
+        assertEquals(kotlinx.serialization.json.JsonNull, sets[1].jsonObject["logged_at"])
+        assertNull(remote.startedAt.toMillis())
+    }
+
     @Test fun startingSnapshotsThePrescriptionInProgramOrder() {
         var next = 0
         val (row, exercises) = startRows("s9", LocalDate.of(2026, 11, 3), program, push) { "id${next++}" }

@@ -16,6 +16,7 @@ import org.junit.runner.RunWith
 class MigrationTest {
     private val name = "migration-test.db"
     private val name6 = "migration-test-6.db"
+    private val name7 = "migration-test-7.db"
     @get:Rule val helper = MigrationTestHelper(InstrumentationRegistry.getInstrumentation(), WorkoutDatabase::class.java)
 
     @Test fun v4WorkoutSurvivesUpgradeToV5WithLightOff() {
@@ -31,7 +32,7 @@ class MigrationTest {
         }
         helper.runMigrationsAndValidate(name, 5, true, WorkoutDatabase.MIGRATION_4_5).close()
         val db = Room.databaseBuilder(InstrumentationRegistry.getInstrumentation().targetContext,
-            WorkoutDatabase::class.java, name).addMigrations(WorkoutDatabase.MIGRATION_4_5, WorkoutDatabase.MIGRATION_5_6).build()
+            WorkoutDatabase::class.java, name).addMigrations(WorkoutDatabase.MIGRATION_4_5, WorkoutDatabase.MIGRATION_5_6, WorkoutDatabase.MIGRATION_6_7).build()
         try {
             runBlocking {
                 val row = db.sessions().get("s1")!!
@@ -55,13 +56,42 @@ class MigrationTest {
         }
         helper.runMigrationsAndValidate(name6, 6, true, WorkoutDatabase.MIGRATION_5_6).close()
         val db = Room.databaseBuilder(InstrumentationRegistry.getInstrumentation().targetContext,
-            WorkoutDatabase::class.java, name6).addMigrations(WorkoutDatabase.MIGRATION_4_5, WorkoutDatabase.MIGRATION_5_6).build()
+            WorkoutDatabase::class.java, name6).addMigrations(WorkoutDatabase.MIGRATION_4_5, WorkoutDatabase.MIGRATION_5_6, WorkoutDatabase.MIGRATION_6_7).build()
         try {
             runBlocking {
                 assertEquals(true, db.sessions().get("s1")!!.light)
                 assertEquals(0, db.checkIns().all().size)
                 db.checkIns().add(CheckInRow("c1", "2026-11-02", waistCm = 91.0))
                 assertEquals(true, db.checkIns().pending().single().pending)
+            }
+        } finally { db.close() }
+    }
+
+    @Test fun v6WorkoutSurvivesUpgradeToV7WithoutTimingAndRecordsItAfterwards() {
+        helper.createDatabase(name7, 6).apply {
+            execSQL("""INSERT INTO sessions (id, performedOn, title, notes, status, localRevision, pushedLocalRevision,
+                baseRevision, sharedLocalRevision, number, serverSnapshot, programId, programWorkoutKey, light)
+                VALUES ('s1', '2026-11-02', 'Push 1', NULL, 'in_progress', 3, 0, NULL, NULL, NULL, NULL, NULL, NULL, 0)""")
+            execSQL("""INSERT INTO session_exercises (id, sessionId, position, exerciseId, exerciseName)
+                VALUES ('e1', 's1', 0, 'press', 'Press')""")
+            execSQL("""INSERT INTO logged_sets (id, sessionId, sessionExerciseId, position, load, unit, reps, rir)
+                VALUES ('t1', 's1', 'e1', 0, 25.0, 'kg', 10.0, 1)""")
+            close()
+        }
+        helper.runMigrationsAndValidate(name7, 7, true, WorkoutDatabase.MIGRATION_6_7).close()
+        val db = Room.databaseBuilder(InstrumentationRegistry.getInstrumentation().targetContext,
+            WorkoutDatabase::class.java, name7).addMigrations(WorkoutDatabase.MIGRATION_4_5, WorkoutDatabase.MIGRATION_5_6, WorkoutDatabase.MIGRATION_6_7).build()
+        try {
+            runBlocking {
+                val row = db.sessions().get("s1")!!
+                assertEquals("in_progress", row.status)
+                assertEquals(null, row.startedAt)
+                assertEquals(null, db.sessions().sets("s1").single().loggedAt)
+                // Finish records the time once; a retry finish keeps the first value.
+                db.sessions().finishAt("s1", 1000L)
+                db.sessions().finishAt("s1", 2000L)
+                assertEquals(1000L, db.sessions().get("s1")!!.finishedAt)
+                assertEquals("finished", db.sessions().get("s1")!!.status)
             }
         } finally { db.close() }
     }

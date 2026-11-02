@@ -37,7 +37,7 @@ service, changes to conflict/revision rules.
 - [x] Step 1a: migration `20261102010000_workout_timing.sql` (columns, push_session,
       save_session, replace_session_exercises keeps `logged_at` by set id when omitted)
       + `supabase/tests/008_workout_timing_test.sql`; `scripts/db push` + `scripts/db test`.
-- [ ] Step 1b: Room v7 (`SessionRow.startedAt/finishedAt`, `SetRow.loggedAt`), MIGRATION_6_7,
+- [x] Step 1b: Room v7 (`SessionRow.startedAt/finishedAt`, `SetRow.loggedAt`), MIGRATION_6_7,
       MigrationTest, mapping (ServerSession/ServerSet/Push*), ViewModel writes with an
       injectable clock; `scripts/check --offline`; device migration test.
 - [ ] Step 2: worker UI slice (spec added below when step 1 lands).
@@ -54,11 +54,21 @@ service, changes to conflict/revision rules.
   there is no prescription (ad-hoc exercise, other programs have none). The per-exercise
   2:00/3:00 toggle is a device-local override (SharedPreferences), not synced.
 - Room migrations are required from v4 (real workouts on the phone).
+- `SessionDao.finishAt(id, now)` uses `COALESCE(finishedAt, now)` because Retry upload calls
+  finish again; `finish(id)` remains for tests and uses the system clock.
+- Timestamps go over the wire as ISO-8601 instants (`Instant.toString()`), parsed back with
+  `OffsetDateTime.parse` (Postgres returns an offset, sometimes microseconds).
 
 ## Verification
 - Step 1a: `scripts/db push` applied `20261102010000_workout_timing.sql` to dev
   (<dev-project-ref>, additive nullable columns only). `scripts/db test`: exit 0,
   127 ok including 10 new in 008.
+- Step 1b: `scripts/check --offline` passed (build, lint, JVM tests incl. new
+  `timingRoundTripsBetweenServerTimestampsAndPhoneMillis`). Device (test phone):
+  `:data:connectedDebugAndroidTest --offline` with MigrationTest, SessionStoreTest,
+  WorkoutDatabaseTest → 14/14 passed, including v6→v7 upgrade + finish-once.
+  Not run: `scripts/test-sync-integration` (needs `REPKNOT_TEST2_*` credentials, not in
+  `.env`); a real upload of a timed session is not yet verified end to end.
 
 ## Handoff
-Next: step 1b (Room v7, mapping, ViewModel writes).
+Next: write the step 2 worker spec and delegate.

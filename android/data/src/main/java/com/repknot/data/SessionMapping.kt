@@ -9,7 +9,9 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import java.time.Instant
 import java.time.LocalDate
+import java.time.OffsetDateTime
 import java.time.ZoneOffset
 
 internal val codec = Json { ignoreUnknownKeys = true; encodeDefaults = true }
@@ -20,6 +22,7 @@ data class ServerSet(
     val id: String, val position: Int = 0, val load: Double? = null, val unit: String? = null,
     val reps: Double? = null, @SerialName("duration_s") val durationS: Int? = null,
     val rir: Int? = null, val notes: String? = null,
+    @SerialName("logged_at") val loggedAt: String? = null,
 )
 
 @Serializable
@@ -51,6 +54,8 @@ data class ServerSession(
     @SerialName("program_id") val programId: String? = null,
     @SerialName("program_workout_key") val programWorkoutKey: String? = null,
     val light: Boolean = false,
+    @SerialName("started_at") val startedAt: String? = null,
+    @SerialName("finished_at") val finishedAt: String? = null,
     val exercises: List<ServerSessionExercise> = emptyList(),
 ) {
     fun json(): String = codec.encodeToString(this)
@@ -82,8 +87,14 @@ data class PushPayload(
     @SerialName("program_id") val programId: String?,
     @SerialName("program_workout_key") val programWorkoutKey: String?,
     val light: Boolean,
+    @SerialName("started_at") val startedAt: String?,
+    @SerialName("finished_at") val finishedAt: String?,
     val exercises: List<PushExercise>,
 )
+
+/** Server timestamps (ISO-8601 with offset) ↔ phone epoch millis. */
+internal fun String?.toMillis(): Long? = this?.let { OffsetDateTime.parse(it).toInstant().toEpochMilli() }
+internal fun Long?.toIso(): String? = this?.let { Instant.ofEpochMilli(it).toString() }
 
 fun ServerSession.exerciseRows(): List<SessionExerciseRow> =
     exercises.sortedBy { it.position }.mapIndexed { index, e ->
@@ -93,18 +104,19 @@ fun ServerSession.exerciseRows(): List<SessionExerciseRow> =
 
 fun ServerSession.setRows(): List<SetRow> = exercises.flatMap { e ->
     e.sets.sortedBy { it.position }.mapIndexed { index, s ->
-        SetRow(s.id, id, e.id, index, s.load, s.unit, s.reps, s.durationS, s.rir, s.notes)
+        SetRow(s.id, id, e.id, index, s.load, s.unit, s.reps, s.durationS, s.rir, s.notes, s.loggedAt.toMillis())
     }
 }
 
 fun SessionSnapshot.pushPayload(): PushPayload {
     val setsByExercise = sets.groupBy { it.sessionExerciseId }
     return PushPayload(row.id, row.performedOn, row.title, row.notes, row.programId, row.programWorkoutKey, row.light,
+        row.startedAt.toIso(), row.finishedAt.toIso(),
         exercises.sortedBy { it.position }.map { e ->
             PushExercise(e.id, e.exerciseId, e.exerciseName, e.plannedSets, e.plannedRepMin, e.plannedRepMax,
                 e.plannedRirMin, e.plannedRirMax, e.plannedLoad, e.plannedUnit, e.substitutedFor, e.notes,
                 setsByExercise[e.id].orEmpty().sortedBy { it.position }.map { s ->
-                    ServerSet(s.id, s.position, s.load, s.unit, s.reps, s.durationS, s.rir, s.notes)
+                    ServerSet(s.id, s.position, s.load, s.unit, s.reps, s.durationS, s.rir, s.notes, s.loggedAt.toIso())
                 })
         })
 }

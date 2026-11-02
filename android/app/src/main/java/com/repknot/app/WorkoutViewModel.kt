@@ -93,6 +93,7 @@ class WorkoutViewModel(
     private val sessions: SessionDao, private val reference: ReferenceDao, private val sync: SessionSync,
     private val current: CurrentSession, val uploadEnabled: StateFlow<Boolean>,
     private val today: () -> LocalDate = LocalDate::now,
+    private val now: () -> Long = System::currentTimeMillis,
 ) : ViewModel() {
     private val currentId = MutableStateFlow(current.get())
     private val previewKey = MutableStateFlow<String?>(null)
@@ -142,7 +143,7 @@ class WorkoutViewModel(
         val workout = program.workouts.firstOrNull { it.key == workoutKey } ?: return@action
         val id = uuid()
         val (row, exercises) = startRows(id, today(), program, workout, ::uuid)
-        if (sessions.start(row, exercises)) { current.set(id); currentId.value = id; previewKey.value = null }
+        if (sessions.start(row.copy(startedAt = now()), exercises)) { current.set(id); currentId.value = id; previewKey.value = null }
     }
     fun logSet(exerciseId: String, setId: String?, load: String, unit: LoadUnit, reps: String, rir: String) {
         val input = parseSetInput(load, unit, reps, rir)
@@ -155,7 +156,8 @@ class WorkoutViewModel(
             val position = existing?.position
                 ?: ((sessions.sets(id).filter { it.sessionExerciseId == exerciseId }.maxOfOrNull { it.position } ?: -1) + 1)
             sessions.saveSet(existing?.copy(load = input.load, reps = input.reps, rir = input.rir)
-                ?: SetRow(uuid(), id, exerciseId, position, input.load, input.unit.name.lowercase(), input.reps, rir = input.rir))
+                ?: SetRow(uuid(), id, exerciseId, position, input.load, input.unit.name.lowercase(), input.reps, rir = input.rir,
+                    loggedAt = now()))
         }
     }
     fun deleteSet(setId: String) = action {
@@ -181,7 +183,7 @@ class WorkoutViewModel(
         current.get()?.let { sessions.saveSessionNotes(it, notes.trim().ifEmpty { null }) }
     }
     /** Marks the workout finished; it is uploaded only while upload is enabled in settings. */
-    fun finish() = action { current.get()?.let { sessions.finish(it); if (uploadEnabled.value) sync.refreshAndPush() } }
+    fun finish() = action { current.get()?.let { sessions.finishAt(it, now()); if (uploadEnabled.value) sync.refreshAndPush() } }
     fun keepMine() = action { current.get()?.let { sync.keepMine(it) } }
     fun takeTheirs() = action { current.get()?.let { sync.takeTheirs(it) } }
     fun share(deliver: (String) -> Unit) = action {

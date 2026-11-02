@@ -29,6 +29,9 @@ data class SessionRow(
     val programWorkoutKey: String? = null,
     /** Intentionally light / modified day: excluded from progress statuses (task 019). */
     @ColumnInfo(defaultValue = "0") val light: Boolean = false,
+    /** Epoch millis when Start was tapped / Finish first tapped (task 027); null for older sessions. */
+    val startedAt: Long? = null,
+    val finishedAt: Long? = null,
 )
 
 /** One exercise in a session, with the prescription snapshot it was started from (ADR 002). */
@@ -63,6 +66,8 @@ data class SetRow(
     val durationS: Int? = null,
     val rir: Int? = null,
     val notes: String? = null,
+    /** Epoch millis when the set was first saved; edits keep it (task 027). */
+    val loggedAt: Long? = null,
 )
 
 data class SessionSnapshot(val row: SessionRow, val exercises: List<SessionExerciseRow>, val sets: List<SetRow>)
@@ -147,8 +152,10 @@ interface SessionDao {
     @Query("SELECT * FROM logged_sets")
     suspend fun allSets(): List<SetRow>
 
-    @Query("UPDATE sessions SET status = 'finished' WHERE id = :id AND status NOT IN ('conflict', 'conflict_deleted')")
-    suspend fun finish(id: String)
+    /** The first finish records the time; Retry upload finishes again and keeps it. */
+    @Query("UPDATE sessions SET status = 'finished', finishedAt = COALESCE(finishedAt, :now) WHERE id = :id AND status NOT IN ('conflict', 'conflict_deleted')")
+    suspend fun finishAt(id: String, now: Long)
+    suspend fun finish(id: String) = finishAt(id, System.currentTimeMillis())
     /** Every local edit bumps the local revision; an uploaded session becomes pending again. */
     @Query("UPDATE sessions SET localRevision = localRevision + 1, status = CASE WHEN status = 'pushed' THEN 'finished' ELSE status END WHERE id = :id")
     suspend fun bump(id: String)
@@ -290,7 +297,7 @@ interface SessionDao {
         val acknowledged = maxOf(revision, remote.clientRevision ?: 0)
         put(SessionRow(remote.id, remote.performedOn, remote.title ?: "Workout", remote.notes,
             "pushed", acknowledged, acknowledged, remote.revision, null, remote.number, null,
-            remote.programId, remote.programWorkoutKey, remote.light))
+            remote.programId, remote.programWorkoutKey, remote.light, remote.startedAt.toMillis(), remote.finishedAt.toMillis()))
         putExercises(remote.exerciseRows())
         putSets(remote.setRows())
     }
