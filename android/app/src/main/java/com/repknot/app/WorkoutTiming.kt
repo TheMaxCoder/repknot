@@ -38,3 +38,14 @@ fun elapsedWorkoutText(startedAt: Long?, nowMillis: Long, status: String): Strin
     val minutes = ((nowMillis - startedAt) / 60000).coerceAtLeast(0)
     return if (minutes < 60) "$minutes min" else "${minutes / 60} h ${minutes % 60} min"
 }
+
+/** When the current rest reaches its target; null when no rest is running in an in-progress session. */
+data class RestAlertPlan(val atMillis: Long, val exerciseName: String, val targetS: Int)
+
+fun restAlertPlan(session: WorkoutUiState.Session, overrides: Map<String, Int>): RestAlertPlan? {
+    if (session.row.status != "in_progress") return null
+    val newest = newestTimedSet(session.exercises.flatMap { it.sets }) ?: return null
+    val exercise = session.exercises.firstOrNull { it.row.id == newest.sessionExerciseId } ?: return null
+    val target = restTargetS(exercise.row.exerciseId, exercise.programRestS, overrides)
+    return RestAlertPlan(newest.loggedAt!! + target * 1000L, exercise.row.exerciseName, target)
+}

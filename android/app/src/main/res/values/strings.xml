@@ -120,4 +120,8 @@
     <string name="rest_elapsed">Rest %1$s /</string>
     <string name="rest_target_description">Rest target for %1$s, tap to change</string>
     <string name="open_exercise">Open %1$s</string>
+    <string name="rest_done">Rest done</string>
+    <string name="rest_alert_text">%1$s · %2$s</string>
+    <string name="rest_channel_name">Rest timer</string>
+    <string name="rest_channel_description">Silent alert when a rest reaches its target, for mirroring to a watch.</string>
 </resources>

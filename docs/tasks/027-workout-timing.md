@@ -42,7 +42,9 @@ service, changes to conflict/revision rules.
       injectable clock; `scripts/check --offline`; device migration test.
 - [x] Step 2: worker UI slice — timer, elapsed header, device-local target and vibration; offline checks passed.
 - [x] Lead review, install, phone check, architecture/status update.
-- [ ] Owner decision: screen-off behavior during rests (see discoveries).
+- [x] Owner decision: phone sits on a stand and owner walks during rests, music playing →
+      silent phone notification at the rest target, mirrored to the paired smartwatch.
+- [ ] Owner watch test: does the watch buzz for the silent notification?
 
 ## Step 2 spec (worker)
 Step 1 is committed (5812eb0): `SessionRow.startedAt`, `SetRow.loggedAt` (epoch millis,
@@ -142,7 +144,17 @@ vibration at target, elapsed header, nothing shown on preview/finished screens.
 - Discovery: the owner's phone has a 60 s screen timeout. When the screen turns off the
   activity pauses, so a 2–3 min rest usually ends with the screen off and no vibration.
   Options for the owner: keep the screen on while a rest timer is running, or a background
-  alert (exact alarm/notification — the planned follow-up). Pending owner choice.
+  alert (exact alarm/notification — the planned follow-up).
+- Decided (owner, 2026-11-02): watch alert. `RestAlert` schedules one exact alarm per rest
+  (`setExactAndAllowWhileIdle`, same PendingIntent so each Log replaces it; cancelled when
+  no rest is running: finished, discarded, past target, no sets). The receiver posts a
+  notification on channel "Rest timer" (IMPORTANCE_HIGH, no sound, no vibration) so music
+  is not interrupted and the watch companion app forwards it to the watch. In-app vibration and the
+  VIBRATE permission were removed. Exact alarms via `USE_EXACT_ALARM` (granted without a
+  prompt; Play restricts it to alarm apps, Repknot is sideloaded) and
+  `SCHEDULE_EXACT_ALARM` maxSdk 32. POST_NOTIFICATIONS is requested when a session is in
+  progress. Unknown: whether the watch forwards a notification that is silent on the phone;
+  fallback is a channel with sound/vibration.
 
 ## Verification
 - Step 1a: `scripts/db push` applied `20261102010000_workout_timing.sql` to dev
@@ -172,5 +184,7 @@ vibration at target, elapsed header, nothing shown on preview/finished screens.
 ## Handoff
 Implemented, installed on the phone, and checked. Commits: 3c0c00d (server), 5812eb0
 (phone timing), 748443a (spec), 1c6a025 (worker UI), 0ea7a93 (lead fixes).
-Next: owner chooses screen-off behavior (keep screen on during rest vs background alert);
-then confirm alarm-usage vibration on device. Time analysis UI later, once data exists.
+Next: owner logs a set, waits for the target and reports whether the watch buzzes.
+If not: check watch companion app → Notifications → Repknot and the phone's autostart/battery
+settings for the watch app; then try a channel with phone vibration. A lock-screen countdown
+(chronometer notification) is a possible follow-up. Time analysis UI later, once data exists.

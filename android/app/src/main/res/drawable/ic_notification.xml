@@ -1,0 +1,5 @@
+<!-- Monochrome notification icon: the launcher's dumbbell without its background. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp" android:height="24dp" android:viewportWidth="48" android:viewportHeight="48">
+    <path android:fillColor="#FFFFFFFF" android:pathData="M8,18h5v12h-5zM15,13h5v22h-5zM20,22h8v4h-8zM28,13h5v22h-5zM35,18h5v12h-5z" />
+</vector>

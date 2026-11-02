@@ -2,7 +2,11 @@ package com.repknot.app
 
 import com.repknot.data.ProgramExerciseRow
 import com.repknot.data.ProgramWorkoutRow
+import com.repknot.data.SessionExerciseRow
+import com.repknot.data.SessionRow
 import com.repknot.data.SetRow
+import com.repknot.domain.LoadUnit
+import com.repknot.domain.Prefill
 import org.junit.Assert.*
 import org.junit.Test
 
@@ -64,5 +68,23 @@ class WorkoutTimingTest {
         assertEquals("1 h 0 min", elapsedWorkoutText(0, 60 * 60000L, "in_progress"))
         assertEquals("1 h 5 min", elapsedWorkoutText(0, 65 * 60000L, "in_progress"))
         assertEquals("2 h 0 min", elapsedWorkoutText(0, 120 * 60000L, "in_progress"))
+    }
+
+    @Test fun alertPlanFollowsNewestSetAndItsTarget() {
+        fun exercise(id: String, exerciseId: String, name: String, rest: Int?, sets: List<SetRow>) = ExerciseUi(
+            SessionExerciseRow(id, "s", 0, exerciseId, name), sets, Prefill.StartLoad(null, LoadUnit.KG),
+            SetSuggestion(null, LoadUnit.KG, null), null, null, emptyList(), rest)
+        val row = SessionRow("s", "2026-11-02", "Push", null, "in_progress", 1, 0, null, null, null, null)
+        val press = exercise("e", "press", "Press", 180, listOf(set.copy(loggedAt = 10_000)))
+        val raise = exercise("f", "raise", "Raise", null, listOf(set.copy(id = "b", sessionExerciseId = "f", loggedAt = 20_000)))
+        fun plan(vararg exercises: ExerciseUi, status: String = "in_progress", overrides: Map<String, Int> = emptyMap()) =
+            restAlertPlan(WorkoutUiState.Session(row.copy(status = status), exercises.toList(), emptyList()), overrides)
+        assertEquals(RestAlertPlan(190_000, "Press", 180), plan(press))
+        // Newest set wins; no program rest falls back to 2:00; an override replaces it.
+        assertEquals(RestAlertPlan(140_000, "Raise", 120), plan(press, raise))
+        assertEquals(RestAlertPlan(200_000, "Raise", 180), plan(press, raise, overrides = mapOf("raise" to 180)))
+        assertNull(plan(press, status = "finished"))
+        assertNull(plan(exercise("e", "press", "Press", 180, listOf(set.copy(loggedAt = null)))))
+        assertNull(plan())
     }
 }

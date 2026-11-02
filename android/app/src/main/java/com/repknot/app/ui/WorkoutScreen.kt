@@ -3,12 +3,11 @@ package com.repknot.app
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Intent
+import android.Manifest
+import android.content.pm.PackageManager
 import android.os.Build
-import android.media.AudioAttributes
-import android.os.VibrationAttributes
-import android.os.VibrationEffect
-import android.os.Vibrator
-import android.os.VibratorManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
 import androidx.compose.ui.semantics.Role
@@ -50,51 +49,28 @@ fun WorkoutScreen(vm: WorkoutViewModel, openProgress: () -> Unit, openSettings: 
     val session = state as? WorkoutUiState.Session
     val preview = state as? WorkoutUiState.Preview
     val overrides by vm.restOverrides.collectAsState()
-    val latestSession by rememberUpdatedState(session)
-    val latestOverrides by rememberUpdatedState(overrides)
     val context = LocalContext.current
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
     LaunchedEffect(session?.row?.id, session?.row?.status, lifecycle) {
         if (session?.row?.status == "in_progress") lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
-            var previousId: String? = null
-            var previousElapsed: Long? = null
-            var vibrated = false
-            while (true) {
-                now = System.currentTimeMillis()
-                val current = latestSession
-                val sets = current?.exercises?.flatMap { it.sets }.orEmpty()
-                val newest = newestTimedSet(sets)
-                val rest = restState(now, current?.row?.status.orEmpty(), sets)
-                val exercise = current?.exercises?.firstOrNull { it.row.id == rest?.sessionExerciseId }
-                if (newest?.id != previousId) {
-                    previousId = newest?.id
-                    previousElapsed = null
-                    vibrated = false
-                }
-                if (rest != null && exercise != null) {
-                    val target = restTargetS(exercise.row.exerciseId, exercise.programRestS, latestOverrides)
-                    if (!vibrated && previousElapsed != null && previousElapsed < target && rest.elapsedS >= target) {
-                        val vibrator = if (Build.VERSION.SDK_INT >= 31)
-                            context.getSystemService(VibratorManager::class.java).defaultVibrator
-                        else {
-                            @Suppress("DEPRECATION")
-                            context.getSystemService(Vibrator::class.java)
-                        }
-                        // Alarm usage: touch-feedback haptics may be switched off in system settings.
-                        val effect = VibrationEffect.createOneShot(400, VibrationEffect.DEFAULT_AMPLITUDE)
-                        if (Build.VERSION.SDK_INT >= 33) vibrator.vibrate(effect, VibrationAttributes.createForUsage(VibrationAttributes.USAGE_ALARM))
-                        else {
-                            @Suppress("DEPRECATION")
-                            vibrator.vibrate(effect, AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_ALARM).build())
-                        }
-                        vibrated = true
-                    }
-                    previousElapsed = rest.elapsedS
-                } else previousElapsed = null
-                delay(1000)
-            }
+            while (true) { now = System.currentTimeMillis(); delay(1000) }
         }
+    }
+    // End-of-rest alert: rescheduled whenever the newest logged set or its target changes,
+    // cancelled when there is no running rest (finished, discarded, no sets, past target).
+    val alert = session?.let { restAlertPlan(it, overrides) }
+    val alertText = alert?.let { stringResource(R.string.rest_alert_text, it.exerciseName, restText(it.targetS.toLong())) }
+    LaunchedEffect(alert, alertText) {
+        if (alert != null && alertText != null && alert.atMillis > System.currentTimeMillis())
+            RestAlert.schedule(context, alert.atMillis, alertText)
+        else RestAlert.cancel(context)
+    }
+    val notificationPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {}
+    LaunchedEffect(session?.row?.status == "in_progress") {
+        if (session?.row?.status == "in_progress" && Build.VERSION.SDK_INT >= 33 &&
+            context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED)
+            notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
     }
     Scaffold(bottomBar = {
         if (session != null) SessionActions(session, vm, { now }, overrides)
