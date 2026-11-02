@@ -15,4 +15,12 @@ class ExerciseSelectionTest {
         assertNull(selectedExerciseId("a", emptyList()))
     }
 
+    @Test fun freshScreenReturnsToTheLastLoggedExerciseEvenWhenComplete() {
+        val exercises = listOf(ExerciseCompletion("a", 3, 3), ExerciseCompletion("b", 4, 0))
+        assertEquals("a", selectedExerciseId(null, exercises, lastLogged = "a"))
+        assertEquals("b", selectedExerciseId("b", exercises, lastLogged = "a"))
+        assertEquals("b", selectedExerciseId(null, exercises, lastLogged = "removed"))
+        assertEquals("b", selectedExerciseId(null, exercises, lastLogged = null))
+    }
+
 }

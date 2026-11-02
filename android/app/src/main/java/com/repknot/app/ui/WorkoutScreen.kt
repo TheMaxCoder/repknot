@@ -175,7 +175,8 @@ private fun SessionScreen(session: WorkoutUiState.Session, vm: WorkoutViewModel,
     var selected by rememberSaveable(session.row.id) { mutableStateOf<String?>(null) }
     var showAll by rememberSaveable(session.row.id) { mutableStateOf(false) }
     val holder = rememberSaveableStateHolder()
-    val selectedId = selectedExerciseId(selected, session.exercises.map { ExerciseCompletion(it.row.id, it.row.plannedSets, it.sets.size) })
+    val selectedId = selectedExerciseId(selected, session.exercises.map { ExerciseCompletion(it.row.id, it.row.plannedSets, it.sets.size) },
+        newestTimedSet(session.exercises.flatMap { it.sets })?.sessionExerciseId)
     LaunchedEffect(selectedId) { selected = selectedId }
     val index = session.exercises.indexOfFirst { it.row.id == selectedId }
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {

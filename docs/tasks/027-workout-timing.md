@@ -204,9 +204,21 @@ Implemented, installed on the phone, and checked. Commits: 3c0c00d (server), 581
 - Owner: still no watch buzz with the vibrating channel. v3 channel `rest_alert_sound` adds
   the default notification sound (USAGE_NOTIFICATION, ducks music briefly); v1/v2 channels
   are deleted on first post. Installed; phone was locked so the owner runs the test.
-Next: owner logs a set (phone may be locked) and reports whether the watch buzzes with
-the sound channel. If not, the cause is on the watch side (per-app settings, phone-in-use
-suppression) rather than in Repknot.
+- Owner test 3: sound channel, still no watch buzz; WhatsApp messages do buzz the watch, so
+  forwarding/vibration work for other apps. New hypothesis: every alert reused notification
+  id 27, so the watch may treat later alerts as updates of an existing notification. Each alert
+  now gets its own id (epoch seconds); clearing uses cancelAll (the app's only notifications).
+- Owner report: during testing, after switching apps and back, "all logged sets were gone".
+  Not caused by the lead (owner was not interacting with the lead then; no process death
+  after 13:24:22, but the activity task changed, i.e. the screen was recreated). The
+  session screen has no BackHandler, so Back finishes the activity, and the notification
+  intent could start a new instance. A fresh screen auto-selected the first unfinished
+  exercise, so after completing DB press it showed Lateral raise "0 / 4" — looks like loss
+  while the sets are stored. Unconfirmed (phone locked; owner to check View all exercises).
+  Fix: with no explicit selection, select the exercise of the newest logged set; the
+  notification intent uses NEW_TASK|CLEAR_TOP|SINGLE_TOP to reuse the existing screen.
+Next: owner confirms via View all exercises that the earlier sets still exist (if not, this
+is real data loss and needs investigation), and tests a rest alert with the per-alert id.
 If not: check watch companion app → Notifications → Repknot and the phone's autostart/battery
 settings for the watch app; then try a channel with phone vibration. A lock-screen countdown
 (chronometer notification) is a possible follow-up. Time analysis UI later, once data exists.

@@ -23,7 +23,6 @@ object RestAlert {
     // so v3 also plays the default notification sound (it ducks music briefly).
     private const val CHANNEL = "rest_alert_sound"
     private val OLD_CHANNELS = listOf("rest_timer", "rest_alert")
-    private const val NOTIFICATION_ID = 27
     private const val EXTRA_TEXT = "text"
 
     fun schedule(context: Context, atMillis: Long, text: String) {
@@ -40,8 +39,9 @@ object RestAlert {
         clearNotification(context)
     }
 
+    // Rest alerts are the app's only notifications, so clearing all of them is safe.
     private fun clearNotification(context: Context) =
-        context.getSystemService(NotificationManager::class.java).cancel(NOTIFICATION_ID)
+        context.getSystemService(NotificationManager::class.java).cancelAll()
 
     // Same request code and component every time, so a new schedule replaces the previous one.
     private fun alarmIntent(context: Context, text: String?): PendingIntent = PendingIntent.getBroadcast(
@@ -61,13 +61,19 @@ object RestAlert {
             vibrationPattern = longArrayOf(0, 300, 150, 300)
         })
         val open = PendingIntent.getActivity(context, 0,
-            Intent(context, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP),
+            // Bring back the existing screen instead of stacking a second one.
+            Intent(context, MainActivity::class.java)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
-        manager.notify(NOTIFICATION_ID, Notification.Builder(context, CHANNEL)
+        // A new id per alert: reusing one id made each alert an update of the previous
+        // notification, which a mirrored watch may show without buzzing.
+        val now = System.currentTimeMillis()
+        manager.notify((now / 1000).toInt(), Notification.Builder(context, CHANNEL)
             .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(context.getString(R.string.rest_done))
             .setContentText(text)
             .setCategory(Notification.CATEGORY_REMINDER)
+            .setWhen(now).setShowWhen(true)
             .setContentIntent(open)
             .setAutoCancel(true)
             .build())
