@@ -16,6 +16,7 @@ class WorkoutStateTest {
     @Test fun todayUsesRotationAndFallbackName() {
         assertEquals(WorkoutUiState.NoProgram, todayState(null, null, emptyList()))
         val state = todayState(Program("p", listOf(second, first)), null, listOf(past)) as WorkoutUiState.Today
+        assertEquals("p", state.programId)
         assertEquals("Program", state.programName)
         assertEquals(second, state.suggested)
         assertEquals(listOf(first, second), state.workouts)

@@ -24,6 +24,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -60,6 +61,12 @@ class MainActivity : ComponentActivity() {
                     app.database.sessions(), app.database.reference(), app.sync, app.current,
                     app.settings.restOverrides, app.settings::setRestOverride,
                 ))
+                val progress: ProgressViewModel = viewModel(factory = ProgressViewModel.Factory(
+                    app.database.sessions(), app.database.reference(), app.database.checkIns(),
+                    app.settings.waistGoalCm, app::requestRefresh,
+                ))
+                val progressState by progress.state.collectAsState()
+                val workoutStateHolder = rememberSaveableStateHolder()
                 var screen by rememberSaveable { mutableStateOf("workout") }
                 if (screen == "settings") {
                     BackHandler { screen = "workout" }
@@ -68,11 +75,6 @@ class MainActivity : ComponentActivity() {
                         CloudSection(cloudState, cloud::signIn, cloud::signOut)
                     }
                 } else if (screen == "progress" || screen == "body" || screen.startsWith("exercise:")) {
-                    val progress: ProgressViewModel = viewModel(factory = ProgressViewModel.Factory(
-                        app.database.sessions(), app.database.reference(), app.database.checkIns(),
-                        app.settings.waistGoalCm, app::requestRefresh,
-                    ))
-                    val progressState by progress.state.collectAsState()
                     if (screen == "progress") {
                         BackHandler { screen = "workout" }
                         ProgressScreen(progressState, { screen = "workout" }, { screen = "body" }, progress::addCheckIn) { screen = "exercise:$it" }
@@ -84,7 +86,9 @@ class MainActivity : ComponentActivity() {
                         ExerciseProgressScreen(progressState, screen.removePrefix("exercise:")) { screen = "progress" }
                     }
                 } else {
-                    WorkoutScreen(workout, { screen = "progress" }) { screen = "settings" }
+                    workoutStateHolder.SaveableStateProvider("workout") {
+                        WorkoutScreen(workout, progressState, { screen = "progress" }) { screen = "settings" }
+                    }
                 }
             }
         }

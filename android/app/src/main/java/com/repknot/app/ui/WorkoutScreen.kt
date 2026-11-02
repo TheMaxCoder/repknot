@@ -33,6 +33,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.repeatOnLifecycle
 import kotlinx.coroutines.delay
+import com.repknot.app.ui.HomeScreen
 import com.repknot.data.ExerciseRow
 import com.repknot.data.SessionExerciseRow
 import com.repknot.data.SessionRow
@@ -43,11 +44,27 @@ import com.repknot.domain.SetDelta
 import java.time.LocalDate
 
 @Composable
-fun WorkoutScreen(vm: WorkoutViewModel, openProgress: () -> Unit, openSettings: () -> Unit) {
+fun WorkoutScreen(vm: WorkoutViewModel, progress: ProgressUiState, openProgress: () -> Unit, openSettings: () -> Unit) {
     val state by vm.state.collectAsState()
     val error by vm.error.collectAsState()
     val session = state as? WorkoutUiState.Session
     val preview = state as? WorkoutUiState.Preview
+    val today = state as? WorkoutUiState.Today
+    var selectedProgram by rememberSaveable { mutableStateOf<String?>(null) }
+    var selectedSuggestion by rememberSaveable { mutableStateOf<String?>(null) }
+    var selectedKey by rememberSaveable { mutableStateOf<String?>(null) }
+    val selected = today?.let { current ->
+        current.workouts.firstOrNull {
+            selectedProgram == current.programId && selectedSuggestion == current.suggested.key && it.key == selectedKey
+        } ?: current.suggested
+    }
+    LaunchedEffect(today) {
+        if (today != null) {
+            selectedProgram = today.programId
+            selectedSuggestion = today.suggested.key
+            selectedKey = selected?.key
+        }
+    }
     val overrides by vm.restOverrides.collectAsState()
     val context = LocalContext.current
     val lifecycle = LocalLifecycleOwner.current.lifecycle
@@ -85,24 +102,18 @@ fun WorkoutScreen(vm: WorkoutViewModel, openProgress: () -> Unit, openSettings: 
             verticalArrangement = Arrangement.spacedBy(16.dp)) {
             if (session == null) Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
                 TextButton(onClick = openProgress) { Text(stringResource(R.string.progress)) }
-                TextButton(onClick = openSettings) { Text(stringResource(R.string.settings)) }
+                if (today != null) {
+                    IconButton(onClick = openSettings) {
+                        Icon(androidx.compose.ui.res.painterResource(R.drawable.ic_settings), contentDescription = stringResource(R.string.settings))
+                    }
+                } else TextButton(onClick = openSettings) { Text(stringResource(R.string.settings)) }
             }
             error?.let { Text(stringResource(it), color = MaterialTheme.colorScheme.error) }
             when (val current = state) {
                 WorkoutUiState.Loading -> CircularProgressIndicator()
                 WorkoutUiState.NoProgram -> Text(stringResource(R.string.no_program))
-                is WorkoutUiState.Today -> {
-                    Text(current.programName, color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.titleSmall)
-                    Text(stringResource(R.string.next_workout))
-                    Text(current.suggested.name, style = MaterialTheme.typography.headlineMedium)
-                    Button(onClick = { vm.preview(current.suggested.key) }, modifier = Modifier.fillMaxWidth()) {
-                        Text(stringResource(R.string.preview_workout, current.suggested.name))
-                    }
-                    Text(stringResource(R.string.other_workouts), style = MaterialTheme.typography.titleMedium)
-                    current.workouts.filter { it.key != current.suggested.key }.forEach { workout ->
-                        OutlinedButton(onClick = { vm.preview(workout.key) }, modifier = Modifier.fillMaxWidth()) { Text(workout.name) }
-                    }
-                }
+                is WorkoutUiState.Today -> HomeScreen(current, selected ?: current.suggested, progress,
+                    onSelect = { selectedKey = it }, onPreview = vm::preview, openProgress = openProgress)
                 is WorkoutUiState.Session -> SessionScreen(current, vm) { now }
                 is WorkoutUiState.Preview -> PreviewScreen(current, vm)
             }

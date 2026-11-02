@@ -65,9 +65,8 @@ Lead owns status/architecture updates after review.
 
 ## Plan / progress
 
-- [ ] Worker implements Home and native chooser, runs checks, inspects staged diff,
-  commits a coherent verified UI step using AGENTS.md, updates this task. Blocked before
-  implementation on program identity question below; baseline inspection completed.
+- [x] Worker implements Home and native chooser, runs checks, inspects staged diff,
+  and commits a coherent verified UI step with this handoff.
 - [ ] Lead reviews full diff, independently runs checks, resolves review findings.
 - [ ] Lead installs on phone; verifies Home, chooser apply/cancel, alternate preview,
   Progress/Settings navigation, and narrow/large-text layout without starting workouts.
@@ -87,11 +86,10 @@ Exposing the existing program ID in the app state is authorized; no new model or
 is needed. This was a spec gap (delegation category 1), resolved before UI implementation.
 Keep small presentational choices local and conservative. No remaining blocker.
 
-`WorkoutUiState.Today` exposes the program name, suggested workout and workout list,
-not `Program.id`. Distinct programs may share the same name and workout keys/content;
-therefore Home cannot reliably detect every program change using this state alone.
-Changing `WorkoutViewModel` is outside scope; reading the DAO directly in UI would cross
-an architecture boundary. Review: resolving this requires an explicit scope decision.
+Today now carries `Program.id`; distinct programs may share names and workout keys.
+The workout saveable state holder retains selection across navigation, and selection is
+reset when program ID or suggestion changes or the selected workout disappears. The
+chooser uses a separate pending selection. The existing Progress state supplies declines.
 
 ## Verification responsibilities
 
@@ -112,11 +110,14 @@ currently shows Home with Pull 1 next, no active workout visible (reported by le
 used no device). No app state mutated.
 
 Worker baseline: `scripts/check --offline` passed (debug build, lint, JVM tests;
-95 tasks up-to-date); `git diff --check` passed before task-note changes. No UI changes
-or device checks performed.
+95 tasks up-to-date); `git diff --check` passed before task-note changes.
+
+Worker implementation: `scripts/check --offline` passed (106 tasks, 27 executed);
+`git diff --check` passed. No device checks or installation performed.
 
 ## Handoff
 
-Resolved: expose `Program.id` as `WorkoutUiState.Today.programId` as allowed above.
-Next: implement the worker step and rerun checks. No implementation changes are
-unfinished yet. Lead review and phone checks remain pending.
+Worker implementation complete; no known unfinished code. Next: lead reviews the full
+commit diff, independently reruns checks, and performs the scoped phone checks. Review
+selection reset and chooser accessibility, especially configuration/navigation and large
+text; no device interaction was performed by worker.

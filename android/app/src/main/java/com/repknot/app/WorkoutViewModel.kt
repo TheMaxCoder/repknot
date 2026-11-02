@@ -22,7 +22,7 @@ import java.util.UUID
 sealed interface WorkoutUiState {
     data object Loading : WorkoutUiState
     data object NoProgram : WorkoutUiState
-    data class Today(val programName: String, val suggested: ProgramWorkout, val workouts: List<ProgramWorkout>) : WorkoutUiState
+    data class Today(val programId: String, val programName: String, val suggested: ProgramWorkout, val workouts: List<ProgramWorkout>) : WorkoutUiState
     data class Session(val row: SessionRow, val exercises: List<ExerciseUi>, val choices: List<ExerciseRow>) : WorkoutUiState
     /** A workout looked at before starting it; nothing is stored until `start`. */
     data class Preview(val programName: String, val workout: ProgramWorkout, val suggested: Boolean,
@@ -48,7 +48,7 @@ fun previewState(program: Program, programName: String?, workoutKey: String, his
 
 fun todayState(program: Program?, programName: String?, history: List<PastSession>): WorkoutUiState =
     if (program == null) WorkoutUiState.NoProgram else WorkoutUiState.Today(
-        programName ?: "Program", todaysWorkout(program, history), program.workouts.sortedBy { it.sequencePosition })
+        program.id, programName ?: "Program", todaysWorkout(program, history), program.workouts.sortedBy { it.sequencePosition })
 
 fun prescriptionFor(row: SessionExerciseRow, defaultUnit: LoadUnit): Prescription = Prescription(
     row.position, row.exerciseId, row.exerciseName, row.plannedSets ?: 0, row.plannedRepMin, row.plannedRepMax,
