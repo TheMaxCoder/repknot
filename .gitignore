@@ -14,3 +14,6 @@
 
 # Delegated worker logs
 /.delegate-logs/
+
+# Local scratch (mockups, explorations)
+/work/
