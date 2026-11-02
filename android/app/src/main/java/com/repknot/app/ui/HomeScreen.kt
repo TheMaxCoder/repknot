@@ -69,7 +69,8 @@ fun HomeScreen(today: WorkoutUiState.Today, selected: ProgramWorkout, progress: 
         }
     }
     if (choosing) {
-        ModalBottomSheet(onDismissRequest = { choosing = false }) {
+        ModalBottomSheet(onDismissRequest = { choosing = false },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
             Column(Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 16.dp)) {
                 Text(stringResource(R.string.home_choose_title), style = MaterialTheme.typography.headlineSmall,
                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 12.dp))

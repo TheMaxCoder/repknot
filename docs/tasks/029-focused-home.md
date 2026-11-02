@@ -115,6 +115,18 @@ Worker baseline: `scripts/check --offline` passed (debug build, lint, JVM tests;
 Worker implementation: `scripts/check --offline` passed (106 tasks, 27 executed);
 `git diff --check` passed. No device checks or installation performed.
 
+Lead milestone: independent `scripts/check --offline` passed, full worker diff reviewed,
+and `cd android && ./gradlew :app:installDebug --offline` installed. Chooser cancellation,
+alternate selection/apply, real Plan/Last preview and Back, Progress summary navigation,
+Settings icon navigation and selection retention all passed on the test phone. No workout
+was started or modified. Large-text test at font scale 1.8 found the default partially
+expanded sheet could leave its apply action below the screen; original font scale 1.0
+was restored. Lead is making the native chooser skip its partial anchor, then will rerun
+checks and repeat large-text verification (bounded worker retry already used on scope).
+The chooser now uses `rememberModalBottomSheetState(skipPartiallyExpanded = true)`;
+`scripts/check --offline` passed again after this change (106 tasks, 15 executed).
+This is a one-off UI miss found by device testing; no worker rule changes are needed.
+
 ## Handoff
 
 Worker implementation complete; no known unfinished code. Next: lead reviews the full
