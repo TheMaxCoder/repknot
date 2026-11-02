@@ -22,6 +22,8 @@ Updated: 2026-11-02
 
 ## Current task
 
+[028 — Explicit per-workout upload](tasks/028-explicit-upload.md) is done: nothing uploads without an Upload tap (workouts and check-ins); finished never-uploaded workouts can be discarded; Settings switch removed; Room v8. Owner phone check of the new buttons pending.
+
 [027 — Workout timing and rest timer](tasks/027-workout-timing.md): timestamps (server + phone v7), rest timer with program-based 2:00/3:00 targets and vibration are implemented and phone-checked. Rest alert: phone notification (vibration, no sound) works; the paired smartwatch does not buzz for it yet — investigation paused, next experiments in the task.
 
 [026 — Flat focused workout logger](tasks/026-flat-workout-logger.md) is done: flat session layout, compact Plan/Last, simplified footer and Light day/Discard menu. Installed and phone-tested (log/edit/delete, RIR, keyboard, notes and selection).
@@ -46,8 +48,8 @@ card ▲/=/▼, Progress screen (statuses, broad dips, exercise history), body c
 
 ## Next priorities
 
-1. Real logging on the phone from 2026-11-02 (upload off until the owner enables it in
-   Settings); fix what hurts in the gym.
+1. Real logging on the phone from 2026-11-02 (each workout uploads only when Upload is
+   tapped, task 028); fix what hurts in the gym.
 2. ChatGPT integration, web companion per the PRD; progress follow-ups in task 019.
 
 ## Environment and handoff limitations
