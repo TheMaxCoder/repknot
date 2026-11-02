@@ -117,7 +117,7 @@
     <string name="previous_exercise">Previous</string>
     <string name="next_exercise">Next</string>
     <string name="exercise_position">%1$d of %2$d</string>
-    <string name="rest_elapsed">Rest %1$s / %2$s</string>
+    <string name="rest_elapsed">Rest %1$s /</string>
     <string name="rest_target_description">Rest target for %1$s, tap to change</string>
     <string name="open_exercise">Open %1$s</string>
 </resources>
