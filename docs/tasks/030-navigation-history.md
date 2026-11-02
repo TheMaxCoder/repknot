@@ -94,6 +94,9 @@ Do not use adb/install on the owner's phone as worker. Preserve unrelated change
 
 ## Plan / progress
 
+Partial checkpoint: basic pure history mappings and navigation transitions have JVM tests;
+additional coverage and all UI integration remain. No acceptance item is complete yet.
+
 - [ ] Worker implements/test pure history mappings and navigation transitions; run
   scripts/check --offline and commit this coherent step before wiring UI if feasible.
 - [ ] Worker implements native shell/history/shared details and safe current-workout
@@ -106,7 +109,7 @@ Do not use adb/install on the owner's phone as worker. Preserve unrelated change
 
 ## Decisions / discoveries
 
-Tree starts clean at 4ea3f5f. Task 029 is visually accepted by the owner. Task 027's
+Tree was clean at worker entry (fec27a0; task starting commit 4ea3f5f). The worker added preliminary pure mappings and transitions, not yet integrated. Task 029 is visually accepted by the owner. Task 027's
 paused watch handoff and task 028's pending owner upload-flow check are unchanged.
 Current SessionDao already exposes read-only rows and per-ID snapshots. Progress's
 lineage excludes unknown units and earlier unit variations, so use raw snapshots as
@@ -135,9 +138,16 @@ test creation and clean up only that exact test record through existing Discard 
 
 ## Verification
 
-Not run yet. adb sees the connected test phone; no device data changed in this task.
+Worker: `scripts/check --offline` passed after correcting a navigation test assertion;
+initial run failed that assertion. `git diff --check` passed. No device operations run.
+The new JVM tests cover basic completion/order/status, partial and mixed-unit preservation,
+directory search and navigation transitions; additional cases and UI verification remain.
 
 ## Handoff
 
-Next: run scripts/delegate docs/tasks/030-navigation-history.md. No known blocker.
-All implementation/review/device checks pending. Do not mark done on worker build alone.
+Partial implementation only: `HistoryMapping.kt` and `NavigationState.kt` plus focused
+JVM tests are present but not wired to the app. No UI or DAO changes yet. Next: extend
+mapping tests for directory ordering/latest names and tie cases, then implement transactional
+snapshot access, reactive history ViewModel, shell and details per acceptance criteria.
+Review mapping behavior as it is integrated, including repeated exercise snapshots. Lead
+review and all device checks remain pending. Do not mark done on worker build alone.
