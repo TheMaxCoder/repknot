@@ -17,6 +17,15 @@ filled load/reps entry and RIR controls. Its footer contains Add exercise, Sessi
 a workout menu (Light day/Discard), and a quiet Finish action. Session headers omit date
 and global navigation; selection/preview retain their navigation.
 
+Home (task 029) shows a flat tonal card for the selected program workout, its actual
+exercise count and ordered exercise teaser, with a separate preview action. A native
+single-choice sheet applies a temporary alternate selection; dismissing it cancels.
+Selection survives navigation/configuration changes and resets when program identity
+or the rotation suggestion changes, or the chosen workout disappears. Home and Progress
+share one ProgressViewModel; Home's attention summary uses its existing recent-decline
+count, with neutral copy while loading or at zero. Selection and preview do not start or
+alter a workout. The Home header contains Progress and a labeled Settings icon, no title.
+
 Workout timing (task 027): sessions record `startedAt`/`finishedAt` and sets `loggedAt`
 (phone millis, server `timestamptz`; writers that omit them keep stored values). The session
 footer shows a rest timer derived from the newest `loggedAt` (every Log restarts it, hidden

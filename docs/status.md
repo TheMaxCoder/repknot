@@ -22,8 +22,9 @@ Updated: 2026-11-02
 
 ## Current task
 
-[029 — Focused Home](tasks/029-focused-home.md) is in progress: implement the approved
-flat-card Home, workout chooser, and live Progress summary; review and phone checks follow.
+[029 — Focused Home](tasks/029-focused-home.md) is done: flat cards, native workout chooser,
+and live Progress summary implemented through the worker, reviewed, checked and installed.
+Phone navigation/selection and large/narrow layouts verified; owner visual review is next.
 
 [028 — Explicit per-workout upload](tasks/028-explicit-upload.md) is done: nothing uploads without an Upload tap (workouts and check-ins); finished never-uploaded workouts can be discarded; Settings switch removed; Room v8. Owner phone check of the new buttons pending.
 

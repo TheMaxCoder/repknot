@@ -1,6 +1,6 @@
 # 029 — Focused Home
 
-Status: in progress
+Status: done
 Starting commit: e6eea0950212e3fa3a9f5f1cc2338cb32d7d9d52
 Date: 2026-11-02
 Interrupts: [027](027-workout-timing.md) remains paused at its watch handoff;
@@ -67,10 +67,10 @@ Lead owns status/architecture updates after review.
 
 - [x] Worker implements Home and native chooser, runs checks, inspects staged diff,
   and commits a coherent verified UI step with this handoff.
-- [ ] Lead reviews full diff, independently runs checks, resolves review findings.
-- [ ] Lead installs on phone; verifies Home, chooser apply/cancel, alternate preview,
+- [x] Lead reviews full diff, independently runs checks, resolves review findings.
+- [x] Lead installs on phone; verifies Home, chooser apply/cancel, alternate preview,
   Progress/Settings navigation, and narrow/large-text layout without starting workouts.
-- [ ] Lead updates routing/architecture and commits verification handoff.
+- [x] Lead updates routing/architecture and commits verification handoff.
 
 ## Decisions / discoveries
 
@@ -127,9 +127,45 @@ The chooser now uses `rememberModalBottomSheetState(skipPartiallyExpanded = true
 `scripts/check --offline` passed again after this change (106 tasks, 15 executed).
 This is a one-off UI miss found by device testing; no worker rule changes are needed.
 
+### Final lead verification
+
+- Reviewed the complete implementation diff: app UI/resources, one existing program-ID
+  mapping assertion, shared ProgressViewModel wiring and saveable selection only. No
+  data/domain/sync/backend changes, dependencies, weakened tests, or new upload actions.
+- `scripts/check --offline` passed independently for 8064760 and again after 47c8a95
+  (build, Android lint and JVM tests). Gradle still reports its existing deprecation notice.
+  `git diff e6eea09..HEAD --check` passed. Both installations used
+  `cd android && ./gradlew :app:installDebug --offline` and succeeded on the test phone.
+- Device script `verify_home_phone.py` in the mockup's thread directory passed:
+  choose Push 1 then Android Back retains Pull 1; choose/apply Legs 2 changes Home;
+  Preview opens that workout's real Plan/Last screen with Start untouched; Back retains
+  selection; the attention summary opens Progress; Settings icon opens Settings;
+  returning from both retains the alternate. Progress displayed its matching Needs a look group.
+- After the fully expanded-sheet fix, `verify_home_large_text.py` passed at font scale
+  1.8: selected long workout name wraps, selection survives Activity recreation,
+  chooser's final long label and apply action remain reachable. First attempt before
+  the fix failed because the default partial anchor hid the action. An initial rerun
+  hit transient adb UI-dump readiness; the script now rejects stale dumps and passed.
+- `verify_home_narrow.py` passed with a temporary 720×1600 display size (about 327 dp
+  width at the existing density) and font scale 1.5. Screenshots before/after a list
+  swipe show chooser content moving while the apply button remains fixed; the long
+  final label wraps fully. Home's exercise remainder text also wraps. XML confirmed
+  a single-choice scrollable list and accessible Settings label; this is not a TalkBack test.
+- Restored physical display 1080×2400 and original font scale 1.0; retained the original
+  density override 352. Restored selected workout to suggested Pull 1 and scrolled Home
+  to its top. No sessions/check-ins were started, edited, finished, uploaded, or discarded.
+  No Repknot entries appeared in `adb logcat -b crash -d -v brief`.
+- Screenshots and the small device scripts/report are outside Git under the thread's
+  visualization directory; `home-final-installed.png` is the final default-size Home.
+  Empty/zero/singular-data presentation and program-ID/suggestion reset were reviewed in
+  source (existing state test covers ID mapping), not exercised by modifying phone data.
+  TalkBack and separate tablet/landscape checks remain unverified. Owner visual feedback
+  is the next action; no known functional blocker remains.
+
 ## Handoff
 
-Worker implementation complete; no known unfinished code. Next: lead reviews the full
-commit diff, independently reruns checks, and performs the scoped phone checks. Review
-selection reset and chooser accessibility, especially configuration/navigation and large
-text; no device interaction was performed by worker.
+Implemented, reviewed, checked and installed. Worker UI commit: 8064760. Lead large-text
+fix: 47c8a95. Planning/scope records: 9b6d7ac, 6431adb, 82db1b4. Final routing/architecture
+and this verification are committed separately. No unfinished code or unrelated drift.
+Next: owner reviews Home on the phone; continue screen-by-screen only on request.
+Task 027's paused watch work and task 028's pending owner upload-flow check remain intact.
