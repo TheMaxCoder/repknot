@@ -201,8 +201,12 @@ vibration at target, elapsed header, nothing shown on preview/finished screens.
 ## Handoff
 Implemented, installed on the phone, and checked. Commits: 3c0c00d (server), 5812eb0
 (phone timing), 748443a (spec), 1c6a025 (worker UI), 0ea7a93 (lead fixes).
-Next: owner checks whether the watch buzzes for other apps and for a rest alert with the
-phone locked; adjust watch settings or the channel (sound) based on that.
+- Owner: still no watch buzz with the vibrating channel. v3 channel `rest_alert_sound` adds
+  the default notification sound (USAGE_NOTIFICATION, ducks music briefly); v1/v2 channels
+  are deleted on first post. Installed; phone was locked so the owner runs the test.
+Next: owner logs a set (phone may be locked) and reports whether the watch buzzes with
+the sound channel. If not, the cause is on the watch side (per-app settings, phone-in-use
+suppression) rather than in Repknot.
 If not: check watch companion app → Notifications → Repknot and the phone's autostart/battery
 settings for the watch app; then try a channel with phone vibration. A lock-screen countdown
 (chronometer notification) is a possible follow-up. Time analysis UI later, once data exists.

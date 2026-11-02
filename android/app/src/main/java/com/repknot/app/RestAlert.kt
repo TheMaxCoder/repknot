@@ -8,18 +8,21 @@ import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.media.AudioAttributes
+import android.provider.Settings
 import android.os.Build
 
 /**
  * End-of-rest alert (task 027). One exact alarm at a time: each Log replaces it, leaving the
- * workout cancels it. The notification has no sound (music keeps playing) but vibrates, which
- * makes it an alerting notification that a mirrored smartwatch buzzes for.
+ * workout cancels it. The notification sounds and vibrates so that a mirrored watch
+ * (the paired smartwatch) treats it as an alert; the sound can be changed in system channel settings.
  */
 object RestAlert {
-    // Channel settings are fixed once created; v1 ("rest_timer") was fully silent and the watch
-    // did not forward it. Alerts must vibrate to count as alerting; still no sound.
-    private const val CHANNEL = "rest_alert"
-    private const val OLD_CHANNEL = "rest_timer"
+    // Channel settings are fixed once created. v1 ("rest_timer", silent) and v2 ("rest_alert",
+    // vibration only) both reached the watch notification list but the watch never buzzed,
+    // so v3 also plays the default notification sound (it ducks music briefly).
+    private const val CHANNEL = "rest_alert_sound"
+    private val OLD_CHANNELS = listOf("rest_timer", "rest_alert")
     private const val NOTIFICATION_ID = 27
     private const val EXTRA_TEXT = "text"
 
@@ -48,11 +51,12 @@ object RestAlert {
     internal fun post(context: Context, text: String) {
         val manager = context.getSystemService(NotificationManager::class.java)
         if (!manager.areNotificationsEnabled()) return
-        manager.deleteNotificationChannel(OLD_CHANNEL)
+        OLD_CHANNELS.forEach(manager::deleteNotificationChannel)
         manager.createNotificationChannel(NotificationChannel(CHANNEL,
             context.getString(R.string.rest_channel_name), NotificationManager.IMPORTANCE_HIGH).apply {
             description = context.getString(R.string.rest_channel_description)
-            setSound(null, null)
+            setSound(Settings.System.DEFAULT_NOTIFICATION_URI, AudioAttributes.Builder()
+                .setUsage(AudioAttributes.USAGE_NOTIFICATION).setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION).build())
             enableVibration(true)
             vibrationPattern = longArrayOf(0, 300, 150, 300)
         })
