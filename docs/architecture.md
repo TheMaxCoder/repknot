@@ -17,6 +17,12 @@ filled load/reps entry and RIR controls. Its footer contains Add exercise, Sessi
 a workout menu (Light day/Discard), and a quiet Finish action. Session headers omit date
 and global navigation; selection/preview retain their navigation.
 
+Workout timing (task 027): sessions record `startedAt`/`finishedAt` and sets `loggedAt`
+(phone millis, server `timestamptz`; writers that omit them keep stored values). The session
+footer shows a rest timer derived from the newest `loggedAt` (every Log restarts it, hidden
+after 15 min) with a 2:00/3:00 target from the program's `rest_s_max`, overridable per
+exercise on the device; it vibrates once at the target while the app is in the foreground.
+
 Workout preview compares the prescription and previous performance in compact columns,
 with a fixed Start action above the navigation inset. Target suggestions are no longer
 displayed in preview or session UI; previous values and per-set comparisons remain.
@@ -77,8 +83,8 @@ actual temporary policy relaxation here when introduced.
 - Supabase CLI is logged in (`supabase login`) with an account-wide token while dev is the
   only project. Before creating a prod project: log out and use `--db-url`, or keep prod in
   a separate account.
-- Room migrations: from v4 the phone holds real workouts. v4→v5 (session `light`) and
-  v5→v6 (check-ins) are explicit migrations tested by `MigrationTest`; every later schema
+- Room migrations: from v4 the phone holds real workouts. v4→v5 (session `light`),
+  v5→v6 (check-ins) and v6→v7 (timing) are explicit migrations tested by `MigrationTest`; every later schema
   change needs one. Only the synthetic v1–v3 databases may still be reset.
 - Server: the project holds real training history ([ADR 003](decisions/003-single-canonical-project.md)).
   Migrations must preserve data; the 2026-11-01 drop-and-recreate was the last destructive one.

@@ -1,6 +1,6 @@
 # 027 — Workout timing and rest timer
 
-Status: in progress
+Status: in progress (implementation done; owner decision on screen-off pending)
 Starting commit: 1e7b90f
 Date: 2026-11-02
 
@@ -41,7 +41,8 @@ service, changes to conflict/revision rules.
       MigrationTest, mapping (ServerSession/ServerSet/Push*), ViewModel writes with an
       injectable clock; `scripts/check --offline`; device migration test.
 - [x] Step 2: worker UI slice — timer, elapsed header, device-local target and vibration; offline checks passed.
-- [ ] Lead review, install, phone check, architecture/status update.
+- [x] Lead review, install, phone check, architecture/status update.
+- [ ] Owner decision: screen-off behavior during rests (see discoveries).
 
 ## Step 2 spec (worker)
 Step 1 is committed (5812eb0): `SessionRow.startedAt`, `SetRow.loggedAt` (epoch millis,
@@ -135,6 +136,13 @@ vibration at target, elapsed header, nothing shown on preview/finished screens.
   `OffsetDateTime.parse` (Postgres returns an offset, sometimes microseconds).
 - Timer ticks and crossing detection run only while the activity is resumed; observation
   resets on resume so returning after the target does not cause a delayed vibration.
+- Lead review fixes: target shown once as the tappable button; ticking clock read only in
+  small composables; `LocalLifecycleOwner`; vibration uses alarm usage (touch haptics can
+  be disabled system-wide).
+- Discovery: the owner's phone has a 60 s screen timeout. When the screen turns off the
+  activity pauses, so a 2–3 min rest usually ends with the screen off and no vibration.
+  Options for the owner: keep the screen on while a rest timer is running, or a background
+  alert (exact alarm/notification — the planned follow-up). Pending owner choice.
 
 ## Verification
 - Step 1a: `scripts/db push` applied `20261102010000_workout_timing.sql` to dev
@@ -149,8 +157,20 @@ vibration at target, elapsed header, nothing shown on preview/finished screens.
 - Step 2: `scripts/check --offline` passed (debug build, lint, JVM tests including
   `WorkoutTimingTest`). First run failed on Kotlin nullability errors; fixed before rerun.
   Device checks and actual vibration remain pending lead verification.
+- Lead: re-ran `scripts/check --offline` (passed) after review fixes. Test phone:
+  install over existing data, launch, no crash entries. Started a test Push 1: header
+  "0 min"→"2 min", no timer before the first set; logged a test set → "Rest 0:05 / 3:00"
+  (3:00 from the exercise's 120–180 s prescription); reinstall (process death) → timer resumed
+  at 0:40; toggle 3:00→2:00; past target the text turns primary; `dumpsys
+  vibrator_manager` showed exactly one 411 ms vibration from com.repknot.app at the 2:00
+  crossing (screen held on with stayon for the test, original setting 7 restored);
+  toggled back to 3:00 (DB press override now stored as 180 = program value); test
+  workout discarded, Today screen shows no timer.
+- Not verified on device: alarm-usage vibration (changed after the device run); large
+  font footer; real upload of a timed session.
 
 ## Handoff
-Next: lead reviews the Step 2 diff, installs and runs the phone checks listed above,
-then updates architecture/status. No unfinished worker changes. Review foreground-only
-vibration/crossing behavior and compact footer at large font on device.
+Implemented, installed on the phone, and checked. Commits: 3c0c00d (server), 5812eb0
+(phone timing), 748443a (spec), 1c6a025 (worker UI), 0ea7a93 (lead fixes).
+Next: owner chooses screen-off behavior (keep screen on during rest vs background alert);
+then confirm alarm-usage vibration on device. Time analysis UI later, once data exists.
