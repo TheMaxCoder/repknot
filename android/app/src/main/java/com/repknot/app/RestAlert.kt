@@ -67,12 +67,14 @@ object RestAlert {
         val now = System.currentTimeMillis()
         manager.notify((now / 1000).toInt(), Notification.Builder(context, CHANNEL)
             .setSmallIcon(R.drawable.ic_notification)
-            .setContentTitle(context.getString(R.string.rest_done))
+            // Unique text per alert in case the watch de-duplicates identical notifications.
+            .setContentTitle(context.getString(R.string.rest_done_at,
+                java.text.DateFormat.getTimeInstance(java.text.DateFormat.SHORT).format(java.util.Date(now))))
             .setContentText(text)
             .setCategory(Notification.CATEGORY_REMINDER)
             .setWhen(now).setShowWhen(true)
-            // The watch buzzes only while no earlier notification from the app is still present,
-            // so an alert never lingers: it expires on its own (and the next Log clears it).
+            // Hypothesis (owner saw it with WhatsApp): the watch may skip the buzz while an earlier
+            // notification from the app is still present, so alerts expire and the next Log clears them.
             .setTimeoutAfter(90_000)
             .setContentIntent(open)
             .setAutoCancel(true)

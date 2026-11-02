@@ -221,7 +221,18 @@ Implemented, installed on the phone, and checked. Commits: 3c0c00d (server), 581
   cleared — the watch buzzes only for the first notification of an app while older ones are
   present. Repknot alerts had stayed in the watch list since test 1. Alerts now expire after
   90 s (`setTimeoutAfter`) in addition to being cleared on the next Log.
-Next: owner clears Repknot (and other) notifications on the watch, then tests; and confirms via View all exercises that the earlier sets still exist (if not, this
+- Owner test 4 (90 s expiry): still no buzz. Owner asked: drop sound, keep IMPORTANCE_HIGH,
+  no installs while they test, and a second opinion from pi gpt-6.1-sol (read-only).
+  Built, not installed: channel `rest_alert_quiet` (high, vibration, no sound) and a unique
+  title per alert ("Rest done · 13:42") in case the watch de-duplicates identical text.
+- gpt-6.1-sol (summary): most likely watch-side suppression of later alerts
+  (medium–high confidence); test locked vs unlocked and the watch vibration options; clearing
+  phone notifications does not clear the watch app's retained state; compare `dumpsys
+  notification` fields for Repknot vs WhatsApp; later try CATEGORY_MESSAGE then
+  MessagingStyle, one variable at a time; no public API to buzz a smartwatch directly, the
+  watch's own timer is the reliable fallback.
+Next: when the owner allows installs: clear watch + phone notifications, one alert with the
+phone locked and no WhatsApp activity; then repeat without clearing. Also confirm via View all exercises that the earlier sets still exist (if not, this
 is real data loss and needs investigation), and tests a rest alert with the per-alert id.
 If not: check watch companion app → Notifications → Repknot and the phone's autostart/battery
 settings for the watch app; then try a channel with phone vibration. A lock-screen countdown
