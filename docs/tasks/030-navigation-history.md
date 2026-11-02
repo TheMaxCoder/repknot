@@ -109,7 +109,7 @@ additional coverage and all UI integration remain. No acceptance item is complet
 
 ## Decisions / discoveries
 
-Tree was clean at worker entry (fec27a0; task starting commit 4ea3f5f). The worker added preliminary pure mappings and transitions, not yet integrated. Task 029 is visually accepted by the owner. Task 027's
+Tree was clean at worker entry (fec27a0; task starting commit 4ea3f5f). The resumed worker added a transactional archive read and latest-name/directory tie coverage; UI integration remains. The worker added preliminary pure mappings and transitions, not yet integrated. Task 029 is visually accepted by the owner. Task 027's
 paused watch handoff and task 028's pending owner upload-flow check are unchanged.
 Current SessionDao already exposes read-only rows and per-ID snapshots. Progress's
 lineage excludes unknown units and earlier unit variations, so use raw snapshots as
@@ -137,6 +137,8 @@ test session, leave owner data intact and request no upload. Lead must record an
 test creation and clean up only that exact test record through existing Discard confirmation.
 
 ## Verification
+
+Resumed worker: `scripts/check --offline` and `git diff --check` passed after transactional archive read and expanded directory tests; no device operations.
 
 Worker: `scripts/check --offline` passed after correcting a navigation test assertion;
 initial run failed that assertion. `git diff --check` passed. No device operations run.

@@ -154,6 +154,15 @@ interface SessionDao {
     @Query("SELECT * FROM logged_sets")
     suspend fun allSets(): List<SetRow>
 
+    /** Read the archive as one consistent snapshot, without changing any records. */
+    @Transaction
+    suspend fun allSnapshots(): List<SessionSnapshot> {
+        val rows = allSessions()
+        val exercises = allExercises().groupBy { it.sessionId }
+        val sets = allSets().groupBy { it.sessionId }
+        return rows.map { SessionSnapshot(it, exercises[it.id].orEmpty(), sets[it.id].orEmpty()) }
+    }
+
     /** The first finish records the time; Retry upload finishes again and keeps it. */
     @Query("UPDATE sessions SET status = 'finished', finishedAt = COALESCE(finishedAt, :now) WHERE id = :id AND status NOT IN ('conflict', 'conflict_deleted')")
     suspend fun finishAt(id: String, now: Long)

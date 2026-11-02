@@ -22,6 +22,18 @@ class HistoryMappingTest {
             listOf(snapshot("1", "pushed"), snapshot("2", upload = true), snapshot("3"), snapshot("4", "conflict"), snapshot("5", "conflict_deleted")).map(::historyStatus))
     }
 
+    @Test fun directoryOrdersLatestNamesAndStableTies() {
+        fun recorded(session: String, date: String, id: String, name: String) = snapshot(session, date = date,
+            exercises = listOf(SessionExerciseRow("x$session", session, 0, id, name)),
+            sets = listOf(SetRow("s$session", session, "x$session", 0, null, null, null)))
+        val rows = listOf(recorded("1", "2025-01-01", "a", "Old"),
+            recorded("2", "2026-01-01", "a", "New"), recorded("3", "2026-01-01", "b", "New"),
+            recorded("4", "2027-01-01", "c", "First"))
+        assertEquals(listOf("c", "a", "b"), historyExercises(rows).map { it.id })
+        assertEquals(listOf("a", "b"), historyExercises(rows, " NEW ").map { it.id })
+        assertTrue(historyExercises(rows, "Old").isEmpty())
+    }
+
     @Test fun directoryUsesRecordedInstancesAndRetainsPartialSets() {
         val exercises = listOf(SessionExerciseRow("x2", "s", 1, "ex", "Squat"),
             SessionExerciseRow("x1", "s", 0, "ex", "Squat"), SessionExerciseRow("x3", "s", 2, "unused", "Unused"))
