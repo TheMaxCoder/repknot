@@ -40,8 +40,83 @@ service, changes to conflict/revision rules.
 - [x] Step 1b: Room v7 (`SessionRow.startedAt/finishedAt`, `SetRow.loggedAt`), MIGRATION_6_7,
       MigrationTest, mapping (ServerSession/ServerSet/Push*), ViewModel writes with an
       injectable clock; `scripts/check --offline`; device migration test.
-- [ ] Step 2: worker UI slice (spec added below when step 1 lands).
+- [ ] Step 2: worker UI slice — spec in "Step 2 spec" below.
 - [ ] Lead review, install, phone check, architecture/status update.
+
+## Step 2 spec (worker)
+Step 1 is committed (5812eb0): `SessionRow.startedAt`, `SetRow.loggedAt` (epoch millis,
+nullable) are already written by `WorkoutViewModel`. Do not change data/, supabase/, the
+Room schema, sync, or the timestamp writes.
+
+Files: `android/app/src/main/java/com/repknot/app/` — new `WorkoutTiming.kt` (pure
+helpers), `WorkoutViewModel.kt`, `AppSettings.kt`, `MainActivity.kt` (factory wiring),
+`ui/WorkoutScreen.kt`, `res/values/strings.xml`, `AndroidManifest.xml`; new JVM test
+`android/app/src/test/java/com/repknot/app/WorkoutTimingTest.kt`.
+
+Pure helpers in `WorkoutTiming.kt` (all JVM-tested):
+1. `programRestS(workoutKey: String?, programId: String?, workouts: List<ProgramWorkoutRow>,
+   prescriptions: List<ProgramExerciseRow>, exerciseId: String): Int?` — the workout row with
+   `programId` and `key == workoutKey`, then its prescriptions (`workoutId == workout.id`)
+   with `exerciseId`; lowest `position` wins; returns its `restSMax`. Null if anything is
+   missing. Caller passes `row.substitutedFor ?: row.exerciseId` (a substitute rests like
+   the prescribed exercise).
+2. `restTargetS(exerciseId: String, programRestS: Int?, overrides: Map<String, Int>): Int` =
+   `overrides[exerciseId] ?: programRestS ?: 120`.
+3. `toggledRestTarget(current: Int): Int` = 180 if `current <= 120`, else 120.
+4. `restState(nowMillis: Long, status: String, sets: List<SetRow>): RestState?` where
+   `RestState(sessionExerciseId: String, elapsedS: Long)`. Null unless status is
+   `in_progress`; takes the set with the greatest non-null `loggedAt` (tie: later in the list);
+   null if none; `elapsedS = (now - loggedAt) / 1000` clamped at 0; null if
+   `elapsedS > 900` (15 min: no longer a rest).
+5. `restText(seconds: Long): String` = `m:ss` (`0:05`, `1:47`, `12:00`).
+6. `elapsedWorkoutText(startedAt: Long?, nowMillis: Long, status: String): String?` — null
+   unless in_progress and startedAt non-null; minutes = floor((now-start)/60000) clamped
+   at 0; `"N min"` under 60, else `"H h M min"` (`"1 h 5 min"`, `"2 h 0 min"`). Plain
+   Kotlin text is fine (no plurals resource).
+
+ViewModel / settings:
+7. `ExerciseUi` gains `programRestS: Int?` filled in `sessionState` via helper 1.
+   `sessionState` gets two extra params (`workouts: List<ProgramWorkoutRow>`,
+   `prescriptions: List<ProgramExerciseRow>`); the ViewModel loads them with
+   `reference.getWorkouts(programId)` (empty list when programId is null) and
+   `reference.getPrescriptions()`. Update existing `WorkoutStateTest` calls to pass
+   empty lists; do not change their assertions.
+8. `AppSettings`: `restOverrides: StateFlow<Map<String, Int>>` persisted in the existing
+   "settings" prefs under keys `rest_target_s.<exerciseId>`; `setRestOverride(exerciseId,
+   seconds)` with `commit()` like the others. The ViewModel receives the flow and a setter
+   (constructor params, wired in the Factory/MainActivity) and exposes
+   `val restOverrides` plus `fun toggleRestTarget(exerciseId: String, current: Int)` which
+   saves `toggledRestTarget(current)`. Overrides are keyed by the performed `exerciseId`
+   (`row.exerciseId`).
+
+UI (session screen, only while `row.status == "in_progress"`):
+9. A once-per-second `now` tick (LaunchedEffect + delay(1000)) only while in progress.
+10. Header row: elapsed text (helper 6) as quiet `labelMedium`/`onSurfaceVariant` beside
+    the existing exercise position; omit when null.
+11. Fixed footer (`SessionActions`), top line, only when `restState` is non-null: label
+    `Rest 1:47 / 3:00` for the rested exercise (the set's `sessionExerciseId` → its
+    `ExerciseUi`; target = helper 2 with that exercise's `row.exerciseId` and
+    `programRestS`). Text uses `primary` color once elapsed ≥ target. On the same line, a
+    small TextButton showing the target (`3:00`) with content description
+    "Rest target for <exercise name>, tap to change" that calls `toggleRestTarget`. Keep the
+    footer compact (one line, wraps at large font). No new Rest button or countdown.
+12. Vibrate once (~400 ms one-shot, `VibrationEffect.createOneShot`, via `VibratorManager`
+    on API 31+ else `Vibrator`) when a tick observes elapsed crossing from `< target` to
+    `>= target` for the same newest set. If the first observed tick is already past the
+    target (app reopened late), do not vibrate. A new log (different newest set) resets it.
+    Add `android.permission.VIBRATE` to the manifest. No notification, wake lock or
+    foreground service.
+
+Out of scope (do not modify): `android/data/**`, `android/domain/**`, `supabase/**`,
+finish/upload/conflict behavior, preview/progress/settings screens, timestamp writes.
+Do not read `.env`, `private-data/`.
+
+Worker verification: `scripts/check --offline` passes; `WorkoutTimingTest` covers helpers
+1–6 including every null branch and the boundaries 120/121 (toggle), 900/901 s (rest
+cutoff), 59/60 min (elapsed text). Don't add layout tests. Commit verified work.
+Lead verification (device): timer appears after Log and restarts on next Log, batch of
+logs leaves timer from the last one, target toggle persists across app restart,
+vibration at target, elapsed header, nothing shown on preview/finished screens.
 
 ## Decisions / discoveries
 - No Rest button: Log restarts the timer. Rests between sets inside a batch are not
@@ -71,4 +146,4 @@ service, changes to conflict/revision rules.
   `.env`); a real upload of a timed session is not yet verified end to end.
 
 ## Handoff
-Next: write the step 2 worker spec and delegate.
+Next: step 2 delegated via `scripts/delegate docs/tasks/027-workout-timing.md`; lead reviews diff and runs device checks.
