@@ -17,6 +17,15 @@ filled load/reps entry and RIR controls. Its footer contains Add exercise, Sessi
 a workout menu (Light day/Discard), and a quiet Finish action. Session headers omit date
 and global navigation; selection/preview retain their navigation.
 
+The app shell (task 030, [ADR 004](decisions/004-app-navigation-and-history.md)) has
+Home, History and Progress bottom destinations with independent saveable detail stacks.
+Settings opens from the originating page; detail Back returns to that origin. Reselecting
+a tab returns to its root. History has independent Workouts/Exercises list positions
+and a saveable exercise search. The focused logger/finish summary hides the bar; Back
+preserves the current session and unsaved input, with Resume/summary access from Home.
+Workout preview retains bottom navigation and its separate Start action. The bar hides
+while the keyboard is open, and outer insets are consumed before nested screen scaffolds.
+
 Home (task 029) shows a flat tonal card for the selected program workout, its actual
 exercise count and ordered exercise teaser, with a separate preview action. A native
 single-choice sheet applies a temporary alternate selection; dismissing it cancels.
@@ -24,7 +33,17 @@ Selection survives navigation/configuration changes and resets when program iden
 or the rotation suggestion changes, or the chosen workout disappears. Home and Progress
 share one ProgressViewModel; Home's attention summary uses its existing recent-decline
 count, with neutral copy while loading or at zero. Selection and preview do not start or
-alter a workout. The Home header contains Progress and a labeled Settings icon, no title.
+alter a workout. The Home header has a labeled Settings icon, no app title; Progress is
+available in bottom navigation and the summary shortcut.
+
+History is read-only and reactive to session/exercise/set changes, loading consistent
+Room snapshots through a ViewModel. It includes finished, pushed and conflicted records,
+including phone-only, light and empty completed sessions, while excluding active drafts.
+The exercise directory groups recorded sets by exercise ID. Shared exercise history
+preserves existing Progress conclusions but displays complete raw sets/notes and units,
+including older unit variations and partial imports excluded from comparison lineage.
+Session detail links and exercise links use stable IDs. Browsing never changes upload
+intent or opens arbitrary historical records for editing.
 
 Workout timing (task 027): sessions record `startedAt`/`finishedAt` and sets `loggedAt`
 (phone millis, server `timestamptz`; writers that omit them keep stored values). The session
@@ -56,12 +75,13 @@ and the signed-in user's session; RLS restricts every table to its owner. Schema
   refreshed transactionally after a complete fetch; local drafts and pending edits are
   retained. Server and phone share the ADR 002 shape (sessions → session exercises →
   sets, exercises referenced by uuid on push). Programs and exercises are read-only on
-  the phone and refreshed before sessions. Upload is a device setting (Settings → Upload
-  workouts), off by default: refresh still downloads, finished sessions stay local
-  until it is enabled.
+  the phone and refreshed before sessions. Upload is explicit per workout (task 028):
+  finishing keeps it local; only an Upload tap marks it for push/retry. History includes
+  those local completed records. Refresh still downloads independently.
 - Check-ins: the phone caches the server's check-ins (replaced on refresh) and keeps
-  phone-added ones `pending`; with upload on they are upserted by their phone id, then
-  marked uploaded. Add-only on the phone. Sessions carry a `light` flag excluded from
+  phone-added ones `pending`; an explicit check-in Upload tap marks one for upsert by
+  its phone id, then it is marked uploaded. Unmarked local check-ins can be deleted.
+  Sessions carry a `light` flag excluded from
   progress statuses.
 - Progress (domain `Progress.kt`, `Body.kt`) is computed on the phone from the local cache,
   so it works offline and includes unuploaded workouts; see task 019 for the rules.

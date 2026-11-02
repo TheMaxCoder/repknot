@@ -4,9 +4,11 @@ Updated: 2026-11-02
 
 ## Current state
 
-- Android app/domain/data modules; dark-only Compose logging screen for one synthetic set.
-- Last build verification (2026-11-01): `scripts/check --offline` passed; see task 004
-  for database and device verification; task 005 adds the latest cleanup checks. Lint has only non-blocking warnings.
+- Android app/domain/data modules; dynamic dark Compose workout logging, Home/History/
+  Progress navigation, complete recorded history and body check-ins.
+- Last build verification (2026-11-02): `scripts/check --offline` passed independently
+  during task 030 review; installed and checked navigation, history, logger retention,
+  and large/narrow phone layouts. See the task for exact results and manual limitations.
 - Device smoke test (2026-10-31): installed the existing debug APK on the test phone
   (API 36). Cold launch and force-stop/relaunch succeeded. Screenshots confirmed
   readable content, unobstructed system-bar insets, and dark appearance with both
@@ -22,8 +24,9 @@ Updated: 2026-11-02
 
 ## Current task
 
-[030 — Navigation and history](tasks/030-navigation-history.md) is in progress: approved
-Home/History/Progress shell, recorded workout/exercise browsing, and origin-aware Back.
+[030 — Navigation and history](tasks/030-navigation-history.md) is done: Home/History/
+Progress shell, recorded workout/exercise browsing and origin-aware Back implemented,
+reviewed, checked and installed. Owner visual review is next.
 
 [029 — Focused Home](tasks/029-focused-home.md) is done: flat cards, native workout chooser,
 and live Progress summary implemented through the worker, reviewed, checked and installed.
@@ -47,7 +50,7 @@ is done (design: [ADR 002](decisions/002-training-data-model.md); steps delegate
 [docs/delegation](delegation/README.md) as tasks 007–009 and 011–013, lead work in 010).
 The phone app previews and starts today's PPL workout, logs and edits sets with last
 values from the full imported history ([ADR 003](decisions/003-single-canonical-project.md)),
-and keeps workouts local until upload is enabled in Settings.
+and keeps each workout local until its Upload action is tapped (task 028).
 
 Milestone [019 — Progress and regression](tasks/019-progress-milestone.md) is done: workout
 card ▲/=/▼, Progress screen (statuses, broad dips, exercise history), body card

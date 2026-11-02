@@ -1,6 +1,6 @@
 # 030 — Bottom navigation and recorded history
 
-Status: in progress
+Status: done
 Starting commit: 4ea3f5f7013cee8a0d6cee6b35cf51ff4e6eac86
 Date: 2026-11-02
 
@@ -94,21 +94,24 @@ Do not use adb/install on the owner's phone as worker. Preserve unrelated change
 
 ## Plan / progress
 
-Worker implementation and offline checks are complete; lead review and device checks remain.
+Worker implementation, lead review, offline checks and scoped phone checks are complete.
 
 - [x] Worker implements/test pure history mappings and navigation transitions; run
   scripts/check --offline and commit this coherent step before wiring UI if feasible.
 - [x] Worker implements native shell/history/shared details and safe current-workout
   routing, runs scripts/check --offline, inspects staged diff and commits verified UI.
-- [ ] Lead reviews full diff, independently reruns checks and handles review findings
+- [x] Lead reviews full diff, independently reruns checks and handles review findings
   through one bounded worker feedback retry, then fixes locally if necessary.
-- [ ] Lead installs and tests navigation/Back/search/details/state retention plus
+- [x] Lead installs and tests navigation/Back/search/details/state retention plus
   narrow/large text. Verify default and configured phone settings are restored.
-- [ ] Lead updates architecture/routing, verification/handoff; commit and finish.
+- [x] Lead updates architecture/routing, verification/handoff; commit and finish.
 
 ## Decisions / discoveries
 
-Tree was clean at worker entry (fec27a0; task starting commit 4ea3f5f). The resumed worker added a transactional archive read and latest-name/directory tie coverage; UI integration remains. The worker added preliminary pure mappings and transitions, not yet integrated. Task 029 is visually accepted by the owner. Task 027's
+Tree was clean at worker entry (fec27a0; task starting commit 4ea3f5f). The first worker
+checkpoint added pure mappings/transitions, then the resumed pass added transactional
+reads, expanded tests and full UI integration. Task 029's approved design and installed
+Home are the baseline. Task 027's
 paused watch handoff and task 028's pending owner upload-flow check are unchanged.
 Current SessionDao already exposes read-only rows and per-ID snapshots. Progress's
 lineage excludes unknown units and earlier unit variations, so use raw snapshots as
@@ -142,6 +145,29 @@ test creation and clean up only that exact test record through existing Discard 
 
 ## Verification
 
+Lead phone milestone (test phone): installed the reviewed build with
+`cd android && ./gradlew :app:installDebug --offline` successfully. Home has the three
+bottom destinations and Settings; real completed workouts, including a zero-exercise
+imported rest day, opened read-only. Workout → exercise → Settings and Back restored
+the exact originating flow. Exercise search, History subtab, independent workout list
+position and per-tab detail stack retention passed. Progress's exercise link opened
+the shared complete history and Back returned to Progress. Body/Settings origin passed.
+Preview survived a tab switch, and reselecting Home closed it. The selected Material
+navigation item reports clickable=false in the UI dump even though pointer reselection
+works; the initial automation missed it, then a native coordinate tap verified the
+transition. The helper now recognizes selected navigation nodes.
+
+After verifying no current session on Home, lead created one NEW empty local Pull 1
+solely for unsaved-input verification. Entered 17 reps without Log, left the logger via
+Back, browsed History, returned Home and resumed: selected exercise and unsaved 17 were
+retained with zero saved sets; no bottom navigation inside the logger. The same input
+survived a temporary font scale of 1.5. Restored 1.0 and discarded only that newly created
+test through its existing Discard confirmation. Home returned to the original suggested
+Pull 1. No Log, Finish, Upload or edits to pre-existing sessions/check-ins were used.
+The external verification marker records started=true, cleaned=true. Rest-alarm continuity
+is code-reviewed (scheduler unchanged and no cancel-on-navigation disposal), not newly
+phone-tested with a logged set or alarm delivery.
+
 Lead review milestone: the worker's first pass stopped after preliminary models without
 a blocker; one feedback retry completed the remaining UI. This is a one-off early-stop
 miss, recorded here without changing worker rules. Lead reviewed the full mapping,
@@ -166,11 +192,37 @@ initial run failed that assertion. `git diff --check` passed. No device operatio
 The new JVM tests cover basic completion/order/status, partial and mixed-unit preservation,
 directory search and navigation transitions; additional cases and UI verification remain.
 
-## Handoff
+## Final lead verification and handoff
 
-Worker implementation is ready for lead review, not yet accepted on device. Next: review
-the full diff from the starting commit, independently run `scripts/check --offline`, then
-perform the lead phone checks above, particularly logger leave/resume with unsaved input,
-rest alerts, nested origin Back and large/narrow layouts. No phone data was touched.
-Review repeated exercise snapshots and the conservative native archive presentation.
-No known blocker; do not mark done on the worker build alone.
+- Complete worker diff reviewed, including all read-only DAO additions. Lead build/lint/
+  JVM tests passed via `scripts/check --offline` after the review fixes (106 tasks,
+  16 executed). Gradle's existing deprecation warning remains. Installation passed
+  via `cd android && ./gradlew :app:installDebug --offline` on the test phone (API 36).
+- Phone checks above passed, followed by `verify_navigation_narrow_030.py`: temporary
+  720×1600 display (about 327 dp at existing density) and font scale 1.5; three-tab
+  navigation, no-results search, keyboard visibility/insets, long History cards,
+  Settings origin, and selecting a long Home workout through the native chooser.
+  Inspected screenshots for wrapping and safe controls. A preliminary script assumed
+  scrolling three gestures would return to the newest workout; the retained list was
+  correctly still in October. Removed that unrelated position assumption and reran
+  the complete narrow test successfully. No app fix was needed for that test issue.
+- Restored physical display 1080×2400, density override 352 unchanged, font scale 1.0.
+  Cleared the test exercise search and restored suggested Pull 1 on Home. No temporary
+  workout remains. No Repknot crash-buffer entries were found. Verification scripts,
+  reports, and screenshots are outside Git in the approved mockup's thread directory;
+  `navigation-installed-home-final.png` shows the restored installed Home.
+- Updated architecture and routing docs. Also reconciled the obsolete global-upload
+  descriptions with already-shipped task 028 (documentation only): uploads are explicit
+  per record, not a Settings switch. No sync, auth, database-write or migration behavior
+  changed in this task. No new dependencies, test suppressions, or weakened tests.
+- Not phone-tested: TalkBack, tablet/landscape, network/error/conflict/missing-record
+  fixtures, or new rest-alert delivery/continuity with a logged set. Raw partial/mixed
+  units, empty/light records and status/order rules have JVM coverage; rest scheduling
+  is unchanged and was source-reviewed. No retained real data was modified for fixtures.
+- Commits: fec27a0 plan/ADR; a142b03 models; d8579a9 transactional read and directory
+  tests; 576d2da UI/navigation; 103964c empty/light coverage; 0ca00fd lead state/insets/
+  formatting refinements; final documentation/verification committed separately.
+
+Task complete and installed, no known unfinished implementation or unrelated drift.
+Next: owner reviews Home/History/Progress on the phone and gives screen-specific feedback.
+Task 027's watch investigation and task 028's owner upload-flow check remain separate.
