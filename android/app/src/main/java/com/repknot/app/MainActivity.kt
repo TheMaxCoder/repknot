@@ -59,6 +59,7 @@ class MainActivity : ComponentActivity() {
                 val cloudState by cloud.state.collectAsState()
                 val workout: WorkoutViewModel = viewModel(factory = WorkoutViewModel.Factory(
                     app.database.sessions(), app.database.reference(), app.sync, app.current, app.settings.uploadEnabled,
+                    app.settings.restOverrides, app.settings::setRestOverride,
                 ))
                 var screen by rememberSaveable { mutableStateOf("workout") }
                 if (screen == "settings") {

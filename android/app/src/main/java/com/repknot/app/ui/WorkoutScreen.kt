@@ -3,6 +3,10 @@ package com.repknot.app
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Intent
+import android.os.Build
+import android.os.VibrationEffect
+import android.os.Vibrator
+import android.os.VibratorManager
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
 import androidx.compose.ui.semantics.Role
@@ -24,6 +28,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.repeatOnLifecycle
+import kotlinx.coroutines.delay
 import com.repknot.data.ExerciseRow
 import com.repknot.data.SessionExerciseRow
 import com.repknot.data.SetRow
@@ -38,8 +46,49 @@ fun WorkoutScreen(vm: WorkoutViewModel, openProgress: () -> Unit, openSettings: 
     val error by vm.error.collectAsState()
     val session = state as? WorkoutUiState.Session
     val preview = state as? WorkoutUiState.Preview
+    val overrides by vm.restOverrides.collectAsState()
+    val latestSession by rememberUpdatedState(session)
+    val latestOverrides by rememberUpdatedState(overrides)
+    val context = LocalContext.current
+    val lifecycle = (context as LifecycleOwner).lifecycle
+    var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
+    LaunchedEffect(session?.row?.id, session?.row?.status, lifecycle) {
+        if (session?.row?.status == "in_progress") lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
+            var previousId: String? = null
+            var previousElapsed: Long? = null
+            var vibrated = false
+            while (true) {
+                now = System.currentTimeMillis()
+                val current = latestSession
+                val sets = current?.exercises?.flatMap { it.sets }.orEmpty()
+                val newest = newestTimedSet(sets)
+                val rest = restState(now, current?.row?.status.orEmpty(), sets)
+                val exercise = current?.exercises?.firstOrNull { it.row.id == rest?.sessionExerciseId }
+                if (newest?.id != previousId) {
+                    previousId = newest?.id
+                    previousElapsed = null
+                    vibrated = false
+                }
+                if (rest != null && exercise != null) {
+                    val target = restTargetS(exercise.row.exerciseId, exercise.programRestS, latestOverrides)
+                    if (!vibrated && previousElapsed != null && previousElapsed < target && rest.elapsedS >= target) {
+                        val vibrator = if (Build.VERSION.SDK_INT >= 31)
+                            context.getSystemService(VibratorManager::class.java).defaultVibrator
+                        else {
+                            @Suppress("DEPRECATION")
+                            context.getSystemService(Vibrator::class.java)
+                        }
+                        vibrator.vibrate(VibrationEffect.createOneShot(400, VibrationEffect.DEFAULT_AMPLITUDE))
+                        vibrated = true
+                    }
+                    previousElapsed = rest.elapsedS
+                } else previousElapsed = null
+                delay(1000)
+            }
+        }
+    }
     Scaffold(bottomBar = {
-        if (session != null) SessionActions(session, vm)
+        if (session != null) SessionActions(session, vm, now, overrides)
         if (preview != null) Surface(color = MaterialTheme.colorScheme.surfaceContainer, tonalElevation = 3.dp) {
             Button(onClick = { vm.start(preview.workout.key) }, modifier = Modifier.fillMaxWidth()
                 .navigationBarsPadding().padding(horizontal = 18.dp, vertical = 12.dp)) {
@@ -69,7 +118,7 @@ fun WorkoutScreen(vm: WorkoutViewModel, openProgress: () -> Unit, openSettings: 
                         OutlinedButton(onClick = { vm.preview(workout.key) }, modifier = Modifier.fillMaxWidth()) { Text(workout.name) }
                     }
                 }
-                is WorkoutUiState.Session -> SessionScreen(current, vm)
+                is WorkoutUiState.Session -> SessionScreen(current, vm, now)
                 is WorkoutUiState.Preview -> PreviewScreen(current, vm)
             }
         }
@@ -136,7 +185,7 @@ private fun PreviewTableRow(label: String, values: PreviewValues, date: String, 
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun SessionScreen(session: WorkoutUiState.Session, vm: WorkoutViewModel) {
+private fun SessionScreen(session: WorkoutUiState.Session, vm: WorkoutViewModel, now: Long) {
     var picker by rememberSaveable(session.row.id) { mutableStateOf<String?>(null) }
     var selected by rememberSaveable(session.row.id) { mutableStateOf<String?>(null) }
     var showAll by rememberSaveable(session.row.id) { mutableStateOf(false) }
@@ -146,8 +195,13 @@ private fun SessionScreen(session: WorkoutUiState.Session, vm: WorkoutViewModel)
     val index = session.exercises.indexOfFirst { it.row.id == selectedId }
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Text(session.row.title, modifier = Modifier.weight(1f), style = MaterialTheme.typography.headlineMedium)
-        if (index >= 0) Text(stringResource(R.string.exercise_position, index + 1, session.exercises.size),
-            style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+            elapsedWorkoutText(session.row.startedAt, now, session.row.status)?.let {
+                Text(it, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            if (index >= 0) Text(stringResource(R.string.exercise_position, index + 1, session.exercises.size),
+                style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
     }
     if (session.row.light) Text(stringResource(R.string.light_day), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
     if (index >= 0) {
@@ -188,8 +242,9 @@ private fun SessionScreen(session: WorkoutUiState.Session, vm: WorkoutViewModel)
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun SessionActions(session: WorkoutUiState.Session, vm: WorkoutViewModel) {
+private fun SessionActions(session: WorkoutUiState.Session, vm: WorkoutViewModel, now: Long, overrides: Map<String, Int>) {
     var picker by rememberSaveable(session.row.id) { mutableStateOf(false) }
     var notesOpen by rememberSaveable(session.row.id) { mutableStateOf(false) }
     var menuOpen by rememberSaveable(session.row.id) { mutableStateOf(false) }
@@ -200,6 +255,21 @@ private fun SessionActions(session: WorkoutUiState.Session, vm: WorkoutViewModel
         Column(Modifier.fillMaxWidth().navigationBarsPadding()) {
             HorizontalDivider()
             Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                val rest = restState(now, session.row.status, session.exercises.flatMap { it.sets })
+                val restedExercise = session.exercises.firstOrNull { it.row.id == rest?.sessionExerciseId }
+                if (rest != null && restedExercise != null) {
+                    val target = restTargetS(restedExercise.row.exerciseId, restedExercise.programRestS, overrides)
+                    val description = stringResource(R.string.rest_target_description, restedExercise.row.exerciseName)
+                    FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center,
+                        verticalArrangement = Arrangement.Center) {
+                        Text(stringResource(R.string.rest_elapsed, restText(rest.elapsedS), restText(target.toLong())),
+                            color = if (rest.elapsedS >= target) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                            style = MaterialTheme.typography.labelMedium)
+                        TextButton(onClick = { vm.toggleRestTarget(restedExercise.row.exerciseId, target) },
+                            modifier = Modifier.semantics { contentDescription = description },
+                            contentPadding = PaddingValues(horizontal = 8.dp)) { Text(restText(target.toLong())) }
+                    }
+                }
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     TextButton(onClick = { picker = true }, modifier = Modifier.weight(1f)) { Text(stringResource(R.string.add_exercise)) }
                     TextButton(onClick = { notes = session.row.notes.orEmpty(); notesOpen = true }, modifier = Modifier.weight(1f)) { Text(stringResource(R.string.session_notes)) }

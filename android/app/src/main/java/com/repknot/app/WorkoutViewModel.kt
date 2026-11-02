@@ -28,7 +28,7 @@ sealed interface WorkoutUiState {
     data class Preview(val programName: String, val workout: ProgramWorkout, val suggested: Boolean,
                        val exercises: List<PreviewExerciseUi>) : WorkoutUiState
 }
-data class ExerciseUi(val row: SessionExerciseRow, val sets: List<SetRow>, val previous: Prefill, val suggestion: SetSuggestion, val previousOn: LocalDate?, val target: TodayTarget?, val deltas: List<SetDelta>)
+data class ExerciseUi(val row: SessionExerciseRow, val sets: List<SetRow>, val previous: Prefill, val suggestion: SetSuggestion, val previousOn: LocalDate?, val target: TodayTarget?, val deltas: List<SetDelta>, val programRestS: Int?)
 data class SetSuggestion(val load: Double?, val unit: LoadUnit, val reps: Double?)
 data class PreviewExerciseUi(val prescription: Prescription, val previous: Prefill, val previousOn: LocalDate?, val target: TodayTarget?)
 
@@ -66,7 +66,8 @@ fun suggestionFor(prefill: Prefill, setIndex: Int, row: SessionExerciseRow, defa
     return if (suggestion.unit == LoadUnit.BODYWEIGHT) suggestion.copy(load = null) else suggestion
 }
 
-fun sessionState(snapshot: SessionSnapshot, history: List<PastSession>, exercises: List<ExerciseRow>): WorkoutUiState.Session {
+fun sessionState(snapshot: SessionSnapshot, history: List<PastSession>, exercises: List<ExerciseRow>,
+                 workouts: List<ProgramWorkoutRow>, prescriptions: List<ProgramExerciseRow>): WorkoutUiState.Session {
     val byId = exercises.associateBy { it.id }
     val sets = snapshot.sets.groupBy { it.sessionExerciseId }
     val previousHistory = history.filterNot { it.id == snapshot.row.id }
@@ -84,7 +85,8 @@ fun sessionState(snapshot: SessionSnapshot, history: List<PastSession>, exercise
             set.unit?.let { setDelta(PastSet(set.position, set.load, parseUnit(it), set.reps, set.durationS, set.rir), index, row.exerciseId, previousHistory) }
                 ?: SetDelta.NONE
         }
-        ExerciseUi(row, logged, previous, suggestionFor(previous, logged.size, inputRow, unit), previousDate(previous, previousHistory), target, deltas)
+        ExerciseUi(row, logged, previous, suggestionFor(previous, logged.size, inputRow, unit), previousDate(previous, previousHistory), target, deltas,
+            programRestS(snapshot.row.programWorkoutKey, snapshot.row.programId, workouts, prescriptions, row.substitutedFor ?: row.exerciseId))
     }, exercises)
 }
 
@@ -92,6 +94,7 @@ fun sessionState(snapshot: SessionSnapshot, history: List<PastSession>, exercise
 class WorkoutViewModel(
     private val sessions: SessionDao, private val reference: ReferenceDao, private val sync: SessionSync,
     private val current: CurrentSession, val uploadEnabled: StateFlow<Boolean>,
+    val restOverrides: StateFlow<Map<String, Int>>, private val setRestOverride: (String, Int) -> Unit,
     private val today: () -> LocalDate = LocalDate::now,
     private val now: () -> Long = System::currentTimeMillis,
 ) : ViewModel() {
@@ -121,7 +124,8 @@ class WorkoutViewModel(
                 val history = sessions.history()
                 val program = if (snapshot == null) reference.activeProgram() else null
                 mutableState.value = when {
-                    snapshot != null -> sessionState(snapshot, history, reference.activeExercises())
+                    snapshot != null -> sessionState(snapshot, history, reference.activeExercises(),
+                        snapshot.row.programId?.let { reference.getWorkouts(it) }.orEmpty(), reference.getPrescriptions())
                     program != null && key != null -> previewState(program, programRow?.name, key, history)
                         ?: todayState(program, programRow?.name, history)
                     else -> todayState(program, programRow?.name, history)
@@ -130,6 +134,7 @@ class WorkoutViewModel(
         }
     }
 
+    fun toggleRestTarget(exerciseId: String, current: Int) { setRestOverride(exerciseId, toggledRestTarget(current)) }
     fun preview(workoutKey: String) { previewKey.value = workoutKey }
     fun closePreview() { previewKey.value = null }
     /** Abandons the current workout if it was never uploaded; back to today's workout. */
@@ -206,10 +211,11 @@ class WorkoutViewModel(
         }
     }
     class Factory(private val sessions: SessionDao, private val reference: ReferenceDao, private val sync: SessionSync,
-                  private val current: CurrentSession, private val uploadEnabled: StateFlow<Boolean>) : ViewModelProvider.Factory {
+                  private val current: CurrentSession, private val uploadEnabled: StateFlow<Boolean>,
+                  private val restOverrides: StateFlow<Map<String, Int>>, private val setRestOverride: (String, Int) -> Unit) : ViewModelProvider.Factory {
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
             require(modelClass.isAssignableFrom(WorkoutViewModel::class.java))
-            @Suppress("UNCHECKED_CAST") return WorkoutViewModel(sessions, reference, sync, current, uploadEnabled) as T
+            @Suppress("UNCHECKED_CAST") return WorkoutViewModel(sessions, reference, sync, current, uploadEnabled, restOverrides, setRestOverride) as T
         }
     }
 }

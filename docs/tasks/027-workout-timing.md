@@ -40,7 +40,7 @@ service, changes to conflict/revision rules.
 - [x] Step 1b: Room v7 (`SessionRow.startedAt/finishedAt`, `SetRow.loggedAt`), MIGRATION_6_7,
       MigrationTest, mapping (ServerSession/ServerSet/Push*), ViewModel writes with an
       injectable clock; `scripts/check --offline`; device migration test.
-- [ ] Step 2: worker UI slice — spec in "Step 2 spec" below.
+- [x] Step 2: worker UI slice — timer, elapsed header, device-local target and vibration; offline checks passed.
 - [ ] Lead review, install, phone check, architecture/status update.
 
 ## Step 2 spec (worker)
@@ -133,6 +133,8 @@ vibration at target, elapsed header, nothing shown on preview/finished screens.
   finish again; `finish(id)` remains for tests and uses the system clock.
 - Timestamps go over the wire as ISO-8601 instants (`Instant.toString()`), parsed back with
   `OffsetDateTime.parse` (Postgres returns an offset, sometimes microseconds).
+- Timer ticks and crossing detection run only while the activity is resumed; observation
+  resets on resume so returning after the target does not cause a delayed vibration.
 
 ## Verification
 - Step 1a: `scripts/db push` applied `20261102010000_workout_timing.sql` to dev
@@ -144,6 +146,11 @@ vibration at target, elapsed header, nothing shown on preview/finished screens.
   WorkoutDatabaseTest → 14/14 passed, including v6→v7 upgrade + finish-once.
   Not run: `scripts/test-sync-integration` (needs `REPKNOT_TEST2_*` credentials, not in
   `.env`); a real upload of a timed session is not yet verified end to end.
+- Step 2: `scripts/check --offline` passed (debug build, lint, JVM tests including
+  `WorkoutTimingTest`). First run failed on Kotlin nullability errors; fixed before rerun.
+  Device checks and actual vibration remain pending lead verification.
 
 ## Handoff
-Next: step 2 delegated via `scripts/delegate docs/tasks/027-workout-timing.md`; lead reviews diff and runs device checks.
+Next: lead reviews the Step 2 diff, installs and runs the phone checks listed above,
+then updates architecture/status. No unfinished worker changes. Review foreground-only
+vibration/crossing behavior and compact footer at large font on device.

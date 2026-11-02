@@ -52,7 +52,7 @@ class WorkoutStateTest {
         val choices = listOf(ExerciseRow("x", "x", "Press", "lb", false), ExerciseRow("y", "y", "Other", null, false))
         val sets = listOf(SetRow("2", "s", "e", 1, 1.0, "lb", 1.0), SetRow("1", "s", "e", 0, 1.0, "lb", 1.0))
         val self = past.copy(id = "s", finishedAtMillis = 2, exercises = listOf(PastExercise(0, "x", listOf(pastSet.copy(load = 99.0)))))
-        val state = sessionState(SessionSnapshot(row, listOf(exercise, early), sets), listOf(past, self), choices)
+        val state = sessionState(SessionSnapshot(row, listOf(exercise, early), sets), listOf(past, self), choices, emptyList(), emptyList())
         assertEquals(listOf("f", "e"), state.exercises.map { it.row.id })
         assertEquals(listOf("1", "2"), state.exercises[1].sets.map { it.id })
         assertEquals(Prefill.Previous("old", listOf(pastSet)), state.exercises[1].previous)
@@ -68,7 +68,7 @@ class WorkoutStateTest {
         val logged = listOf(SetRow("1", "s", "e", 0, 35.0, "lb", 8.5, rir = 1),
             SetRow("2", "s", "e", 1, 35.0, null, 8.5, rir = 1))
         val choices = listOf(ExerciseRow("x", "x", "Press", "lb", false))
-        fun state(e: SessionExerciseRow) = sessionState(SessionSnapshot(row, listOf(e), logged), history, choices).exercises.single()
+        fun state(e: SessionExerciseRow) = sessionState(SessionSnapshot(row, listOf(e), logged), history, choices, emptyList(), emptyList()).exercises.single()
         val prescribed = state(exercise)
         assertNotNull(prescribed.target)
         assertEquals(listOf(SetDelta.UP, SetDelta.NONE), prescribed.deltas)
@@ -77,14 +77,14 @@ class WorkoutStateTest {
     }
     @Test fun configuredUnitsAndSubstitutionsDoNotRelabelLoads() {
         val catalog = listOf(ExerciseRow("x", "x", "Press", "plates", false))
-        fun state(e: SessionExerciseRow) = sessionState(SessionSnapshot(row, listOf(e), emptyList()), emptyList(), catalog).exercises.single()
+        fun state(e: SessionExerciseRow) = sessionState(SessionSnapshot(row, listOf(e), emptyList()), emptyList(), catalog, emptyList(), emptyList()).exercises.single()
         assertEquals(LoadUnit.PLATES, state(exercise).suggestion.unit)
         assertEquals(LoadUnit.KG, state(exercise.copy(plannedUnit = "kg")).suggestion.unit)
         val substituted = state(exercise.copy(plannedUnit = "kg", substitutedFor = "original"))
         assertEquals(LoadUnit.PLATES, substituted.suggestion.unit)
         assertNull(substituted.suggestion.load)
         val bodyweight = sessionState(SessionSnapshot(row, listOf(exercise), emptyList()), emptyList(),
-            listOf(ExerciseRow("x", "x", "Press", "bodyweight", false))).exercises.single()
+            listOf(ExerciseRow("x", "x", "Press", "bodyweight", false)), emptyList(), emptyList()).exercises.single()
         assertEquals(LoadUnit.BODYWEIGHT, bodyweight.suggestion.unit)
         assertNull(bodyweight.suggestion.load)
     }
