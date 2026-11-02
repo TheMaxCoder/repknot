@@ -18,7 +18,6 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -58,15 +57,14 @@ class MainActivity : ComponentActivity() {
                 val cloud: CloudViewModel = viewModel(factory = cloudFactory)
                 val cloudState by cloud.state.collectAsState()
                 val workout: WorkoutViewModel = viewModel(factory = WorkoutViewModel.Factory(
-                    app.database.sessions(), app.database.reference(), app.sync, app.current, app.settings.uploadEnabled,
+                    app.database.sessions(), app.database.reference(), app.sync, app.current,
                     app.settings.restOverrides, app.settings::setRestOverride,
                 ))
                 var screen by rememberSaveable { mutableStateOf("workout") }
                 if (screen == "settings") {
                     BackHandler { screen = "workout" }
-                    val uploadEnabled by app.settings.uploadEnabled.collectAsState()
                     val waistGoal by app.settings.waistGoalCm.collectAsState()
-                    SettingsScreen(uploadEnabled, app::setUploadEnabled, waistGoal, app.settings::setWaistGoalCm, { screen = "workout" }) {
+                    SettingsScreen(waistGoal, app.settings::setWaistGoalCm, { screen = "workout" }) {
                         CloudSection(cloudState, cloud::signIn, cloud::signOut)
                     }
                 } else if (screen == "progress" || screen == "body" || screen.startsWith("exercise:")) {
@@ -80,7 +78,7 @@ class MainActivity : ComponentActivity() {
                         ProgressScreen(progressState, { screen = "workout" }, { screen = "body" }, progress::addCheckIn) { screen = "exercise:$it" }
                     } else if (screen == "body") {
                         BackHandler { screen = "progress" }
-                        BodyScreen(progressState, { screen = "progress" }, progress::addCheckIn)
+                        BodyScreen(progressState, { screen = "progress" }, progress::addCheckIn, progress::uploadCheckIn, progress::deleteCheckIn)
                     } else {
                         BackHandler { screen = "progress" }
                         ExerciseProgressScreen(progressState, screen.removePrefix("exercise:")) { screen = "progress" }
@@ -94,8 +92,7 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-private fun SettingsScreen(uploadEnabled: Boolean, setUploadEnabled: (Boolean) -> Unit,
-                           waistGoal: Double, setWaistGoal: (Double) -> Unit,
+private fun SettingsScreen(waistGoal: Double, setWaistGoal: (Double) -> Unit,
                            back: () -> Unit, cloud: @Composable () -> Unit) {
     Scaffold { padding ->
         Column(Modifier.fillMaxSize().padding(padding).imePadding().verticalScroll(rememberScrollState()).padding(24.dp),
@@ -104,13 +101,6 @@ private fun SettingsScreen(uploadEnabled: Boolean, setUploadEnabled: (Boolean) -
                 TextButton(onClick = back) { Text(stringResource(R.string.back)) }
                 Text(stringResource(R.string.settings), style = MaterialTheme.typography.titleLarge)
             }
-            Text(stringResource(R.string.workouts), style = MaterialTheme.typography.titleLarge)
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Text(stringResource(R.string.upload_workouts))
-                Switch(checked = uploadEnabled, onCheckedChange = setUploadEnabled)
-            }
-            Text(stringResource(if (uploadEnabled) R.string.upload_on_description else R.string.upload_off_description),
-                color = MaterialTheme.colorScheme.onSurfaceVariant)
             var goalText by rememberSaveable { mutableStateOf(waistGoal.toString()) }
             val parsedGoal = goalText.replace(',', '.').toDoubleOrNull()
             val invalidGoal = parsedGoal == null || parsedGoal !in 40.0..200.0

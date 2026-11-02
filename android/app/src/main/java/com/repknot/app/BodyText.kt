@@ -66,5 +66,5 @@ fun checkInLine(row: CheckInRow): String = listOfNotNull(
     row.waistCm?.let { "waist ${measure(it)} cm".takeIf { row.weightKg == null } ?: "${measure(it)} cm" },
     row.chestCm?.let { "chest ${measure(it)}" }, row.armsCm?.let { "arms ${measure(it)}" },
     row.armsFlexedCm?.let { "arms flexed ${measure(it)}" }, row.legsCm?.let { "legs ${measure(it)}" },
-    if (row.pending) "not uploaded" else null,
+    when { !row.pending -> null; row.uploadRequested -> "upload pending"; else -> "not uploaded" },
 ).joinToString(" · ")

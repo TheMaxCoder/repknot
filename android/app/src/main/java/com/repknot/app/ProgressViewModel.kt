@@ -35,7 +35,8 @@ class ProgressViewModel(
     private val reference: ReferenceDao,
     private val checkIns: CheckInDao,
     private val waistGoal: StateFlow<Double>,
-    private val onCheckInAdded: () -> Unit,
+    /** Asks the app to sync (pushes check-ins marked for upload). */
+    private val requestSync: () -> Unit,
     private val today: () -> LocalDate = LocalDate::now,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow(ProgressUiState())
@@ -70,18 +71,21 @@ class ProgressViewModel(
 
     fun addCheckIn(date: String, weight: String, waist: String, notes: String): Boolean {
         val row = parseCheckIn(date, weight, waist, notes) ?: return false
-        viewModelScope.launch { checkIns.add(row); onCheckInAdded() }
+        viewModelScope.launch { checkIns.add(row) }
         return true
     }
+    /** The explicit Upload tap for a phone-only check-in (task 028). */
+    fun uploadCheckIn(id: String) { viewModelScope.launch { if (checkIns.requestUpload(id) > 0) requestSync() } }
+    fun deleteCheckIn(id: String) { viewModelScope.launch { checkIns.deleteLocal(id) } }
 
     class Factory(
         private val sessions: SessionDao, private val reference: ReferenceDao,
         private val checkIns: CheckInDao, private val waistGoal: StateFlow<Double>,
-        private val onCheckInAdded: () -> Unit,
+        private val requestSync: () -> Unit,
     ) : ViewModelProvider.Factory {
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
             require(modelClass.isAssignableFrom(ProgressViewModel::class.java))
-            @Suppress("UNCHECKED_CAST") return ProgressViewModel(sessions, reference, checkIns, waistGoal, onCheckInAdded) as T
+            @Suppress("UNCHECKED_CAST") return ProgressViewModel(sessions, reference, checkIns, waistGoal, requestSync) as T
         }
     }
 }

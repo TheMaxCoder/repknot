@@ -78,16 +78,48 @@ class WorkoutDatabaseTest {
         assertEquals(8L, dao.get("s")!!.localRevision)
     }
 
-        @Test fun discardRemovesOnlyANeverUploadedWorkoutInProgress() = runBlocking {
+        @Test fun discardRemovesOnlyAWorkoutThatNeverLeftThePhone() = runBlocking {
         val dao = db.sessions()
         db.logSet("draft", "set", 20.0)
         assertTrue(dao.discard("draft"))
         assertNull(dao.get("draft")); assertTrue(dao.sets("draft").isEmpty()); assertTrue(dao.exercises("draft").isEmpty())
+        // Finished but Upload not tapped (a test run): discardable.
         db.logSet("done", "set2", 20.0); dao.finish("done")
-        assertFalse(dao.discard("done"))
+        assertTrue(dao.discard("done")); assertNull(dao.get("done"))
+        // Upload tapped (maybe still in flight): kept.
+        db.logSet("marked", "set3", 20.0); dao.finish("marked"); dao.requestUpload("marked")
+        assertFalse(dao.discard("marked"))
         dao.put(draft("uploaded").copy(number = 7, baseRevision = 3))
         assertFalse(dao.discard("uploaded"))
         assertFalse(dao.discard("missing"))
+    }
+
+        @Test fun onlyWorkoutsMarkedForUploadArePending() = runBlocking {
+        val dao = db.sessions()
+        db.logSet("s1", "set", 20.0)
+        assertEquals(0, dao.requestUpload("s1"))  // in progress: cannot be marked
+        dao.finish("s1")
+        assertTrue(dao.pending().isEmpty())
+        assertEquals(1, dao.requestUpload("s1"))
+        assertEquals(listOf("s1"), dao.pending().map { it.id })
+        // Resume (never uploaded) clears the mark; finishing again needs a new tap.
+        assertEquals(1, dao.resume("s1")); dao.finish("s1")
+        assertTrue(dao.pending().isEmpty())
+        // Once acknowledged, later edits sync without another tap.
+        dao.requestUpload("s1"); dao.acknowledge("s1", dao.get("s1")!!.localRevision, 5, 42)
+        db.logSet("s1", "set", 22.5)
+        assertEquals(listOf("s1"), dao.pending().map { it.id })
+    }
+
+        @Test fun checkInsUploadOnlyWhenMarkedAndUnmarkedOnesCanBeDeleted() = runBlocking {
+        val dao = db.checkIns()
+        dao.add(CheckInRow("c1", "2026-11-02", waistCm = 91.0)); dao.add(CheckInRow("c2", "2026-11-02", weightKg = 75.0))
+        assertTrue(dao.pending().isEmpty())
+        assertEquals(1, dao.requestUpload("c1"))
+        assertEquals(listOf("c1"), dao.pending().map { it.id })
+        assertEquals(0, dao.deleteLocal("c1"))  // marked: kept
+        assertEquals(1, dao.deleteLocal("c2"))
+        assertEquals(listOf("c1"), dao.all().map { it.id })
     }
 
         @Test fun recordedValuesSurviveDatabaseReopen() = runBlocking {

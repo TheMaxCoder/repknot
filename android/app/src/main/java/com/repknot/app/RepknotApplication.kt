@@ -20,8 +20,7 @@ class RepknotApplication : Application() {
     val settings by lazy { AppSettings(this) }
     val database by lazy { WorkoutDatabase.open(this) }
     val cloud by lazy { CloudAccount(BuildConfig.SUPABASE_URL, BuildConfig.SUPABASE_PUBLISHABLE_KEY) }
-    val sync by lazy { SessionSync(cloud, database.sessions(), database.reference(), database.checkIns(),
-        uploadEnabled = { settings.uploadEnabled.value }) { userId ->
+    val sync by lazy { SessionSync(cloud, database.sessions(), database.reference(), database.checkIns()) { userId ->
         val prefs = getSharedPreferences("sync_account", MODE_PRIVATE)
         val owner = prefs.getString("user_id", null)
         if (owner == null) prefs.edit().putString("user_id", userId).commit() else owner == userId
@@ -41,11 +40,6 @@ class RepknotApplication : Application() {
         })
     }
     fun requestRefresh() { scope.launch { refresh() } }
-    /** Turning upload on pushes anything finished while it was off. */
-    fun setUploadEnabled(enabled: Boolean) {
-        settings.setUploadEnabled(enabled)
-        if (enabled) requestRefresh()
-    }
     private suspend fun refresh() {
         if (cloud.state.first() !is CloudState.SignedIn) return
         try { sync.refreshAndPush() } catch (e: kotlinx.coroutines.CancellationException) { throw e }

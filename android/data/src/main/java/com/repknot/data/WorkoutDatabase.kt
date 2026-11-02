@@ -8,7 +8,7 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Database(entities = [SessionRow::class, SessionExerciseRow::class, SetRow::class, ExerciseRow::class,
-    ProgramRow::class, ProgramWorkoutRow::class, ProgramExerciseRow::class, CheckInRow::class], version = 7, exportSchema = true)
+    ProgramRow::class, ProgramWorkoutRow::class, ProgramExerciseRow::class, CheckInRow::class], version = 8, exportSchema = true)
 abstract class WorkoutDatabase : RoomDatabase() {
     abstract fun sessions(): SessionDao
     abstract fun reference(): ReferenceDao
@@ -35,9 +35,18 @@ abstract class WorkoutDatabase : RoomDatabase() {
                 db.execSQL("ALTER TABLE logged_sets ADD COLUMN loggedAt INTEGER")
             }
         }
+        /** v7 → v8: explicit upload (task 028). Rows the old global switch would upload stay marked. */
+        val MIGRATION_7_8 = object : Migration(7, 8) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE sessions ADD COLUMN uploadRequested INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("UPDATE sessions SET uploadRequested = 1 WHERE status <> 'in_progress' OR number IS NOT NULL OR baseRevision IS NOT NULL")
+                db.execSQL("ALTER TABLE checkins ADD COLUMN uploadRequested INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("UPDATE checkins SET uploadRequested = 1")
+            }
+        }
         // Versions 1–3 were synthetic building-phase data and may still be reset.
         fun open(context: Context): WorkoutDatabase = Room.databaseBuilder(
             context.applicationContext, WorkoutDatabase::class.java, "workouts.db",
-        ).addMigrations(MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7).fallbackToDestructiveMigrationFrom(true, 1, 2, 3).build()
+        ).addMigrations(MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8).fallbackToDestructiveMigrationFrom(true, 1, 2, 3).build()
     }
 }

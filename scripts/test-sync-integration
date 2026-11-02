@@ -27,4 +27,4 @@ output="$(adb shell am instrument -w -r \
   com.repknot.data.test/androidx.test.runner.AndroidJUnitRunner)"
 printf '%s\n' "$output"
 # adb can exit zero even when instrumentation reports a failed or skipped test.
-grep -q '^OK (1 test)' <<<"$output" && ! grep -q '^INSTRUMENTATION_STATUS_CODE: -3' <<<"$output" || { echo 'Integration test failed or was skipped' >&2; exit 1; }
+grep -qE '^OK \([0-9]+ tests?\)' <<<"$output" && ! grep -q '^INSTRUMENTATION_STATUS_CODE: -3' <<<"$output" || { echo 'Integration test failed or was skipped' >&2; exit 1; }

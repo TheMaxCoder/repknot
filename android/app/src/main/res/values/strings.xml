@@ -4,7 +4,6 @@
     <string name="exercise_not_found">Exercise not found</string>
     <string name="settings">Settings</string>
     <string name="back">Back</string>
-    <string name="workouts">Workouts</string>
     <string name="waist_goal">Waist goal (cm)</string>
     <string name="waist_goal_range">40–200 cm</string>
     <string name="body">Body</string>
@@ -16,9 +15,6 @@
     <string name="check_in_waist">Waist (cm)</string>
     <string name="check_in_error">Enter a date and a weight or waist</string>
     <string name="save">Save</string>
-    <string name="upload_workouts">Upload workouts</string>
-    <string name="upload_off_description">Workouts stay on this phone. Programs still download when signed in.</string>
-    <string name="upload_on_description">Finished workouts upload to the cloud.</string>
     <string name="no_program">Sign in and sync to load your program.</string>
     <string name="next_workout">Next workout</string>
     <string name="preview_workout">Preview %1$s</string>
@@ -100,7 +96,8 @@
     <string name="discard_confirm_title">Discard this workout?</string>
     <string name="discard_confirm_message">Logged sets on this phone will be deleted.</string>
     <string name="discard">Discard</string>
-    <string name="saved_upload_off">Saved on this phone. Upload is off (Settings).</string>
+    <string name="saved_not_uploaded">Saved on this phone · not uploaded</string>
+    <string name="upload">Upload</string>
     <string name="session_notes">Session notes</string>
     <string name="save_notes">Save notes</string>
     <string name="sync_conflict">Changed elsewhere · choose which version to keep</string>

@@ -47,10 +47,10 @@ class SharedSessionIntegrationTest {
         suspend fun log(sessionId: String, setId: String, load: Double) = db.logSet(sessionId, setId, load, exerciseId = bench)
         val ids = mutableListOf<String>()
         try {
-            // With upload disabled a finished session stays local and never reaches the server.
+            // A finished session that was never marked for upload stays local and never reaches the server.
             val localOnly = UUID.randomUUID().toString(); ids += localOnly
             log(localOnly, UUID.randomUUID().toString(), 30.0); db.sessions().finish(localOnly)
-            SessionSync(cloud, db.sessions(), db.reference(), uploadEnabled = { false }).refreshAndPush()
+            SessionSync(cloud, db.sessions(), db.reference()).refreshAndPush()
             assertEquals("finished", db.sessions().get(localOnly)!!.status)
             assertEquals(0, client.from("workout_sessions").select { filter { eq("id", localOnly) } }.decodeList<ServerSession>().size)
             db.sessions().takeDeleted(localOnly); db.sessions().put(draft(localOnly).copy(status = "pushed")); db.sessions().deleteCached(localOnly)
@@ -59,7 +59,7 @@ class SharedSessionIntegrationTest {
                 log(id, setId, 32.5)
                 db.sessions().shareSnapshot(id)
                 if (edited) log(id, setId, 35.0)
-                db.sessions().finish(id)
+                db.sessions().finish(id); db.sessions().requestUpload(id)
                 val params = buildJsonObject {
                     putJsonObject("payload") {
                         put("ref", id); put("performed_on", "2026-10-31"); put("title", "Shared integration test")
@@ -90,7 +90,7 @@ class SharedSessionIntegrationTest {
             // a different session's payload is rejected by the server.
             val deletedId = UUID.randomUUID().toString(); val deletedSet = UUID.randomUUID().toString(); ids += deletedId
             log(deletedId, deletedSet, 10.0)
-            db.sessions().finish(deletedId)
+            db.sessions().finish(deletedId); db.sessions().requestUpload(deletedId)
             val sync = SessionSync(cloud, db.sessions(), db.reference())
             sync.refreshAndPush()
             client.from("workout_sessions").delete { filter { eq("id", deletedId) } }
@@ -98,10 +98,10 @@ class SharedSessionIntegrationTest {
             val badId = UUID.randomUUID().toString(); val goodId = UUID.randomUUID().toString()
             val badSet = UUID.randomUUID().toString(); val goodSet = UUID.randomUUID().toString()
             ids += badId; ids += goodId
-            log(badId, badSet, 1.0); db.sessions().finish(badId)
+            log(badId, badSet, 1.0); db.sessions().finish(badId); db.sessions().requestUpload(badId)
             val badRow = db.sessions().sets(badId).single()
             db.sessions().putSets(listOf(badRow.copy(unit = "INVALID")))  // rejected by the server's unit domain
-            log(goodId, goodSet, 2.0); db.sessions().finish(goodId)
+            log(goodId, goodSet, 2.0); db.sessions().finish(goodId); db.sessions().requestUpload(goodId)
             val order = db.sessions().pending().map { it.id }
             assertTrue(order.indexOf(badId) < order.indexOf(goodId))
             assertTrue(runCatching { sync.refreshAndPush() }.isFailure)
@@ -126,7 +126,7 @@ class SharedSessionIntegrationTest {
         }
     }
 
-    @Test fun checkInsDownloadAndUploadOnlyWhenEnabled() = runBlocking {
+    @Test fun checkInsDownloadAndUploadOnlyWhenMarked() = runBlocking {
         val args = InstrumentationRegistry.getArguments()
         fun value(name: String): String = args.getString(name)?.let {
             String(android.util.Base64.decode(it, android.util.Base64.NO_WRAP), Charsets.UTF_8)
@@ -143,13 +143,14 @@ class SharedSessionIntegrationTest {
         try {
             client.from("checkins").insert(buildJsonObject { put("id", serverId); put("checked_on", "2026-10-30"); put("waist_cm", 90.5); put("source", "cli") })
             db.checkIns().add(CheckInRow(phoneId, "2026-10-31", weightKg = 70.25, waistCm = 90.0))
-            // Upload off: the server row is downloaded, the phone row stays pending and local.
-            SessionSync(cloud, db.sessions(), db.reference(), db.checkIns(), uploadEnabled = { false }).refreshAndPush()
+            // Not marked: the server row is downloaded, the phone row stays pending and local.
+            val sync = SessionSync(cloud, db.sessions(), db.reference(), db.checkIns())
+            sync.refreshAndPush()
             assertEquals(90.5, db.checkIns().all().single { it.id == serverId }.waistCm!!, 0.0)
             assertTrue(db.checkIns().all().single { it.id == phoneId }.pending)
             assertEquals(0, client.from("checkins").select { filter { eq("id", phoneId) } }.decodeList<ServerCheckIn>().size)
-            // Upload on: the phone row reaches the server once, even when refreshed again.
-            val sync = SessionSync(cloud, db.sessions(), db.reference(), db.checkIns())
+            // Upload tapped: the phone row reaches the server once, even when refreshed again.
+            assertEquals(1, db.checkIns().requestUpload(phoneId))
             sync.refreshAndPush(); sync.refreshAndPush()
             assertEquals(listOf(false), db.checkIns().all().filter { it.id == phoneId }.map { it.pending })
             val remote = client.from("checkins").select { filter { eq("id", phoneId) } }.decodeList<ServerCheckIn>()

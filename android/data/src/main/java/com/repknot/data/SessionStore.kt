@@ -32,6 +32,8 @@ data class SessionRow(
     /** Epoch millis when Start was tapped / Finish first tapped (task 027); null for older sessions. */
     val startedAt: Long? = null,
     val finishedAt: Long? = null,
+    /** Upload was tapped, or the session came from / reached the server (task 028). Only marked sessions sync. */
+    @ColumnInfo(defaultValue = "0") val uploadRequested: Boolean = false,
 )
 
 /** One exercise in a session, with the prescription snapshot it was started from (ADR 002). */
@@ -82,7 +84,7 @@ interface SessionDao {
     suspend fun put(row: SessionRow)
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertIfAbsent(row: SessionRow): Long
-    @Query("SELECT * FROM sessions WHERE status = 'finished' AND localRevision > pushedLocalRevision")
+    @Query("SELECT * FROM sessions WHERE status = 'finished' AND localRevision > pushedLocalRevision AND uploadRequested = 1")
     suspend fun pending(): List<SessionRow>
     @Query("SELECT * FROM session_exercises WHERE sessionId = :id ORDER BY position, id")
     suspend fun exercises(id: String): List<SessionExerciseRow>
@@ -158,11 +160,14 @@ interface SessionDao {
     suspend fun finish(id: String) = finishAt(id, System.currentTimeMillis())
     /**
      * Reopens a finished workout that was never uploaded (e.g. Finish tapped by accident), so
-     * it can be continued or discarded. Clears the finish time; returns whether it reopened.
+     * it can be continued or discarded. Clears the finish time and the upload mark; returns whether it reopened.
      */
-    @Query("UPDATE sessions SET status = 'in_progress', finishedAt = NULL WHERE id = :id AND status = 'finished' AND number IS NULL AND baseRevision IS NULL")
+    @Query("UPDATE sessions SET status = 'in_progress', finishedAt = NULL, uploadRequested = 0 WHERE id = :id AND status = 'finished' AND number IS NULL AND baseRevision IS NULL")
     suspend fun resume(id: String): Int
     /** Every local edit bumps the local revision; an uploaded session becomes pending again. */
+    /** Marks a finished workout for upload (the explicit Upload tap); returns whether it was marked. */
+    @Query("UPDATE sessions SET uploadRequested = 1 WHERE id = :id AND status = 'finished'")
+    suspend fun requestUpload(id: String): Int
     @Query("UPDATE sessions SET localRevision = localRevision + 1, status = CASE WHEN status = 'pushed' THEN 'finished' ELSE status END WHERE id = :id")
     suspend fun bump(id: String)
     @Query("UPDATE sessions SET notes = :notes WHERE id = :id")
@@ -201,13 +206,13 @@ interface SessionDao {
     @Query("DELETE FROM sessions WHERE id = :id")
     suspend fun deleteSessionRow(id: String)
     /**
-     * Abandons a started workout. Only a session that is still in progress and was never
-     * uploaded (no server number or base revision) can be discarded; returns whether it was.
+     * Abandons a workout that never left the phone: in progress or finished, no server number or
+     * base revision, and Upload not tapped. Returns whether it was discarded.
      */
     @Transaction
     suspend fun discard(id: String): Boolean {
         val row = get(id) ?: return false
-        if (row.status != "in_progress" || row.number != null || row.baseRevision != null) return false
+        if (row.status !in setOf("in_progress", "finished") || row.uploadRequested || row.number != null || row.baseRevision != null) return false
         deleteSets(id)
         deleteExercises(id)
         deleteSessionRow(id)
@@ -228,7 +233,7 @@ interface SessionDao {
 
     @Query("UPDATE sessions SET sharedLocalRevision = localRevision WHERE id = :id")
     suspend fun shared(id: String)
-    @Query("UPDATE sessions SET pushedLocalRevision = MAX(pushedLocalRevision, :revision), baseRevision = :serverRevision, number = :number, status = CASE WHEN localRevision > :revision THEN 'finished' ELSE 'pushed' END WHERE id = :id")
+    @Query("UPDATE sessions SET pushedLocalRevision = MAX(pushedLocalRevision, :revision), baseRevision = :serverRevision, number = :number, uploadRequested = 1, status = CASE WHEN localRevision > :revision THEN 'finished' ELSE 'pushed' END WHERE id = :id")
     suspend fun acknowledge(id: String, revision: Long, serverRevision: Long, number: Long)
     @Query("UPDATE sessions SET status = 'conflict', serverSnapshot = :snapshot WHERE id = :id")
     suspend fun conflict(id: String, snapshot: String)
@@ -303,7 +308,8 @@ interface SessionDao {
         val acknowledged = maxOf(revision, remote.clientRevision ?: 0)
         put(SessionRow(remote.id, remote.performedOn, remote.title ?: "Workout", remote.notes,
             "pushed", acknowledged, acknowledged, remote.revision, null, remote.number, null,
-            remote.programId, remote.programWorkoutKey, remote.light, remote.startedAt.toMillis(), remote.finishedAt.toMillis()))
+            remote.programId, remote.programWorkoutKey, remote.light, remote.startedAt.toMillis(), remote.finishedAt.toMillis(),
+            uploadRequested = true))
         putExercises(remote.exerciseRows())
         putSets(remote.setRows())
     }

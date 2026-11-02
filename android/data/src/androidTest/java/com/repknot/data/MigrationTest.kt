@@ -17,6 +17,7 @@ class MigrationTest {
     private val name = "migration-test.db"
     private val name6 = "migration-test-6.db"
     private val name7 = "migration-test-7.db"
+    private val name8 = "migration-test-8.db"
     @get:Rule val helper = MigrationTestHelper(InstrumentationRegistry.getInstrumentation(), WorkoutDatabase::class.java)
 
     @Test fun v4WorkoutSurvivesUpgradeToV5WithLightOff() {
@@ -32,7 +33,7 @@ class MigrationTest {
         }
         helper.runMigrationsAndValidate(name, 5, true, WorkoutDatabase.MIGRATION_4_5).close()
         val db = Room.databaseBuilder(InstrumentationRegistry.getInstrumentation().targetContext,
-            WorkoutDatabase::class.java, name).addMigrations(WorkoutDatabase.MIGRATION_4_5, WorkoutDatabase.MIGRATION_5_6, WorkoutDatabase.MIGRATION_6_7).build()
+            WorkoutDatabase::class.java, name).addMigrations(WorkoutDatabase.MIGRATION_4_5, WorkoutDatabase.MIGRATION_5_6, WorkoutDatabase.MIGRATION_6_7, WorkoutDatabase.MIGRATION_7_8).build()
         try {
             runBlocking {
                 val row = db.sessions().get("s1")!!
@@ -56,13 +57,13 @@ class MigrationTest {
         }
         helper.runMigrationsAndValidate(name6, 6, true, WorkoutDatabase.MIGRATION_5_6).close()
         val db = Room.databaseBuilder(InstrumentationRegistry.getInstrumentation().targetContext,
-            WorkoutDatabase::class.java, name6).addMigrations(WorkoutDatabase.MIGRATION_4_5, WorkoutDatabase.MIGRATION_5_6, WorkoutDatabase.MIGRATION_6_7).build()
+            WorkoutDatabase::class.java, name6).addMigrations(WorkoutDatabase.MIGRATION_4_5, WorkoutDatabase.MIGRATION_5_6, WorkoutDatabase.MIGRATION_6_7, WorkoutDatabase.MIGRATION_7_8).build()
         try {
             runBlocking {
                 assertEquals(true, db.sessions().get("s1")!!.light)
                 assertEquals(0, db.checkIns().all().size)
                 db.checkIns().add(CheckInRow("c1", "2026-11-02", waistCm = 91.0))
-                assertEquals(true, db.checkIns().pending().single().pending)
+                assertEquals(true, db.checkIns().all().single().pending)
             }
         } finally { db.close() }
     }
@@ -80,7 +81,7 @@ class MigrationTest {
         }
         helper.runMigrationsAndValidate(name7, 7, true, WorkoutDatabase.MIGRATION_6_7).close()
         val db = Room.databaseBuilder(InstrumentationRegistry.getInstrumentation().targetContext,
-            WorkoutDatabase::class.java, name7).addMigrations(WorkoutDatabase.MIGRATION_4_5, WorkoutDatabase.MIGRATION_5_6, WorkoutDatabase.MIGRATION_6_7).build()
+            WorkoutDatabase::class.java, name7).addMigrations(WorkoutDatabase.MIGRATION_4_5, WorkoutDatabase.MIGRATION_5_6, WorkoutDatabase.MIGRATION_6_7, WorkoutDatabase.MIGRATION_7_8).build()
         try {
             runBlocking {
                 val row = db.sessions().get("s1")!!
@@ -92,6 +93,43 @@ class MigrationTest {
                 db.sessions().finishAt("s1", 2000L)
                 assertEquals(1000L, db.sessions().get("s1")!!.finishedAt)
                 assertEquals("finished", db.sessions().get("s1")!!.status)
+            }
+        } finally { db.close() }
+    }
+
+    @Test fun v7UpgradeToV8KeepsDataAndMarksOnlyRowsTheOldSwitchWouldUpload() {
+        helper.createDatabase(name8, 7).apply {
+            fun session(id: String, status: String, pushed: Long, base: String, number: String) = execSQL(
+                """INSERT INTO sessions (id, performedOn, title, notes, status, localRevision, pushedLocalRevision,
+                baseRevision, sharedLocalRevision, number, serverSnapshot, programId, programWorkoutKey, light, startedAt, finishedAt)
+                VALUES ('$id', '2026-11-02', 'Push 1', NULL, '$status', 3, $pushed, $base, NULL, $number, NULL, NULL, NULL, 0, 100, NULL)""")
+            session("current", "in_progress", 0, "NULL", "NULL")
+            session("waiting", "finished", 0, "NULL", "NULL")
+            session("uploaded", "pushed", 3, "5", "405")
+            execSQL("""INSERT INTO session_exercises (id, sessionId, position, exerciseId, exerciseName)
+                VALUES ('e1', 'current', 0, 'press', 'Press')""")
+            execSQL("""INSERT INTO logged_sets (id, sessionId, sessionExerciseId, position, load, unit, reps, rir, loggedAt)
+                VALUES ('t1', 'current', 'e1', 0, 25.0, 'kg', 10.0, 1, 200)""")
+            execSQL("""INSERT INTO checkins (id, checkedOn, weightKg, waistCm, chestCm, armsCm, armsFlexedCm, legsCm, notes, pending)
+                VALUES ('c1', '2026-11-01', 75.0, 91.0, NULL, NULL, NULL, NULL, NULL, 1)""")
+            close()
+        }
+        helper.runMigrationsAndValidate(name8, 8, true, WorkoutDatabase.MIGRATION_7_8).close()
+        val db = Room.databaseBuilder(InstrumentationRegistry.getInstrumentation().targetContext,
+            WorkoutDatabase::class.java, name8).addMigrations(WorkoutDatabase.MIGRATION_4_5, WorkoutDatabase.MIGRATION_5_6, WorkoutDatabase.MIGRATION_6_7, WorkoutDatabase.MIGRATION_7_8).build()
+        try {
+            runBlocking {
+                val current = db.sessions().get("current")!!
+                assertFalse(current.uploadRequested)
+                assertEquals(100L, current.startedAt)
+                assertEquals(200L, db.sessions().sets("current").single().loggedAt)
+                assertEquals(true, db.sessions().get("waiting")!!.uploadRequested)
+                assertEquals(true, db.sessions().get("uploaded")!!.uploadRequested)
+                assertEquals(listOf("waiting"), db.sessions().pending().map { it.id })
+                assertEquals(listOf("c1"), db.checkIns().pending().map { it.id })
+                // The in-progress workout still needs an explicit Upload after finishing.
+                db.sessions().finish("current")
+                assertEquals(listOf("waiting"), db.sessions().pending().map { it.id })
             }
         } finally { db.close() }
     }

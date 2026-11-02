@@ -281,7 +281,7 @@ private fun SessionActions(session: WorkoutUiState.Session, vm: WorkoutViewModel
                         }
                     }
                 }
-                FinishSection(session.row, vm) { confirmFinish = true }
+                FinishSection(session.row, vm, { confirmDiscard = true }) { confirmFinish = true }
             }
         }
     }
@@ -293,7 +293,7 @@ private fun SessionActions(session: WorkoutUiState.Session, vm: WorkoutViewModel
         confirmButton = { TextButton(onClick = { vm.finish(); confirmFinish = false }) { Text(stringResource(R.string.finish)) } },
         dismissButton = { TextButton(onClick = { confirmFinish = false }) { Text(stringResource(R.string.cancel)) } },
     )
-    if (confirmDiscard && session.row.status == "in_progress") AlertDialog(
+    if (confirmDiscard && session.row.discardable()) AlertDialog(
         onDismissRequest = { confirmDiscard = false }, title = { Text(stringResource(R.string.discard_confirm_title)) },
         text = { Text(stringResource(R.string.discard_confirm_message)) },
         confirmButton = { TextButton(onClick = { vm.discard(); confirmDiscard = false }) { Text(stringResource(R.string.discard)) } },
@@ -499,27 +499,29 @@ private fun ExercisePicker(choices: List<ExerciseRow>, onDismiss: () -> Unit, on
 }
 
 @Composable
-private fun FinishSection(row: SessionRow, vm: WorkoutViewModel, requestFinish: () -> Unit) {
+private fun FinishSection(row: SessionRow, vm: WorkoutViewModel, requestDiscard: () -> Unit, requestFinish: () -> Unit) {
     val status = row.status
     val context = LocalContext.current
     val shareTitle = stringResource(R.string.share_workout)
     val clipboardLabel = stringResource(R.string.clipboard_workout)
-    val uploadEnabled by vm.uploadEnabled.collectAsState()
     when (status) {
         "in_progress" -> {
             OutlinedButton(onClick = requestFinish, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.finish_workout)) }
         }
         "finished" -> {
-            if (uploadEnabled) {
+            val neverUploaded = row.number == null && row.baseRevision == null
+            if (row.uploadRequested) {
                 Text(stringResource(R.string.upload_pending))
-                Button(onClick = vm::finish) { Text(stringResource(R.string.retry_upload)) }
+                Button(onClick = vm::upload) { Text(stringResource(R.string.retry_upload)) }
             } else {
-                Text(stringResource(R.string.saved_upload_off))
+                // Nothing reaches the server without this tap (task 028).
+                Text(stringResource(R.string.saved_not_uploaded))
+                Button(onClick = vm::upload, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.upload)) }
             }
             Row {
-                if (row.number == null && row.baseRevision == null)
-                    OutlinedButton(onClick = vm::resume) { Text(stringResource(R.string.resume_workout)) }
-                OutlinedButton(onClick = vm::done) { Text(stringResource(R.string.done)) }
+                if (neverUploaded) OutlinedButton(onClick = vm::resume) { Text(stringResource(R.string.resume_workout)) }
+                if (row.discardable()) OutlinedButton(onClick = requestDiscard) { Text(stringResource(R.string.discard)) }
+                if (row.uploadRequested) OutlinedButton(onClick = vm::done) { Text(stringResource(R.string.done)) }
             }
         }
         "pushed" -> {
@@ -544,3 +546,7 @@ private fun FinishSection(row: SessionRow, vm: WorkoutViewModel, requestFinish: 
         } }) { Text(stringResource(R.string.copy)) }
     }
 }
+
+/** Mirrors SessionDao.discard: the workout never left the phone and Upload was not tapped. */
+private fun SessionRow.discardable(): Boolean =
+    (status == "in_progress" || status == "finished") && !uploadRequested && number == null && baseRevision == null

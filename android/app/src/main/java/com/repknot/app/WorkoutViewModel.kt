@@ -93,7 +93,7 @@ fun sessionState(snapshot: SessionSnapshot, history: List<PastSession>, exercise
 @OptIn(ExperimentalCoroutinesApi::class)
 class WorkoutViewModel(
     private val sessions: SessionDao, private val reference: ReferenceDao, private val sync: SessionSync,
-    private val current: CurrentSession, val uploadEnabled: StateFlow<Boolean>,
+    private val current: CurrentSession,
     val restOverrides: StateFlow<Map<String, Int>>, private val setRestOverride: (String, Int) -> Unit,
     private val today: () -> LocalDate = LocalDate::now,
     private val now: () -> Long = System::currentTimeMillis,
@@ -137,7 +137,7 @@ class WorkoutViewModel(
     fun toggleRestTarget(exerciseId: String, current: Int) { setRestOverride(exerciseId, toggledRestTarget(current)) }
     fun preview(workoutKey: String) { previewKey.value = workoutKey }
     fun closePreview() { previewKey.value = null }
-    /** Abandons the current workout if it was never uploaded; back to today's workout. */
+    /** Abandons the current workout if it never left the phone (see SessionDao.discard); back to today's workout. */
     fun discard() = action {
         val id = current.get() ?: return@action
         if (sessions.discard(id)) { current.set(null); currentId.value = null }
@@ -187,8 +187,10 @@ class WorkoutViewModel(
     fun saveSessionNotes(notes: String) = action {
         current.get()?.let { sessions.saveSessionNotes(it, notes.trim().ifEmpty { null }) }
     }
-    /** Marks the workout finished; it is uploaded only while upload is enabled in settings. */
-    fun finish() = action { current.get()?.let { sessions.finishAt(it, now()); if (uploadEnabled.value) sync.refreshAndPush() } }
+    /** Marks the workout finished. It stays on the phone until Upload is tapped (task 028). */
+    fun finish() = action { current.get()?.let { sessions.finishAt(it, now()) } }
+    /** Marks the finished workout for upload and pushes it; later syncs retry if this fails. */
+    fun upload() = action { current.get()?.let { if (sessions.requestUpload(it) > 0) sync.refreshAndPush() } }
     /** Back to in progress if the workout was never uploaded. */
     fun resume() = action { current.get()?.let { sessions.resume(it) } }
     fun keepMine() = action { current.get()?.let { sync.keepMine(it) } }
@@ -198,7 +200,9 @@ class WorkoutViewModel(
     }
     fun done() = action {
         val id = current.get() ?: return@action
-        if (sessions.get(id)?.status in listOf("pushed", "finished")) { current.set(null); currentId.value = null }
+        val row = sessions.get(id) ?: return@action
+        // A finished workout must be uploaded or discarded first, so test runs never linger unseen.
+        if (row.status == "pushed" || (row.status == "finished" && row.uploadRequested)) { current.set(null); currentId.value = null }
     }
     private fun exerciseAction(id: String, block: suspend () -> Unit) = action {
         if (sessions.getExercise(id)?.sessionId == current.get()) block()
@@ -213,11 +217,11 @@ class WorkoutViewModel(
         }
     }
     class Factory(private val sessions: SessionDao, private val reference: ReferenceDao, private val sync: SessionSync,
-                  private val current: CurrentSession, private val uploadEnabled: StateFlow<Boolean>,
+                  private val current: CurrentSession,
                   private val restOverrides: StateFlow<Map<String, Int>>, private val setRestOverride: (String, Int) -> Unit) : ViewModelProvider.Factory {
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
             require(modelClass.isAssignableFrom(WorkoutViewModel::class.java))
-            @Suppress("UNCHECKED_CAST") return WorkoutViewModel(sessions, reference, sync, current, uploadEnabled, restOverrides, setRestOverride) as T
+            @Suppress("UNCHECKED_CAST") return WorkoutViewModel(sessions, reference, sync, current, restOverrides, setRestOverride) as T
         }
     }
 }
