@@ -142,6 +142,23 @@ test creation and clean up only that exact test record through existing Discard 
 
 ## Verification
 
+Lead review milestone: the worker's first pass stopped after preliminary models without
+a blocker; one feedback retry completed the remaining UI. This is a one-off early-stop
+miss, recorded here without changing worker rules. Lead reviewed the full mapping,
+read-only DAO additions, shared details and routing. Review found History Workouts and
+Exercises shared one scroll offset and eagerly composed the full archive. Lead replaced
+the root lists with separate saveable lazy-list states and fixed header/tabs/search,
+keeping route-level state providers. Lead also consumes outer Scaffold insets so nested
+screens do not double-pad system bars, hides the bottom bar while the keyboard is open,
+and improves complete raw-set formatting with focused edge-case tests. Exercises that
+were prescribed but not performed retain a historical title and neutral no-data detail.
+Initial lead check hit a cross-module smart-cast compile error in the new formatter;
+replaced direct nullable property reads with a local value before rechecking.
+The next run found non-observable default-locale access in a new Compose date label;
+aligned it with the app's existing English date formatting. Lead
+`scripts/check --offline` then passed (106 tasks, 16 executed); no lint suppression,
+baseline, or weakened test was added. Phone verification follows this reviewed build.
+
 Resumed worker: `scripts/check --offline` and `git diff --check` passed after transactional archive read and expanded directory tests. UI integration initially failed compilation due to a cross-module smart cast; fixed and subsequent `scripts/check --offline` passed. Final integrated check and diff check passed; an additional test confirms light/empty workouts and that timestamps alone do not imply completion. No device operations.
 
 Worker: `scripts/check --offline` passed after correcting a navigation test assertion;

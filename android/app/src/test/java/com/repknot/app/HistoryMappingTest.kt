@@ -8,6 +8,15 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class HistoryMappingTest {
+    @Test fun recordedSetFormattingKeepsFractionsMixedValuesAndUnknownUnits() {
+        val set = SetRow("s", "workout", "exercise", 0, 2.25, null, 8.5, durationS = 30, rir = 0, notes = "pause")
+        assertEquals("2.25 (unit unknown) × 8.5 reps · 30 s · RIR 0 · pause", historySetText(set))
+        assertEquals("9p × 11 reps", historySetText(set.copy(load = 9.0, unit = "plates", reps = 11.0, durationS = null, rir = null, notes = null)))
+        assertEquals("bodyweight × 8 reps", historySetText(set.copy(load = null, unit = "bodyweight", reps = 8.0, durationS = null, rir = null, notes = null)))
+        assertEquals("Load — lb × 8.5 reps · 30 s · RIR 0 · pause", historySetText(set.copy(load = null, unit = "lb")))
+        assertEquals("Missing values", historySetText(set.copy(load = null, unit = null, reps = null, durationS = null, rir = null, notes = null)))
+    }
+
     private fun snapshot(id: String, status: String = "finished", date: String = "2026-01-01", finish: Long? = null,
                          number: Long? = null, upload: Boolean = false, exercises: List<SessionExerciseRow> = emptyList(),
                          sets: List<SetRow> = emptyList()) = SessionSnapshot(

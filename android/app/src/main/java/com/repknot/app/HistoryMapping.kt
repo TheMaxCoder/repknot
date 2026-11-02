@@ -1,6 +1,7 @@
 package com.repknot.app
 
 import com.repknot.data.SessionSnapshot
+import com.repknot.data.SetRow
 
 private val completedStatuses = setOf("finished", "pushed", "conflict", "conflict_deleted")
 
@@ -26,6 +27,25 @@ fun historyStatus(snapshot: SessionSnapshot): String = when (snapshot.row.status
 }
 
 data class HistoryExercise(val id: String, val name: String, val performedOn: String)
+
+/** A recorded set is shown even when imports lack units or other values. */
+fun historySetText(set: SetRow): String {
+    fun number(value: Double): String = if (value % 1.0 == 0.0 && kotlin.math.abs(value) < 9e15)
+        value.toLong().toString() else value.toString()
+    val unit = set.unit?.takeIf { it.isNotBlank() }
+    val recordedLoad = set.load
+    val load = when {
+        recordedLoad != null && unit == "plates" -> "${number(recordedLoad)}p"
+        recordedLoad != null -> "${number(recordedLoad)} ${unit ?: "(unit unknown)"}"
+        unit == "bodyweight" -> "bodyweight"
+        unit != null -> "Load — $unit"
+        else -> null
+    }
+    val amounts = listOfNotNull(set.reps?.let { "${number(it)} reps" }, set.durationS?.let { "$it s" })
+    val performance = listOfNotNull(load, amounts.joinToString(" · ").ifEmpty { null }).joinToString(" × ")
+    return listOfNotNull(performance.ifEmpty { "Missing values" }, set.rir?.let { "RIR $it" },
+        set.notes?.takeIf { it.isNotBlank() }).joinToString(" · ")
+}
 
 fun historyExercises(snapshots: List<SessionSnapshot>, query: String = ""): List<HistoryExercise> {
     val directory = linkedMapOf<String, HistoryExercise>()

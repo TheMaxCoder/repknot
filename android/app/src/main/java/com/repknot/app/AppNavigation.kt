@@ -6,6 +6,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -31,13 +32,14 @@ fun AppNavigation(workout: WorkoutViewModel, progress: ProgressViewModel,
         if (session == null && workoutState !is WorkoutUiState.Loading) previousId = null
     }
     val showingLogger = session != null && focused
+    val keyboardVisible = WindowInsets.ime.getBottom(LocalDensity.current) > 0
     val route = nav.details.lastOrNull()
     val back = { nav = nav.back() ?: nav }
     BackHandler(enabled = showingLogger || nav.back() != null) {
         if (showingLogger) { focused = false; nav = nav.copy(selected = RootTab.HOME, stacks = nav.stacks + (RootTab.HOME to emptyList())) } else back()
     }
     Scaffold(bottomBar = {
-        if (!showingLogger) NavigationBar {
+        if (!showingLogger && !keyboardVisible) NavigationBar {
             RootTab.entries.forEach { tab -> NavigationBarItem(selected = nav.selected == tab, onClick = {
                 if (tab == nav.selected && tab == RootTab.HOME && workoutState is WorkoutUiState.Preview) workout.closePreview()
                 nav = nav.select(tab)
@@ -46,7 +48,7 @@ fun AppNavigation(workout: WorkoutViewModel, progress: ProgressViewModel,
                 label = { Text(tab.name.lowercase().replaceFirstChar { it.uppercase() }) }) }
         }
     }) { padding ->
-        Column(Modifier.fillMaxSize().padding(padding)) {
+        Column(Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding)) {
             if (!showingLogger && route != "settings" && !(nav.selected == RootTab.HOME && route == null && workoutState is WorkoutUiState.Preview)) {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                     IconButton(onClick = { nav = nav.push("settings") }) {

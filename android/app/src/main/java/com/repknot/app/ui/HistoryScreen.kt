@@ -1,6 +1,9 @@
 package com.repknot.app.ui
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -11,31 +14,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.repknot.app.*
 import com.repknot.data.SessionSnapshot
-import com.repknot.data.SetRow
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 private fun title(s: SessionSnapshot) = s.row.title.ifBlank { "Workout" }
-private fun month(date: String): String = runCatching { LocalDate.parse(date).format(DateTimeFormatter.ofPattern("MMMM yyyy", Locale.getDefault())) }.getOrDefault(date)
+private fun month(date: String): String = runCatching { LocalDate.parse(date).format(DateTimeFormatter.ofPattern("MMMM yyyy", Locale.ENGLISH)) }.getOrDefault(date)
 private fun duration(s: SessionSnapshot): String? {
     val start = s.row.startedAt ?: return null
     val end = s.row.finishedAt ?: return null
     if (end < start) return null
     return "${(end - start) / 60000} min"
 }
-private fun setText(set: SetRow): String {
-    val values = mutableListOf<String>()
-    set.load?.let { values.add("$it ${set.unit?.takeIf { unit -> unit.isNotBlank() } ?: "unit unknown"}") }
-    if (set.load == null) set.unit?.let { values.add(it) }
-    set.reps?.let { values.add("$it reps") }
-    set.durationS?.let { values.add("$it sec") }
-    set.rir?.let { values.add("RIR $it") }
-    if (values.isEmpty()) values.add("Missing values")
-    set.notes?.takeIf { it.isNotBlank() }?.let { values.add(it) }
-    return values.joinToString(" · ")
-}
-
 @Composable
 private fun ArchiveLayout(back: (() -> Unit)? = null, content: @Composable ColumnScope.() -> Unit) {
     Column(Modifier.fillMaxSize().imePadding().verticalScroll(rememberScrollState()).padding(24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -60,30 +50,56 @@ private fun ArchiveState(state: HistoryUiState, content: @Composable () -> Unit)
 fun HistoryScreen(state: HistoryUiState, openWorkout: (String) -> Unit, openExercise: (String) -> Unit) {
     var tab by rememberSaveable { mutableIntStateOf(0) }
     var query by rememberSaveable { mutableStateOf("") }
-    ArchiveLayout {
-        Text("History", style = MaterialTheme.typography.headlineMedium)
+    val workoutScroll = rememberLazyListState()
+    val exerciseScroll = rememberLazyListState()
+    Column(Modifier.fillMaxSize().imePadding()) {
+        Text("History", style = MaterialTheme.typography.headlineMedium,
+            modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp))
         PrimaryTabRow(selectedTabIndex = tab) {
             listOf("Workouts", "Exercises").forEachIndexed { index, name -> Tab(selected = tab == index, onClick = { tab = index }, text = { Text(name) }) }
         }
         ArchiveState(state) {
             if (tab == 0) {
-                if (state.sessions.isEmpty()) Text("No completed workouts yet.")
-                state.sessions.groupBy { month(it.row.performedOn) }.forEach { (group, sessions) ->
-                    Text(group, style = MaterialTheme.typography.titleMedium)
-                    sessions.forEach { s -> ArchiveCard({ openWorkout(s.row.id) }) {
-                        Text(title(s), style = MaterialTheme.typography.titleMedium)
-                        Text("${s.row.performedOn} · ${s.exercises.size} exercises" + if (s.row.light) " · Light day" else "")
-                        Text(historyStatus(s), color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    } }
+                LazyColumn(Modifier.weight(1f).fillMaxWidth(), state = workoutScroll,
+                    contentPadding = PaddingValues(24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    if (state.sessions.isEmpty()) item { Text("No completed workouts yet.") }
+                    state.sessions.groupBy { month(it.row.performedOn) }.forEach { (group, sessions) ->
+                        item(key = "month-$group") { Text(group, style = MaterialTheme.typography.titleMedium) }
+                        items(sessions, key = { it.row.id }) { s -> ArchiveCard({ openWorkout(s.row.id) }) {
+                            Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                                val date = runCatching { LocalDate.parse(s.row.performedOn) }.getOrNull()
+                                if (date != null) Column(Modifier.width(36.dp), horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally) {
+                                    Text(date.dayOfMonth.toString(), style = MaterialTheme.typography.headlineSmall)
+                                    Text(date.format(DateTimeFormatter.ofPattern("MMM", Locale.ENGLISH)),
+                                        style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
+                                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                    Text(title(s), style = MaterialTheme.typography.titleMedium)
+                                    Text("${s.row.performedOn} · ${s.exercises.size} exercises" + if (s.row.light) " · Light day" else "",
+                                        style = MaterialTheme.typography.bodySmall)
+                                    Text(historyStatus(s), color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        style = MaterialTheme.typography.bodySmall)
+                                }
+                                Text("›", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                        } }
+                    }
                 }
             } else {
-                OutlinedTextField(query, { query = it }, label = { Text("Search exercises") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(query, { query = it }, label = { Text("Search exercises") }, singleLine = true,
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 12.dp))
                 val exercises = historyExercises(state.sessions, query)
-                if (exercises.isEmpty()) Text(if (query.isBlank()) "No recorded exercises yet." else "No exercises found.")
-                exercises.forEach { exercise -> ArchiveCard({ openExercise(exercise.id) }) {
-                    Text(exercise.name, style = MaterialTheme.typography.titleMedium)
-                    Text(exercise.performedOn, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                } }
+                LazyColumn(Modifier.weight(1f).fillMaxWidth(), state = exerciseScroll,
+                    contentPadding = PaddingValues(start = 24.dp, end = 24.dp, bottom = 24.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    if (exercises.isEmpty()) item { Text(if (query.isBlank()) "No recorded exercises yet." else "No exercises found.") }
+                    items(exercises, key = { it.id }) { exercise -> ArchiveCard({ openExercise(exercise.id) }) {
+                        Text(exercise.name, style = MaterialTheme.typography.titleMedium)
+                        Text("Last trained ${exercise.performedOn}", color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            style = MaterialTheme.typography.bodySmall)
+                    } }
+                }
             }
         }
     }
@@ -99,7 +115,7 @@ private fun ExerciseRecords(s: SessionSnapshot, exerciseId: String? = null, open
         exercise.notes?.takeIf { it.isNotBlank() }?.let { Text("Notes: $it") }
         val sets = s.sets.filter { it.sessionExerciseId == exercise.id }
         if (sets.isEmpty()) Text("No recorded sets.")
-        sets.forEachIndexed { index, set -> Text("${index + 1}. ${setText(set)}") }
+        sets.forEachIndexed { index, set -> Text("${index + 1}. ${historySetText(set)}") }
     }
 }
 
@@ -121,7 +137,8 @@ fun ExerciseHistoryScreen(state: HistoryUiState, progress: ProgressUiState, id: 
     ArchiveLayout(back) { ArchiveState(state) {
         val sessions = state.sessions.filter { s -> s.exercises.any { ex -> ex.exerciseId == id && s.sets.any { it.sessionExerciseId == ex.id } } }
         val item = progress.items.firstOrNull { it.exerciseId == id }
-        val name = item?.name ?: historyExercises(sessions).firstOrNull { it.id == id }?.name
+        val name = item?.name ?: state.sessions.firstOrNull { s -> s.exercises.any { it.exerciseId == id } }
+            ?.exercises?.firstOrNull { it.exerciseId == id }?.exerciseName?.ifBlank { "Exercise" }
         if (name == null) Text("Exercise no longer available.") else {
             Text(name, style = MaterialTheme.typography.headlineMedium)
             if (item != null) {
