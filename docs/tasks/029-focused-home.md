@@ -1,6 +1,6 @@
 # 029 — Focused Home
 
-Status: blocked
+Status: in progress
 Starting commit: e6eea0950212e3fa3a9f5f1cc2338cb32d7d9d52
 Date: 2026-11-02
 Interrupts: [027](027-workout-timing.md) remains paused at its watch handoff;
@@ -52,8 +52,12 @@ not requirements: navigate to the real existing screens.
 Allowed: `ui/WorkoutScreen.kt`, new `ui/HomeScreen.kt` if helpful, `MainActivity.kt`
 (shared ProgressViewModel wiring), app resources (strings/plurals/vector icons), focused
 app presentation helpers/tests only if new nontrivial logic needs coverage, and this task.
+`WorkoutViewModel.kt` is also allowed solely to expose the existing `Program.id` as
+`WorkoutUiState.Today.programId` and pass it from `todayState`; update/test affected
+app state construction as needed. This metadata enables reliable UI selection reset;
+do not change ViewModel actions, persistence, or workout choice rules.
 Use small local drawable vectors for needed icons; no new dependencies. Do not change
-WorkoutViewModel/domain/data behavior, ProgressScreen layout, PreviewScreen, session UI,
+domain/data behavior, ProgressScreen layout, PreviewScreen, session UI,
 backend/sync/auth/migrations/build tooling or worker rules. Do not read `.env`, credentials,
 private-data, or raw personal exports. Do not copy mockup health numbers or exercises
 into product code. Leave unrelated changes untouched. Worker must not use adb or install.
@@ -77,6 +81,11 @@ Flat means the approved mock's low-radius tonal blocks without elevation. The pr
 button retains native Material shape. The decorative dumbbell icon is optional;
 Settings accessibility and visual hierarchy take priority. Chooser apply/cancel behavior
 is explicitly specified above rather than copying the prototype's immediate underlay update.
+
+Lead scope clarification: worker correctly identified that Today lacked program identity.
+Exposing the existing program ID in the app state is authorized; no new model or storage
+is needed. This was a spec gap (delegation category 1), resolved before UI implementation.
+Keep small presentational choices local and conservative. No remaining blocker.
 
 `WorkoutUiState.Today` exposes the program name, suggested workout and workout list,
 not `Program.id`. Distinct programs may share the same name and workout keys/content;
@@ -108,11 +117,6 @@ or device checks performed.
 
 ## Handoff
 
-Blocked — question for lead: may the scope be expanded to expose `Program.id` in
-`WorkoutUiState.Today` (and test it), so Home can reset its transient selection when
-program identity changes even if name and workout content are identical? Alternatively,
-what explicit behavior should apply in that case? The current scope forbids changing
-`WorkoutViewModel` and gives Home no reliable program identity.
-
-Next: resolve the scope question, then implement the worker step and rerun checks.
-No implementation changes are unfinished. Lead review and phone checks remain pending.
+Resolved: expose `Program.id` as `WorkoutUiState.Today.programId` as allowed above.
+Next: implement the worker step and rerun checks. No implementation changes are
+unfinished yet. Lead review and phone checks remain pending.
