@@ -1,0 +1,584 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 9,
+    "identityHash": "f30888e3f2757ecca7d9f8aa1f08d2ee",
+    "entities": [
+      {
+        "tableName": "sessions",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `performedOn` TEXT NOT NULL, `title` TEXT NOT NULL, `notes` TEXT, `status` TEXT NOT NULL, `localRevision` INTEGER NOT NULL, `pushedLocalRevision` INTEGER NOT NULL, `baseRevision` INTEGER, `sharedLocalRevision` INTEGER, `number` INTEGER, `serverSnapshot` TEXT, `programId` TEXT, `programWorkoutKey` TEXT, `light` INTEGER NOT NULL DEFAULT 0, `startedAt` INTEGER, `finishedAt` INTEGER, `uploadRequested` INTEGER NOT NULL DEFAULT 0, `source` TEXT, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "performedOn",
+            "columnName": "performedOn",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "title",
+            "columnName": "title",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "notes",
+            "columnName": "notes",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "status",
+            "columnName": "status",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "localRevision",
+            "columnName": "localRevision",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "pushedLocalRevision",
+            "columnName": "pushedLocalRevision",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "baseRevision",
+            "columnName": "baseRevision",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "sharedLocalRevision",
+            "columnName": "sharedLocalRevision",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "number",
+            "columnName": "number",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "serverSnapshot",
+            "columnName": "serverSnapshot",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "programId",
+            "columnName": "programId",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "programWorkoutKey",
+            "columnName": "programWorkoutKey",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "light",
+            "columnName": "light",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
+          },
+          {
+            "fieldPath": "startedAt",
+            "columnName": "startedAt",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "finishedAt",
+            "columnName": "finishedAt",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "uploadRequested",
+            "columnName": "uploadRequested",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
+          },
+          {
+            "fieldPath": "source",
+            "columnName": "source",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        }
+      },
+      {
+        "tableName": "session_exercises",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `sessionId` TEXT NOT NULL, `position` INTEGER NOT NULL, `exerciseId` TEXT NOT NULL, `exerciseName` TEXT NOT NULL, `plannedSets` INTEGER, `plannedRepMin` INTEGER, `plannedRepMax` INTEGER, `plannedRirMin` INTEGER, `plannedRirMax` INTEGER, `plannedLoad` REAL, `plannedUnit` TEXT, `substitutedFor` TEXT, `notes` TEXT, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sessionId",
+            "columnName": "sessionId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "position",
+            "columnName": "position",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "exerciseId",
+            "columnName": "exerciseId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "exerciseName",
+            "columnName": "exerciseName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "plannedSets",
+            "columnName": "plannedSets",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "plannedRepMin",
+            "columnName": "plannedRepMin",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "plannedRepMax",
+            "columnName": "plannedRepMax",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "plannedRirMin",
+            "columnName": "plannedRirMin",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "plannedRirMax",
+            "columnName": "plannedRirMax",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "plannedLoad",
+            "columnName": "plannedLoad",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "plannedUnit",
+            "columnName": "plannedUnit",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "substitutedFor",
+            "columnName": "substitutedFor",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "notes",
+            "columnName": "notes",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        }
+      },
+      {
+        "tableName": "logged_sets",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `sessionId` TEXT NOT NULL, `sessionExerciseId` TEXT NOT NULL, `position` INTEGER NOT NULL, `load` REAL, `unit` TEXT, `reps` REAL, `durationS` INTEGER, `rir` INTEGER, `notes` TEXT, `loggedAt` INTEGER, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sessionId",
+            "columnName": "sessionId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sessionExerciseId",
+            "columnName": "sessionExerciseId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "position",
+            "columnName": "position",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "load",
+            "columnName": "load",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "unit",
+            "columnName": "unit",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "reps",
+            "columnName": "reps",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "durationS",
+            "columnName": "durationS",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "rir",
+            "columnName": "rir",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "notes",
+            "columnName": "notes",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "loggedAt",
+            "columnName": "loggedAt",
+            "affinity": "INTEGER"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        }
+      },
+      {
+        "tableName": "exercises",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `slug` TEXT NOT NULL, `name` TEXT NOT NULL, `defaultUnit` TEXT, `archived` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "slug",
+            "columnName": "slug",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "defaultUnit",
+            "columnName": "defaultUnit",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "archived",
+            "columnName": "archived",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        }
+      },
+      {
+        "tableName": "programs",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `key` TEXT NOT NULL, `name` TEXT NOT NULL, `version` INTEGER NOT NULL, `startsOn` TEXT NOT NULL, `rules` TEXT, `isActive` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "key",
+            "columnName": "key",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "version",
+            "columnName": "version",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "startsOn",
+            "columnName": "startsOn",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "rules",
+            "columnName": "rules",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "isActive",
+            "columnName": "isActive",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        }
+      },
+      {
+        "tableName": "program_workouts",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `programId` TEXT NOT NULL, `key` TEXT NOT NULL, `name` TEXT NOT NULL, `sequencePosition` INTEGER NOT NULL, `defaultWeekday` INTEGER, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "programId",
+            "columnName": "programId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "key",
+            "columnName": "key",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sequencePosition",
+            "columnName": "sequencePosition",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "defaultWeekday",
+            "columnName": "defaultWeekday",
+            "affinity": "INTEGER"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        }
+      },
+      {
+        "tableName": "program_exercises",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `workoutId` TEXT NOT NULL, `position` INTEGER NOT NULL, `exerciseId` TEXT NOT NULL, `sets` INTEGER NOT NULL, `repMin` INTEGER, `repMax` INTEGER, `rirMin` INTEGER, `rirMax` INTEGER, `restSMin` INTEGER, `restSMax` INTEGER, `load` REAL, `unit` TEXT NOT NULL, `notes` TEXT, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "workoutId",
+            "columnName": "workoutId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "position",
+            "columnName": "position",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "exerciseId",
+            "columnName": "exerciseId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sets",
+            "columnName": "sets",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "repMin",
+            "columnName": "repMin",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "repMax",
+            "columnName": "repMax",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "rirMin",
+            "columnName": "rirMin",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "rirMax",
+            "columnName": "rirMax",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "restSMin",
+            "columnName": "restSMin",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "restSMax",
+            "columnName": "restSMax",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "load",
+            "columnName": "load",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "unit",
+            "columnName": "unit",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "notes",
+            "columnName": "notes",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        }
+      },
+      {
+        "tableName": "checkins",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `checkedOn` TEXT NOT NULL, `weightKg` REAL, `waistCm` REAL, `chestCm` REAL, `armsCm` REAL, `armsFlexedCm` REAL, `legsCm` REAL, `notes` TEXT, `pending` INTEGER NOT NULL, `uploadRequested` INTEGER NOT NULL DEFAULT 0, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "checkedOn",
+            "columnName": "checkedOn",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "weightKg",
+            "columnName": "weightKg",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "waistCm",
+            "columnName": "waistCm",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "chestCm",
+            "columnName": "chestCm",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "armsCm",
+            "columnName": "armsCm",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "armsFlexedCm",
+            "columnName": "armsFlexedCm",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "legsCm",
+            "columnName": "legsCm",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "notes",
+            "columnName": "notes",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "pending",
+            "columnName": "pending",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "uploadRequested",
+            "columnName": "uploadRequested",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        }
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'f30888e3f2757ecca7d9f8aa1f08d2ee')"
+    ]
+  }
+}

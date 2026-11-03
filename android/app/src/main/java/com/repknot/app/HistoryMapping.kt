@@ -31,6 +31,23 @@ fun historyStatus(snapshot: SessionSnapshot): String = when (snapshot.row.status
     else -> ""
 }
 
+private val datePrefix = Regex("^\\d{4}-\\d{2}-\\d{2}\\s*[-–—]\\s*")
+
+/** Imported titles start with their date ("2026-10-30 - Upper B"); the date is shown separately. */
+fun historyTitle(snapshot: SessionSnapshot): String =
+    snapshot.row.title.replace(datePrefix, "").ifBlank { "Workout" }
+
+/**
+ * Airtable imports carry long analysis notes on the session, exercises and sets; the archive
+ * shows them as clean as phone workouts (owner request). The records themselves are unchanged.
+ */
+fun historyDisplay(snapshot: SessionSnapshot): SessionSnapshot =
+    if (snapshot.row.source != "import") snapshot else snapshot.copy(
+        row = snapshot.row.copy(notes = null),
+        exercises = snapshot.exercises.map { it.copy(notes = null) },
+        sets = snapshot.sets.map { it.copy(notes = null) },
+    )
+
 data class HistoryExercise(val id: String, val name: String, val performedOn: String)
 
 /** A recorded set is shown even when imports lack units or other values. */

@@ -5,7 +5,9 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -14,7 +16,7 @@ import com.repknot.app.ui.*
 
 @Composable
 fun AppNavigation(workout: WorkoutViewModel, progress: ProgressViewModel,
-                  history: HistoryViewModel, settings: @Composable (() -> Unit) -> Unit) {
+                  history: HistoryViewModel, settings: @Composable () -> Unit) {
     val progressState by progress.state.collectAsState()
     val historyState by history.state.collectAsState()
     val workoutState by workout.state.collectAsState()
@@ -50,7 +52,13 @@ fun AppNavigation(workout: WorkoutViewModel, progress: ProgressViewModel,
     }) { padding ->
         Column(Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding)) {
             if (!showingLogger && route != "settings" && !(nav.selected == RootTab.HOME && route == null && workoutState is WorkoutUiState.Preview)) {
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    // Home root: the program name shares the top row with Settings.
+                    val today = workoutState as? WorkoutUiState.Today
+                    if (nav.selected == RootTab.HOME && route == null && today != null)
+                        Text(today.programName, color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelLarge,
+                            maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(start = 24.dp))
+                    Spacer(Modifier.weight(1f))
                     IconButton(onClick = { nav = nav.push("settings") }) {
                         Icon(painterResource(R.drawable.ic_settings), contentDescription = stringResource(R.string.settings))
                     }
@@ -59,13 +67,13 @@ fun AppNavigation(workout: WorkoutViewModel, progress: ProgressViewModel,
             Box(Modifier.weight(1f)) {
                 if (showingLogger) holder.SaveableStateProvider("workout") {
                     WorkoutScreen(workout, progressState, { nav = nav.select(RootTab.PROGRESS) }, { nav = nav.push("settings") })
-                } else if (route == "settings") holder.SaveableStateProvider("settings-${nav.selected}") { settings(back) }
+                } else if (route == "settings") holder.SaveableStateProvider("settings-${nav.selected}") { settings() }
                 else if (route == "body") holder.SaveableStateProvider("body") {
-                    BodyScreen(progressState, back, progress::addCheckIn, progress::uploadCheckIn, progress::deleteCheckIn)
+                    BodyScreen(progressState, progress::addCheckIn, progress::uploadCheckIn, progress::deleteCheckIn)
                 } else if (route?.startsWith("exercise:") == true) holder.SaveableStateProvider("${nav.selected}-${nav.details.lastIndex}-$route") {
-                    ExerciseHistoryScreen(historyState, progressState, route.removePrefix("exercise:"), back) { nav = nav.push("workout:$it") }
+                    ExerciseHistoryScreen(historyState, progressState, route.removePrefix("exercise:")) { nav = nav.push("workout:$it") }
                 } else if (route?.startsWith("workout:") == true) holder.SaveableStateProvider("${nav.selected}-${nav.details.lastIndex}-$route") {
-                    WorkoutHistoryScreen(historyState, route.removePrefix("workout:"), back) { nav = nav.push("exercise:$it") }
+                    WorkoutHistoryScreen(historyState, route.removePrefix("workout:")) { nav = nav.push("exercise:$it") }
                 } else when (nav.selected) {
                     RootTab.HOME -> if (session != null) {
                         Column(Modifier.fillMaxSize().padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -87,7 +95,7 @@ fun AppNavigation(workout: WorkoutViewModel, progress: ProgressViewModel,
                         HistoryScreen(historyState, { nav = nav.push("workout:$it") }, { nav = nav.push("exercise:$it") })
                     }
                     RootTab.PROGRESS -> holder.SaveableStateProvider("progress") {
-                        ProgressScreen(progressState, back, { nav = nav.push("body") }, progress::addCheckIn) { nav = nav.push("exercise:$it") }
+                        ProgressScreen(progressState, { nav = nav.push("body") }, progress::addCheckIn) { nav = nav.push("exercise:$it") }
                     }
                 }
             }

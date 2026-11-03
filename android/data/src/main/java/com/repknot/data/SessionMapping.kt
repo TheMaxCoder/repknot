@@ -56,6 +56,7 @@ data class ServerSession(
     val light: Boolean = false,
     @SerialName("started_at") val startedAt: String? = null,
     @SerialName("finished_at") val finishedAt: String? = null,
+    val source: String? = null,
     val exercises: List<ServerSessionExercise> = emptyList(),
 ) {
     fun json(): String = codec.encodeToString(this)

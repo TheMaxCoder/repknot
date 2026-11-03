@@ -20,7 +20,6 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
-private fun title(s: SessionSnapshot) = s.row.title.ifBlank { "Workout" }
 private fun month(date: String): String = runCatching { LocalDate.parse(date).format(DateTimeFormatter.ofPattern("MMMM yyyy", Locale.ENGLISH)) }.getOrDefault(date)
 private fun duration(s: SessionSnapshot): String? {
     val start = s.row.startedAt ?: return null
@@ -29,9 +28,8 @@ private fun duration(s: SessionSnapshot): String? {
     return "${(end - start) / 60000} min"
 }
 @Composable
-private fun ArchiveLayout(back: (() -> Unit)? = null, content: @Composable ColumnScope.() -> Unit) {
+private fun ArchiveLayout(content: @Composable ColumnScope.() -> Unit) {
     Column(Modifier.fillMaxSize().imePadding().verticalScroll(rememberScrollState()).padding(24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        if (back != null) TextButton(onClick = back) { Text("Back") }
         content()
     }
 }
@@ -77,7 +75,7 @@ fun HistoryScreen(state: HistoryUiState, openWorkout: (String) -> Unit, openExer
                                         style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 }
                                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                    Text(title(s), style = MaterialTheme.typography.titleMedium)
+                                    Text(historyTitle(s), style = MaterialTheme.typography.titleMedium)
                                     Text("${s.row.performedOn} · ${s.exercises.size} exercises" + if (s.row.light) " · Light day" else "",
                                         style = MaterialTheme.typography.bodySmall)
                                     Text(historyStatus(s), color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -121,11 +119,11 @@ private fun ExerciseRecords(s: SessionSnapshot, openExercise: (String) -> Unit) 
 }
 
 @Composable
-fun WorkoutHistoryScreen(state: HistoryUiState, id: String, back: () -> Unit, openExercise: (String) -> Unit) {
-    ArchiveLayout(back) { ArchiveState(state) {
-        val s = state.sessions.firstOrNull { it.row.id == id }
+fun WorkoutHistoryScreen(state: HistoryUiState, id: String, openExercise: (String) -> Unit) {
+    ArchiveLayout { ArchiveState(state) {
+        val s = state.sessions.firstOrNull { it.row.id == id }?.let(::historyDisplay)
         if (s == null) Text("Workout no longer available.") else {
-            Text(title(s), style = MaterialTheme.typography.headlineMedium)
+            Text(historyTitle(s), style = MaterialTheme.typography.headlineMedium)
             Text(listOfNotNull(s.row.performedOn, historyStatus(s), if (s.row.light) "Light day" else null, duration(s)).joinToString(" · "))
             s.row.notes?.takeIf { it.isNotBlank() }?.let { Text("Notes: $it") }
             ExerciseRecords(s, openExercise = openExercise)
@@ -134,8 +132,8 @@ fun WorkoutHistoryScreen(state: HistoryUiState, id: String, back: () -> Unit, op
 }
 
 @Composable
-fun ExerciseHistoryScreen(state: HistoryUiState, progress: ProgressUiState, id: String, back: () -> Unit, openWorkout: (String) -> Unit) {
-    ArchiveLayout(back) { ArchiveState(state) {
+fun ExerciseHistoryScreen(state: HistoryUiState, progress: ProgressUiState, id: String, openWorkout: (String) -> Unit) {
+    ArchiveLayout { ArchiveState(state) {
         val sessions = state.sessions.filter { s -> s.exercises.any { ex -> ex.exerciseId == id && s.sets.any { it.sessionExerciseId == ex.id } } }
         val item = progress.items.firstOrNull { it.exerciseId == id }
         val name = item?.name ?: state.sessions.firstOrNull { s -> s.exercises.any { it.exerciseId == id } }

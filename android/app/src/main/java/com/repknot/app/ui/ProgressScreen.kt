@@ -33,11 +33,11 @@ import com.repknot.domain.BodyVerdict
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun ProgressScreen(state: ProgressUiState, back: () -> Unit, openBody: () -> Unit,
+fun ProgressScreen(state: ProgressUiState, openBody: () -> Unit,
                    addCheckIn: (String, String, String, String) -> Boolean, openExercise: (String) -> Unit) {
     var showDialog by rememberSaveable { mutableStateOf(false) }
     if (showDialog) CheckInDialog(state, addCheckIn) { showDialog = false }
-    ProgressLayout(back, state.loading, showBack = false, title = {
+    ProgressLayout(state.loading, title = {
         Text(stringResource(R.string.progress), style = MaterialTheme.typography.titleLarge)
     }) {
         when {
@@ -118,11 +118,11 @@ fun ProgressScreen(state: ProgressUiState, back: () -> Unit, openBody: () -> Uni
 }
 
 @Composable
-fun BodyScreen(state: ProgressUiState, back: () -> Unit, addCheckIn: (String, String, String, String) -> Boolean,
+fun BodyScreen(state: ProgressUiState, addCheckIn: (String, String, String, String) -> Boolean,
                upload: (String) -> Unit, delete: (String) -> Unit) {
     var showDialog by rememberSaveable { mutableStateOf(false) }
     if (showDialog) CheckInDialog(state, addCheckIn) { showDialog = false }
-    ProgressLayout(back, state.loading, title = {
+    ProgressLayout(state.loading, title = {
         Text(stringResource(R.string.body), style = MaterialTheme.typography.titleLarge)
     }) {
         if (state.loading) CircularProgressIndicator() else {
@@ -269,34 +269,12 @@ private fun CheckInDialog(state: ProgressUiState, save: (String, String, String,
 }
 
 @Composable
-fun ExerciseProgressScreen(state: ProgressUiState, id: String, back: () -> Unit) {
-    ProgressLayout(back, state.loading, title = {}) {
-        if (state.loading) {
-            Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
-        } else {
-            val item = state.items.firstOrNull { it.exerciseId == id }
-            if (item == null) Text(stringResource(R.string.exercise_not_found))
-            else {
-                Text(item.name, style = MaterialTheme.typography.headlineSmall)
-                Text(groupLabel(item), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
-                Text(reasonText(item.reason), style = MaterialTheme.typography.bodyMedium)
-                Flags(item)
-                item.exposures.asReversed().forEach { exposure ->
-                    Text(exposureLine(exposure) + if (exposure.sessionId in item.bestSessionIds) " · best" else "",
-                        style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-            }
-        }
-    }
-}
-
-@Composable
 private fun Flags(item: ExerciseProgress) {
     flagText(item).forEach { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.tertiary) }
 }
 
 @Composable
-private fun ProgressLayout(back: () -> Unit, loading: Boolean, showBack: Boolean = true, title: @Composable RowScope.() -> Unit,
+private fun ProgressLayout(loading: Boolean, title: @Composable RowScope.() -> Unit,
                            content: @Composable ColumnScope.() -> Unit) {
     Scaffold { padding ->
         val scroll = rememberScrollState()
@@ -304,7 +282,6 @@ private fun ProgressLayout(back: () -> Unit, loading: Boolean, showBack: Boolean
         Column((if (loading) body else body.verticalScroll(scroll)).padding(24.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                if (showBack) TextButton(onClick = back) { Text(stringResource(R.string.back)) }
                 title()
             }
             content()

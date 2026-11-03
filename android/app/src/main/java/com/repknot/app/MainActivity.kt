@@ -61,9 +61,9 @@ class MainActivity : ComponentActivity() {
                     app.settings.waistGoalCm, app::requestRefresh,
                 ))
                 val history: HistoryViewModel = viewModel(factory = HistoryViewModel.Factory(app.database.sessions()))
-                AppNavigation(workout, progress, history) { back ->
+                AppNavigation(workout, progress, history) {
                     val waistGoal by app.settings.waistGoalCm.collectAsState()
-                    SettingsScreen(waistGoal, app.settings::setWaistGoalCm, back) {
+                    SettingsScreen(waistGoal, app.settings::setWaistGoalCm) {
                         CloudSection(cloudState, cloud::signIn, cloud::signOut)
                     }
                 }
@@ -73,15 +73,11 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-private fun SettingsScreen(waistGoal: Double, setWaistGoal: (Double) -> Unit,
-                           back: () -> Unit, cloud: @Composable () -> Unit) {
+private fun SettingsScreen(waistGoal: Double, setWaistGoal: (Double) -> Unit, cloud: @Composable () -> Unit) {
     Scaffold { padding ->
         Column(Modifier.fillMaxSize().padding(padding).imePadding().verticalScroll(rememberScrollState()).padding(24.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                TextButton(onClick = back) { Text(stringResource(R.string.back)) }
-                Text(stringResource(R.string.settings), style = MaterialTheme.typography.titleLarge)
-            }
+            Text(stringResource(R.string.settings), style = MaterialTheme.typography.titleLarge)
             var goalText by rememberSaveable { mutableStateOf(waistGoal.toString()) }
             val parsedGoal = goalText.replace(',', '.').toDoubleOrNull()
             val invalidGoal = parsedGoal == null || parsedGoal !in 40.0..200.0

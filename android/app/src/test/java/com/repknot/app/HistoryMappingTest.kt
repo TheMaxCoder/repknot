@@ -8,6 +8,23 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class HistoryMappingTest {
+    @Test fun importedWorkoutsShowCleanTitlesAndNoNotes() {
+        val row = SessionRow("w", "2026-10-30", "2026-10-30 - Upper B with shoulder-machine test", "Long analysis", "pushed", 0, 0, 1, null, 152, null, source = "import")
+        val exercise = SessionExerciseRow("e", "w", 0, "row", "Seated row", notes = "Exercise analysis")
+        val set = SetRow("s", "w", "e", 0, 9.0, "plates", 11.0, rir = 1, notes = "Set analysis")
+        val imported = SessionSnapshot(row, listOf(exercise), listOf(set))
+        assertEquals("Upper B with shoulder-machine test", historyTitle(imported))
+        val clean = historyDisplay(imported)
+        assertNull(clean.row.notes); assertNull(clean.exercises.single().notes); assertNull(clean.sets.single().notes)
+        assertEquals("9p × 11 reps · RIR 1", historySetText(clean.sets.single()))
+        // Phone workouts keep their notes and titles; an undated or blank title is left alone / falls back.
+        val phone = imported.copy(row = row.copy(title = "Push 1", source = "android"))
+        assertEquals(phone, historyDisplay(phone))
+        assertEquals("Push 1", historyTitle(phone))
+        assertEquals("Workout", historyTitle(imported.copy(row = row.copy(title = "2026-10-29 - "))))
+        assertEquals(imported.copy(row = row.copy(source = null)), historyDisplay(imported.copy(row = row.copy(source = null))))
+    }
+
     @Test fun compactExerciseHistoryOmitsNotesAndRetainsPerformance() {
         val row = SessionRow("workout", "2026-10-30", "Verbose session title", "SESSION NOTE", "pushed", 0, 0, 1, null, 1, null, light = true)
         val exercise = SessionExerciseRow("e", "workout", 0, "curl", "Curl", notes = "EXERCISE NOTE")

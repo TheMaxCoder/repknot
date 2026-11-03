@@ -26,7 +26,6 @@ fun HomeScreen(today: WorkoutUiState.Today, selected: ProgramWorkout, progress: 
     var choosing by remember { mutableStateOf(false) }
     var pending by remember { mutableStateOf(selected.key) }
     val exercises = selected.exercises.sortedBy { it.position }
-    Text(today.programName, color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelLarge)
     Text(stringResource(R.string.home_heading), style = MaterialTheme.typography.headlineMedium)
     Surface(shape = RoundedCornerShape(8.dp), color = MaterialTheme.colorScheme.surfaceContainer) {
         Column(Modifier.fillMaxWidth().padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {

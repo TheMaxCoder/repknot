@@ -34,6 +34,8 @@ data class SessionRow(
     val finishedAt: Long? = null,
     /** Upload was tapped, or the session came from / reached the server (task 028). Only marked sessions sync. */
     @ColumnInfo(defaultValue = "0") val uploadRequested: Boolean = false,
+    /** Server `source` (`android`, `import`, …); null until downloaded. Display only (Airtable imports hide notes). */
+    val source: String? = null,
 )
 
 /** One exercise in a session, with the prescription snapshot it was started from (ADR 002). */
@@ -322,7 +324,7 @@ interface SessionDao {
         put(SessionRow(remote.id, remote.performedOn, remote.title ?: "Workout", remote.notes,
             "pushed", acknowledged, acknowledged, remote.revision, null, remote.number, null,
             remote.programId, remote.programWorkoutKey, remote.light, remote.startedAt.toMillis(), remote.finishedAt.toMillis(),
-            uploadRequested = true))
+            uploadRequested = true, source = remote.source))
         putExercises(remote.exerciseRows())
         putSets(remote.setRows())
     }
