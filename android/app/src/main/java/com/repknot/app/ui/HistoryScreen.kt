@@ -1,6 +1,7 @@
 package com.repknot.app.ui
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -11,6 +12,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import com.repknot.app.*
 import com.repknot.data.SessionSnapshot
@@ -106,12 +108,11 @@ fun HistoryScreen(state: HistoryUiState, openWorkout: (String) -> Unit, openExer
 }
 
 @Composable
-private fun ExerciseRecords(s: SessionSnapshot, exerciseId: String? = null, openExercise: ((String) -> Unit)? = null) {
-    val exercises = s.exercises.filter { exerciseId == null || it.exerciseId == exerciseId }
+private fun ExerciseRecords(s: SessionSnapshot, openExercise: (String) -> Unit) {
+    val exercises = s.exercises
     if (exercises.isEmpty()) Text("No exercises in this workout.")
     exercises.forEach { exercise ->
-        if (openExercise != null) TextButton(onClick = { openExercise(exercise.exerciseId) }) { Text(exercise.exerciseName) }
-        else Text(exercise.exerciseName, style = MaterialTheme.typography.titleSmall)
+        TextButton(onClick = { openExercise(exercise.exerciseId) }) { Text(exercise.exerciseName) }
         exercise.notes?.takeIf { it.isNotBlank() }?.let { Text("Notes: $it") }
         val sets = s.sets.filter { it.sessionExerciseId == exercise.id }
         if (sets.isEmpty()) Text("No recorded sets.")
@@ -140,19 +141,21 @@ fun ExerciseHistoryScreen(state: HistoryUiState, progress: ProgressUiState, id: 
         val name = item?.name ?: state.sessions.firstOrNull { s -> s.exercises.any { it.exerciseId == id } }
             ?.exercises?.firstOrNull { it.exerciseId == id }?.exerciseName?.ifBlank { "Exercise" }
         if (name == null) Text("Exercise no longer available.") else {
-            Text(name, style = MaterialTheme.typography.headlineMedium)
+            // Same compact presentation as the pre-030 Progress exercise screen (owner follow-up).
+            Text(name, style = MaterialTheme.typography.headlineSmall)
             if (item != null) {
-                Text(groupLabel(item), color = MaterialTheme.colorScheme.primary)
-                Text(reasonText(item.reason))
-                flagText(item).forEach { Text(it) }
-            } else Text("Recorded history")
+                Text(groupLabel(item), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+                Text(reasonText(item.reason), style = MaterialTheme.typography.bodyMedium)
+                flagText(item).forEach { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.tertiary) }
+            } else Text("Recorded history", style = MaterialTheme.typography.bodyMedium)
             if (sessions.isEmpty()) Text("No recorded sessions yet.")
-            sessions.forEach { s ->
-                ArchiveCard({ openWorkout(s.row.id) }) {
-                    Text("${s.row.performedOn} · ${title(s)}" + if (s.row.light) " · Light day" else "", style = MaterialTheme.typography.titleSmall)
-                    if (item != null && s.row.id in item.bestSessionIds) Text("Best")
-                    s.row.notes?.takeIf { it.isNotBlank() }?.let { Text("Notes: $it") }
-                    ExerciseRecords(s, exerciseId = id)
+            Column {
+                sessions.forEach { s ->
+                    Text(exerciseHistoryLine(s, id) + if (item != null && s.row.id in item.bestSessionIds) " · best" else "",
+                        style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
+                            .clickable(role = Role.Button, onClickLabel = "Open workout") { openWorkout(s.row.id) }
+                            .padding(vertical = 6.dp))
                 }
             }
         }

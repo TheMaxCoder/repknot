@@ -40,8 +40,10 @@ History is read-only and reactive to session/exercise/set changes, loading consi
 Room snapshots through a ViewModel. It includes finished, pushed and conflicted records,
 including phone-only, light and empty completed sessions, while excluding active drafts.
 The exercise directory groups recorded sets by exercise ID. Shared exercise history
-preserves existing Progress conclusions but displays complete raw sets/notes and units,
-including older unit variations and partial imports excluded from comparison lineage.
+preserves existing Progress conclusions and best markers, with compact per-session
+performance rows including older unit variations and partial imports. Full notes and
+per-set detail are available in the linked workout detail rather than repeated in the
+exercise list (owner follow-up to task 030).
 Session detail links and exercise links use stable IDs. Browsing never changes upload
 intent or opens arbitrary historical records for editing.
 

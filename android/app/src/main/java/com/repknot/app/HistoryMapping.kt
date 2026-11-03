@@ -2,6 +2,11 @@ package com.repknot.app
 
 import com.repknot.data.SessionSnapshot
 import com.repknot.data.SetRow
+import com.repknot.domain.LoadUnit
+import com.repknot.domain.PastSet
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 private val completedStatuses = setOf("finished", "pushed", "conflict", "conflict_deleted")
 
@@ -45,6 +50,27 @@ fun historySetText(set: SetRow): String {
     val performance = listOfNotNull(load, amounts.joinToString(" · ").ifEmpty { null }).joinToString(" × ")
     return listOfNotNull(performance.ifEmpty { "Missing values" }, set.rir?.let { "RIR $it" },
         set.notes?.takeIf { it.isNotBlank() }).joinToString(" · ")
+}
+
+/** Compact performance only; notes belong to the linked workout detail. */
+fun exerciseHistoryLine(snapshot: SessionSnapshot, exerciseId: String): String {
+    val sets = snapshot.exercises.filter { it.exerciseId == exerciseId }
+        .sortedWith(compareBy({ it.position }, { it.id }))
+        .flatMap { exercise -> snapshot.sets.filter { it.sessionExerciseId == exercise.id }
+            .sortedWith(compareBy({ it.position }, { it.id })) }
+    val units = sets.map { set -> LoadUnit.entries.firstOrNull { it.name.equals(set.unit, ignoreCase = true) } }
+    val standard = sets.indices.all { i ->
+        units[i] != null && (sets[i].load != null || units[i] == LoadUnit.BODYWEIGHT) &&
+            (sets[i].reps != null) != (sets[i].durationS != null) &&
+            !(units[i] == LoadUnit.BODYWEIGHT && sets[i].load != null)
+    }
+    val summary = if (standard) previousSummary(sets.mapIndexed { index, set ->
+        PastSet(set.position, set.load, units[index]!!, set.reps, set.durationS, set.rir)
+    }) else "${sets.size} ${if (sets.size == 1) "set" else "sets"} · " +
+        sets.joinToString("; ") { historySetText(it.copy(notes = null)) }
+    val date = runCatching { LocalDate.parse(snapshot.row.performedOn)
+        .format(DateTimeFormatter.ofPattern("MMM d", Locale.ENGLISH)) }.getOrDefault(snapshot.row.performedOn)
+    return "$date · $summary" + if (snapshot.row.light) " · light" else ""
 }
 
 fun historyExercises(snapshots: List<SessionSnapshot>, query: String = ""): List<HistoryExercise> {

@@ -8,6 +8,17 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class HistoryMappingTest {
+    @Test fun compactExerciseHistoryOmitsNotesAndRetainsPerformance() {
+        val row = SessionRow("workout", "2026-10-30", "Verbose session title", "SESSION NOTE", "pushed", 0, 0, 1, null, 1, null, light = true)
+        val exercise = SessionExerciseRow("e", "workout", 0, "curl", "Curl", notes = "EXERCISE NOTE")
+        val sets = listOf(SetRow("s1", "workout", "e", 0, 5.0, "kg", 13.0, rir = 1, notes = "SET NOTE"),
+            SetRow("s2", "workout", "e", 1, 5.0, "kg", 9.0, rir = 0))
+        val snapshot = SessionSnapshot(row, listOf(exercise), sets)
+        assertEquals("Oct 30 · 2 sets · 5 kg × 13, 9 · RIR 1, 0 · light", exerciseHistoryLine(snapshot, "curl"))
+        val partial = snapshot.copy(sets = listOf(sets[0].copy(unit = null, reps = 8.5)))
+        assertEquals("Oct 30 · 1 set · 5 (unit unknown) × 8.5 reps · RIR 1 · light", exerciseHistoryLine(partial, "curl"))
+    }
+
     @Test fun recordedSetFormattingKeepsFractionsMixedValuesAndUnknownUnits() {
         val set = SetRow("s", "workout", "exercise", 0, 2.25, null, 8.5, durationS = 30, rir = 0, notes = "pause")
         assertEquals("2.25 (unit unknown) × 8.5 reps · 30 s · RIR 0 · pause", historySetText(set))

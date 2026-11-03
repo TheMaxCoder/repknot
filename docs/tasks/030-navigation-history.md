@@ -226,3 +226,27 @@ directory search and navigation transitions; additional cases and UI verificatio
 Task complete and installed, no known unfinished implementation or unrelated drift.
 Next: owner reviews Home/History/Progress on the phone and gives screen-specific feedback.
 Task 027's watch investigation and task 028's owner upload-flow check remain separate.
+
+## Owner follow-up — compact exercise history
+
+The owner reported that the new exercise history was too verbose: the earlier screen
+was a simple chronological list with best-session markers. Lead restores that presentation
+directly as a scoped follow-up. Keep status/reason/flags and best markers, dates, compact
+performance values, RIR and light markers; remove cards, repeated names, session titles,
+session/exercise/set notes from the exercise list. Rows still open the full workout detail,
+where all notes and sets remain. Preserve earlier unit variations and partial recorded
+values in compact fallback rows. No analysis or data changes. Added a regression test
+covering note exclusion, previous-summary formatting, RIR and unknown-unit precision.
+Starting commit: 2faf05f. Done 2026-11-03.
+Lead review (resumed after the session stopped mid-step): the row reuses the pre-030
+`exposureLine` format (`MMM d · previousSummary · light`, no year, as before); only sessions
+with recorded sets for the ID are listed, so no "0 sets" rows. Restored the old header
+typography (headlineSmall name, labelLarge status, tertiary flags) and dropped the now-unused
+exercise filter from `ExerciseRecords`. Rows keep a 48 dp touch target, so they are spaced
+more than the old non-clickable list.
+Verified: `scripts/check --offline` → BUILD SUCCESSFUL (HistoryMappingTest 7/7, incl. the
+new compact-row test). `./gradlew --offline :app:installDebug` on the test phone (first attempt
+failed while adb reconnected; retry installed). Phone: History → Exercises → Lateral raise
+shows compact rows with status, reason, `best` marker and mixed-load rows (Nov 2 row matches
+#405); tapping a row opened Push 1 detail with all sets; Back returned to the exercise. No
+crash-buffer entries. Not checked: the Progress-tab entry point to this screen (same composable).

@@ -45,3 +45,10 @@ snapshot access may be added to the DAO, without schema or sync changes. UI stat
 survive tab switches/configuration changes, including unsaved logger fields. History
 details are read-only; record editing, new sync actions and search filters are separate
 future requests. Revisit the small navigation model when app links or richer flows are used.
+
+## Presentation follow-up — 2026-11-02
+
+The owner requested restoration of the compact exercise-history list with best-session
+markers after task 030's initial implementation repeated full notes and set details.
+Exercise history uses per-session performance summaries; full notes remain in the linked
+workout detail. This narrows presentation while preserving the raw archive and navigation.
