@@ -44,6 +44,9 @@ preserves existing Progress conclusions and best markers, with compact per-sessi
 performance rows including older unit variations and partial imports. Full notes and
 per-set detail are available in the linked workout detail rather than repeated in the
 exercise list (owner follow-up to task 030).
+Imported (Airtable, `source = import`) workouts display without their session/exercise/set
+notes and without the date prefix in titles; the records are unchanged. Screens have no
+visible Back buttons: system Back pops each tab's stack (owner preference).
 Session detail links and exercise links use stable IDs. Browsing never changes upload
 intent or opens arbitrary historical records for editing.
 
