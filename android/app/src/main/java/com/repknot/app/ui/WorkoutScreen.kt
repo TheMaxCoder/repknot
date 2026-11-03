@@ -10,6 +10,9 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -277,22 +280,15 @@ private fun SessionActions(session: WorkoutUiState.Session, vm: WorkoutViewModel
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     TextButton(onClick = { picker = true }, modifier = Modifier.weight(1f)) { Text(stringResource(R.string.add_exercise)) }
                     TextButton(onClick = { notes = session.row.notes.orEmpty(); notesOpen = true }, modifier = Modifier.weight(1f)) { Text(stringResource(R.string.session_notes)) }
-                    Box {
-                        val menuLabel = stringResource(R.string.workout_menu)
-                        TextButton(onClick = { menuOpen = true }, modifier = Modifier.semantics { contentDescription = menuLabel }) { Text("⋯") }
-                        DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
-                            DropdownMenuItem(text = { Text(stringResource(R.string.light_day)) },
-                                leadingIcon = { Checkbox(checked = session.row.light, onCheckedChange = null) },
-                                onClick = { vm.setLight(!session.row.light); menuOpen = false })
-                            if (session.row.status == "in_progress") DropdownMenuItem(text = { Text(stringResource(R.string.discard_workout)) },
-                                onClick = { menuOpen = false; confirmDiscard = true })
-                        }
-                    }
+                    val menuLabel = stringResource(R.string.workout_menu)
+                    TextButton(onClick = { menuOpen = true }, modifier = Modifier.semantics { contentDescription = menuLabel }) { Text("⋯") }
                 }
                 FinishSection(session.row, vm, { confirmDiscard = true }) { confirmFinish = true }
             }
         }
     }
+    if (menuOpen) WorkoutOptionsSheet(session.row, onLight = vm::setLight,
+        onDiscard = { menuOpen = false; confirmDiscard = true }) { menuOpen = false }
     // Finish sits at the bottom of a footer whose height changes, so one stray tap must not end the workout.
     if (confirmFinish && session.row.status == "in_progress") AlertDialog(
         onDismissRequest = { confirmFinish = false }, title = { Text(stringResource(R.string.finish_confirm_title)) },
@@ -558,3 +554,33 @@ private fun FinishSection(row: SessionRow, vm: WorkoutViewModel, requestDiscard:
 /** Mirrors SessionDao.discard: the workout never left the phone and Upload was not tapped. */
 private fun SessionRow.discardable(): Boolean =
     (status == "in_progress" || status == "finished") && !uploadRequested && number == null && baseRevision == null
+
+/** Workout-level options as a bottom sheet next to the ⋯ footer button (owner redesign of the dropdown). */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun WorkoutOptionsSheet(row: SessionRow, onLight: (Boolean) -> Unit, onDiscard: () -> Unit, onDismiss: () -> Unit) {
+    ModalBottomSheet(onDismissRequest = onDismiss) {
+        Column(Modifier.fillMaxWidth().navigationBarsPadding().padding(bottom = 16.dp)) {
+            Text(stringResource(R.string.workout_options), style = MaterialTheme.typography.titleLarge,
+                modifier = Modifier.padding(start = 24.dp, end = 24.dp, bottom = 8.dp))
+            ListItem(
+                headlineContent = { Text(stringResource(R.string.light_day)) },
+                supportingContent = { Text(stringResource(R.string.light_day_description)) },
+                trailingContent = { Switch(checked = row.light, onCheckedChange = null) },
+                colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                modifier = Modifier.toggleable(value = row.light, role = Role.Switch, onValueChange = onLight)
+                    .padding(horizontal = 8.dp),
+            )
+            if (row.status == "in_progress") {
+                HorizontalDivider(Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
+                val danger = MaterialTheme.colorScheme.error
+                ListItem(
+                    headlineContent = { Text(stringResource(R.string.discard_workout), color = danger) },
+                    leadingContent = { Icon(painterResource(R.drawable.ic_delete), contentDescription = null, tint = danger) },
+                    colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                    modifier = Modifier.clickable(role = Role.Button, onClick = onDiscard).padding(horizontal = 8.dp),
+                )
+            }
+        }
+    }
+}
