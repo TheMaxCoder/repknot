@@ -1,0 +1,94 @@
+#!/usr/bin/env -S deno run --ext=ts --allow-net --allow-env --allow-read --allow-write
+// Read-only snapshot of the owner's training and body data for the separate coach workspace
+// (../health). Signs in as the normal user (RLS applies) and only SELECTs.
+// Writes compact JSON without ids, revisions or raw import payloads.
+//
+//   scripts/coach-export [output-dir]     # default: ../health/data next to this repo
+import { createClient } from "npm:@supabase/supabase-js@2";
+
+const root = new URL("..", import.meta.url).pathname;
+const out = Deno.args[0] ?? `${root}../health/data`;
+const env: Record<string, string> = {};
+for (const line of (await Deno.readTextFile(`${root}.env`)).split("\n")) {
+  const m = line.match(/^([A-Za-z0-9_]+)=(.*)$/);
+  if (m) env[m[1]] = m[2].trim();
+}
+function need(name: string): string {
+  if (!env[name]) throw new Error(`${name} is empty in .env`);
+  return env[name];
+}
+
+const supabase = createClient(need("SUPABASE_URL"), need("SUPABASE_PUBLISHABLE_KEY"), { auth: { persistSession: false } });
+const { error: authError } = await supabase.auth.signInWithPassword({
+  email: need("REPKNOT_EMAIL"), password: need("REPKNOT_PASSWORD"),
+});
+if (authError) throw authError;
+
+async function rows<T>(query: PromiseLike<{ data: T[] | null; error: unknown }>): Promise<T[]> {
+  const { data, error } = await query;
+  if (error) { console.error(error); Deno.exit(1); }
+  return data ?? [];
+}
+// deno-lint-ignore no-explicit-any
+type Row = Record<string, any>;
+const byPosition = (a: Row, b: Row) => a.position - b.position;
+/** Drops null/empty fields so the files stay short for a model to read. */
+const compact = (o: Row): Row => Object.fromEntries(Object.entries(o).filter(([, v]) =>
+  v !== null && v !== undefined && v !== "" && !(Array.isArray(v) && v.length === 0)));
+function minutes(start?: string, end?: string): number | undefined {
+  if (!start || !end) return undefined;
+  const m = Math.round((Date.parse(end) - Date.parse(start)) / 60000);
+  return m >= 0 ? m : undefined;
+}
+
+const sessions = (await rows<Row>(supabase.from("workout_sessions")
+  .select("number, performed_on, title, notes, source, light, program_workout_key, started_at, finished_at, session_exercises(position, exercise_name, substituted_for, planned_sets, planned_rep_min, planned_rep_max, planned_rir_min, planned_rir_max, planned_load, planned_unit, notes, session_sets(position, load, unit, reps, duration_s, rir, notes))")
+  .order("performed_on").order("number")))
+  .map((s) => compact({
+    number: s.number, date: s.performed_on, title: s.title, source: s.source,
+    workout: s.program_workout_key, light: s.light || undefined,
+    minutes: minutes(s.started_at, s.finished_at), notes: s.notes,
+    exercises: s.session_exercises.sort(byPosition).map((e: Row) => compact({
+      name: e.exercise_name, substituted: e.substituted_for ? true : undefined,
+      plan: e.planned_sets ? compact({ sets: e.planned_sets, reps: e.planned_rep_min ? `${e.planned_rep_min}-${e.planned_rep_max}` : undefined,
+        rir: e.planned_rir_min != null ? `${e.planned_rir_min}-${e.planned_rir_max}` : undefined,
+        load: e.planned_load, unit: e.planned_unit }) : undefined,
+      notes: e.notes,
+      sets: e.session_sets.sort(byPosition).map((t: Row) => compact({
+        load: t.load, unit: t.unit, reps: t.reps, seconds: t.duration_s, rir: t.rir, notes: t.notes })),
+    })),
+  }));
+
+const checkins = (await rows<Row>(supabase.from("checkins")
+  .select("checked_on, weight_kg, waist_cm, chest_cm, arms_cm, arms_flexed_cm, legs_cm, height_cm, notes, source")
+  .order("checked_on"))).map((c) => compact({ ...c, date: c.checked_on, checked_on: undefined }));
+
+const context = (await rows<Row>(supabase.from("context_entries")
+  .select("kind, recorded_on, title, details, source").order("recorded_on")))
+  .map((c) => compact({ kind: c.kind, date: c.recorded_on, title: c.title,
+    details: Object.keys(c.details ?? {}).length ? c.details : undefined }));
+
+const programs = await rows<Row>(supabase.from("programs")
+  .select("name, key, version, starts_on, is_active, rules, details, program_workouts(key, name, sequence_position, default_weekday, program_exercises(position, sets, rep_min, rep_max, rir_min, rir_max, rest_s_min, rest_s_max, load, unit, notes, exercises(name)))")
+  .eq("is_active", true));
+const program = programs.map((p) => compact({
+  name: p.name, key: p.key, version: p.version, starts_on: p.starts_on,
+  rules: (p.rules ?? "").split("\n").filter((r: string) => r.trim()), details: p.details,
+  rotation: p.program_workouts.sort((a: Row, b: Row) => a.sequence_position - b.sequence_position).map((w: Row) => compact({
+    key: w.key, name: w.name, weekday: w.default_weekday,
+    exercises: w.program_exercises.sort(byPosition).map((e: Row) => compact({
+      name: e.exercises?.name, sets: e.sets, reps: e.rep_min ? `${e.rep_min}-${e.rep_max}` : undefined,
+      rir: e.rir_min != null ? `${e.rir_min}-${e.rir_max}` : undefined,
+      rest_s: e.rest_s_min ? `${e.rest_s_min}-${e.rest_s_max}` : undefined, load: e.load, unit: e.unit, notes: e.notes })),
+  })),
+}))[0] ?? null;
+
+await Deno.mkdir(out, { recursive: true });
+const write = (name: string, value: unknown) => Deno.writeTextFile(`${out}/${name}`, JSON.stringify(value, null, 1) + "\n");
+await write("sessions.json", sessions);
+await write("checkins.json", checkins);
+await write("context.json", context);
+await write("program.json", program);
+await write("export.json", { exported_at: new Date().toISOString(), sessions: sessions.length,
+  checkins: checkins.length, context: context.length, program: program?.name ?? null });
+console.log(`Wrote ${sessions.length} sessions, ${checkins.length} check-ins, ${context.length} context entries, program ${program?.name ?? "(none)"} to ${out}`);

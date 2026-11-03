@@ -78,6 +78,8 @@ loop, and the bounded rules for tuning `docs/delegation/worker-notes.md` live in
 - `scripts/repknot …` — CLI as the signed-in user (`--as test2` for the second user).
 - `scripts/airtable-normalize <export-dir>` — regenerate import-ready CSVs from a
   private Airtable export (`private-data/README.md` describes the layout).
+- `scripts/coach-export [dir]` — read-only JSON snapshot of the owner's data for the separate
+  coach workspace `../health` (its `./refresh` calls this).
 - `scripts/delegate <task-file> [feedback]` — run a task through the worker model;
   logs go to the ignored `.delegate-logs/`.
 
