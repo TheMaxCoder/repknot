@@ -8,11 +8,11 @@ cd "$root"
 set -a
 . ./.env
 set +a
-: "${SUPABASE_URL:?}" "${SUPABASE_PUBLISHABLE_KEY:?}" "${REPKNOT_TEST2_EMAIL:?}" "${REPKNOT_TEST2_PASSWORD:?}"
+: "${SUPABASE_URL:?}" "${SUPABASE_PUBLISHABLE_KEY:?}" "${REPKNOT_DEV_PROJECT_REF:?set it in .env to your dev project ref}" "${REPKNOT_TEST2_EMAIL:?}" "${REPKNOT_TEST2_PASSWORD:?}"
 ref="${SUPABASE_URL#https://}"
 ref="${ref%%.supabase.co*}"
 linked="$(cat supabase/.temp/project-ref 2>/dev/null || true)"
-[ "$ref" = "<dev-project-ref>" ] && [ "$ref" = "$linked" ] || { echo 'Linked project does not match the confirmed dev project' >&2; exit 1; }
+[ "$ref" = "$REPKNOT_DEV_PROJECT_REF" ] && [ "$ref" = "$linked" ] || { echo 'Linked project does not match the confirmed dev project' >&2; exit 1; }
 b64() { printf %s "$1" | base64 -w0; }
 (cd android && ./gradlew :data:assembleDebugAndroidTest "$@")
 adb install -r android/data/build/outputs/apk/androidTest/debug/data-debug-androidTest.apk
