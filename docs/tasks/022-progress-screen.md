@@ -2,7 +2,7 @@
 
 Status: done
 Updated: 2026-11-01
-Starting commit: 1e2482e
+Starting commit: 7ba634c
 Parent: [019](019-progress-milestone.md) step 3 · Delegated: yes (see
 [delegation](../delegation/README.md))
 
@@ -90,7 +90,7 @@ ViewModel and screens are checked by the lead on the device.
 - Pre-existing untracked `work/` is unrelated and left untouched.
 - For unusual bodyweight MovedUp/LoadDown inputs, omit load values and use “Moved up on …” / “Load down for 2 sessions”; normal engine output does not generate these. Exposure summaries use `previousSummary` exactly as specified, including its bodyweight label.
 - Recent dips include today and the date 28 days before today; future dates are excluded. Same-date dips retain engine order.
-- Review: commits `dd871d7` and `3a8add1` omitted their Not verified and Review lines due to commit command mistakes. Device verification remains pending; review the unusual bodyweight fallback and recent-dip boundary above.
+- Review: commits `f645722` and `820b1ac` omitted their Not verified and Review lines due to commit command mistakes. Device verification remains pending; review the unusual bodyweight fallback and recent-dip boundary above.
 
 ## Verification
 

@@ -1,7 +1,7 @@
 # 028 — Explicit per-workout upload
 
 Status: done (owner phone check of the new buttons pending)
-Starting commit: c0e69c5
+Starting commit: 2a98fe4
 Interrupts: [027](027-workout-timing.md) (paused at the watch investigation; its handoff is unchanged)
 
 ## Outcome / acceptance
@@ -31,7 +31,7 @@ While the owner is still testing on the phone, nothing reaches Supabase without 
 
 ## Plan / progress
 - [x] Data layer + migration + tests
-- [x] App wiring + UI (commit b8daddb)
+- [x] App wiring + UI (commit b5d7ca3)
 - [x] `scripts/check`, data androidTests on device, install and launch check
 - [ ] Owner tries the flow at the next workout (see Handoff)
 

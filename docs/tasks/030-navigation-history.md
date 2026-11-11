@@ -1,7 +1,7 @@
 # 030 — Bottom navigation and recorded history
 
 Status: done
-Starting commit: 4ea3f5f7013cee8a0d6cee6b35cf51ff4e6eac86
+Starting commit: de363fb7f5f105a5f7e02180da90e2f4641c17d5
 Date: 2026-11-02
 
 ## Outcome and acceptance
@@ -108,7 +108,7 @@ Worker implementation, lead review, offline checks and scoped phone checks are c
 
 ## Decisions / discoveries
 
-Tree was clean at worker entry (fec27a0; task starting commit 4ea3f5f). The first worker
+Tree was clean at worker entry (1c837e7; task starting commit de363fb). The first worker
 checkpoint added pure mappings/transitions, then the resumed pass added transactional
 reads, expanded tests and full UI integration. Task 029's approved design and installed
 Home are the baseline. Task 027's
@@ -219,8 +219,8 @@ directory search and navigation transitions; additional cases and UI verificatio
   fixtures, or new rest-alert delivery/continuity with a logged set. Raw partial/mixed
   units, empty/light records and status/order rules have JVM coverage; rest scheduling
   is unchanged and was source-reviewed. No retained real data was modified for fixtures.
-- Commits: fec27a0 plan/ADR; a142b03 models; d8579a9 transactional read and directory
-  tests; 576d2da UI/navigation; 103964c empty/light coverage; 0ca00fd lead state/insets/
+- Commits: 1c837e7 plan/ADR; c1a2328 models; c9844cb transactional read and directory
+  tests; 2154b62 UI/navigation; bc1e5e9 empty/light coverage; ce020ef lead state/insets/
   formatting refinements; final documentation/verification committed separately.
 
 Task complete and installed, no known unfinished implementation or unrelated drift.
@@ -237,7 +237,7 @@ session/exercise/set notes from the exercise list. Rows still open the full work
 where all notes and sets remain. Preserve earlier unit variations and partial recorded
 values in compact fallback rows. No analysis or data changes. Added a regression test
 covering note exclusion, previous-summary formatting, RIR and unknown-unit precision.
-Starting commit: 2faf05f. Done 2026-11-03.
+Starting commit: 182ee59. Done 2026-11-03.
 Lead review (resumed after the session stopped mid-step): the row reuses the pre-030
 `exposureLine` format (`MMM d · previousSummary · light`, no year, as before); only sessions
 with recorded sets for the ID are listed, so no "0 sets" rows. Restored the old header

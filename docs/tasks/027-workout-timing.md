@@ -1,7 +1,7 @@
 # 027 — Workout timing and rest timer
 
 Status: in progress (implementation done; owner decision on screen-off pending)
-Starting commit: 1e7b90f
+Starting commit: 346f87b
 Date: 2026-11-02
 
 ## Outcome / acceptance
@@ -47,7 +47,7 @@ service, changes to conflict/revision rules.
 - [ ] Owner watch test: does the watch buzz for the silent notification?
 
 ## Step 2 spec (worker)
-Step 1 is committed (5812eb0): `SessionRow.startedAt`, `SetRow.loggedAt` (epoch millis,
+Step 1 is committed (294c682): `SessionRow.startedAt`, `SetRow.loggedAt` (epoch millis,
 nullable) are already written by `WorkoutViewModel`. Do not change data/, supabase/, the
 Room schema, sync, or the timestamp writes.
 
@@ -199,8 +199,8 @@ vibration at target, elapsed header, nothing shown on preview/finished screens.
   font footer; real upload of a timed session.
 
 ## Handoff
-Implemented, installed on the phone, and checked. Commits: 3c0c00d (server), 5812eb0
-(phone timing), 748443a (spec), 1c6a025 (worker UI), 0ea7a93 (lead fixes).
+Implemented, installed on the phone, and checked. Commits: 9f0ddae (server), 294c682
+(phone timing), f30bfd8 (spec), 773a174 (worker UI), afaceeb (lead fixes).
 - Owner: still no watch buzz with the vibrating channel. v3 channel `rest_alert_sound` adds
   the default notification sound (USAGE_NOTIFICATION, ducks music briefly); v1/v2 channels
   are deleted on first post. Installed; phone was locked so the owner runs the test.
@@ -236,7 +236,7 @@ Implemented, installed on the phone, and checked. Commits: 3c0c00d (server), 581
   --ei id 101 --es text Probe` (no spaces/parentheses in text: the device shell re-parses it),
   `--ez clear true` clears. Owner-proposed test: three unique ids 10 s apart, then three
   posts with one id (updates), watch cleared before each group.
-- Probe runs 2026-11-02 (installed build af8331a+8e024c9: rest_alert_quiet, high, vibration,
+- Probe runs 2026-11-02 (installed build 82b9305+06189f6: rest_alert_quiet, high, vibration,
   no sound, unique titles). Run 1 (14:40): phone vibrated A1, A2, B1–B3 but not A3 (Android
   notification cooldown for a 3rd alert in 20 s). Run 2 (14:51): phone vibrated all six.
   Watch: not a single buzz in either group. So neither unique ids nor updates matter; the

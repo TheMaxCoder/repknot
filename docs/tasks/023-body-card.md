@@ -2,7 +2,7 @@
 
 Status: done
 Updated: 2026-11-01
-Starting commit: 4bc409f
+Starting commit: d59a8f1
 Parent: [019](019-progress-milestone.md) step 5 · Delegated: yes (see
 [delegation](../delegation/README.md))
 
@@ -10,7 +10,7 @@ Parent: [019](019-progress-milestone.md) step 5 · Delegated: yes (see
 The owner is cutting toward a configurable waist goal. The Progress screen gets a Body card: waist
 now and cm to go, weekly waist and weight trend, projected goal date, and one verdict that
 pairs the cut with strength (e.g. losing weight fast while exercises decline). Check-ins
-can be added on the phone. The data layer exists (lead, a632ef7): `CheckInRow`,
+can be added on the phone. The data layer exists (lead, e66fa9a): `CheckInRow`,
 `CheckInDao` (`observeAll`, `all`, `add`), `WorkoutDatabase.checkIns()`; sync uploads
 pending rows when upload is on. Accepted when the items below behave as specified, JVM
 tests cover the pure functions, and `scripts/check --offline` passes. The lead runs the

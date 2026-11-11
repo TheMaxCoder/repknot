@@ -2,7 +2,7 @@
 
 Status: done
 Updated: 2026-11-01
-Starting commit: 94118c1
+Starting commit: 9bc4294
 Parent: [006](006-training-data-model.md) step 7 (first half) · Delegated: yes (see
 [delegation](../delegation/README.md)). The second half — nested sessions and sync — is
 lead work in task 010 and must not be started here.

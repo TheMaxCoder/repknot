@@ -2,7 +2,7 @@
 
 Status: done
 Updated: 2026-11-01
-Starting commit: `4123c56`
+Starting commit: `369d895`
 Parent: [006](006-training-data-model.md) step 8 (logic half; the Compose screen is task 012)
 · Delegated: yes (see [delegation](../delegation/README.md))
 
@@ -168,7 +168,7 @@ interim `MainActivity` compiling (it does not use the new ViewModel yet).
 - DAO behavior still requires lead's device verification; review revision bump and reorder logic. Rules 5, 6 and 10–14 also require lead's device verification.
 
 ## Handoff
-DAO additions committed as `c7b87e4` and accepted by the lead. Steps 2–4 are implemented and local acceptance commands passed. Next: lead reviews the diff, especially sync/conflict handling and DAO revision bumps/reordering, and verifies rules 5, 6, 10–14 and DAO behavior on device as specified. No backend or device operations were run. Task remains in progress pending that verification; task 012 supplies the Compose screen.
+DAO additions committed as `cb82905` and accepted by the lead. Steps 2–4 are implemented and local acceptance commands passed. Next: lead reviews the diff, especially sync/conflict handling and DAO revision bumps/reordering, and verifies rules 5, 6, 10–14 and DAO behavior on device as specified. No backend or device operations were run. Task remains in progress pending that verification; task 012 supplies the Compose screen.
 
 ## Lead review (2026-11-01)
 Accepted (third run; the first two stopped on questions, the second run was then hung by a

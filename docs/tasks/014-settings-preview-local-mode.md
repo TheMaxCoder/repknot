@@ -2,7 +2,7 @@
 
 Status: done
 Updated: 2026-11-01
-Starting commit: a93df78
+Starting commit: 81e7a43
 Lead task; the screens are delegated as [015](015-settings-preview-screens.md).
 
 ## Outcome and acceptance

@@ -2,7 +2,7 @@
 
 Status: done
 Updated: 2026-11-01
-Starting commit: f25a2ab
+Starting commit: bab8e5b
 Parent: [006](006-training-data-model.md) step 8 (UI half; logic is task 011) · Delegated:
 yes (see [delegation](../delegation/README.md))
 
@@ -71,7 +71,7 @@ Every state ends with the existing `CloudSection` below a divider. Errors from
      **Take theirs**.
    - Always (except `in_progress`): **Share** (ACTION_SEND chooser) and **Copy**
      (clipboard) using `share { … }`, as the old `FinishSection` did (see Git history:
-     `git show a6e4f79^:android/app/src/main/java/com/repknot/app/MainActivity.kt`).
+     `git show fc40a26^:android/app/src/main/java/com/repknot/app/MainActivity.kt`).
 10. Remove strings that become unused (`logging_rebuilding`, etc.); reuse existing ones
     where the meaning matches.
 

@@ -2,7 +2,7 @@
 
 Status: done
 Updated: 2026-11-01
-Starting commit: d506393
+Starting commit: a92900d
 Parent: [006](006-training-data-model.md) step 7 (second half) · Lead task (sync/conflict
 logic stays with the lead per [delegation](../delegation/README.md)).
 

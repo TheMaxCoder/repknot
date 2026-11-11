@@ -2,7 +2,7 @@
 
 Status: done
 Updated: 2026-11-01
-Starting commit: 78296df
+Starting commit: d32ed14
 
 ## Outcome and acceptance
 The PPL program (starts 2026-11-02) drives the daily workout, per

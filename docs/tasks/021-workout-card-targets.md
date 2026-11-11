@@ -2,7 +2,7 @@
 
 Status: done
 Updated: 2026-11-01
-Starting commit: 499d8c6
+Starting commit: a657822
 Parent: [019](019-progress-milestone.md) step 2 · Delegated: yes (see
 [delegation](../delegation/README.md))
 

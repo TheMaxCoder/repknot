@@ -2,7 +2,7 @@
 
 Status: done
 Updated: 2026-11-01
-Starting commit: 3a54670
+Starting commit: 9d2b613
 Parent: [014](014-settings-preview-local-mode.md) (logic done by the lead) · Delegated: yes
 
 ## Outcome and acceptance

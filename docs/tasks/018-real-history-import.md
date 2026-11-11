@@ -2,7 +2,7 @@
 
 Status: done
 Updated: 2026-11-01
-Starting commit: aef47cf
+Starting commit: 9edc793
 Lead task (real-data operation, owner-approved 2026-11-01).
 
 ## Outcome

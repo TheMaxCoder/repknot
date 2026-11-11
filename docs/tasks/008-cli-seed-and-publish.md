@@ -2,7 +2,7 @@
 
 Status: done
 Updated: 2026-11-01
-Starting commit: 20e3804
+Starting commit: 39947d4
 Parent: [006](006-training-data-model.md) step 5 · Delegated: yes (see
 [delegation](../delegation/README.md))
 
