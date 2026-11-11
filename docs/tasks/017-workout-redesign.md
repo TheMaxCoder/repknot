@@ -1,7 +1,7 @@
 # 017 — Workout redesign
 
 Status: done
-Starting commit: d9caba4
+Starting commit: 9c8a321
 Updated: 2026-11-01
 
 ## Outcome / acceptance

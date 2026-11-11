@@ -2,7 +2,7 @@
 
 Status: done
 Updated: 2026-11-01
-Starting commit: a063635
+Starting commit: d6a563d
 Delegated: yes (see [delegation](../delegation/README.md)). Owner feedback after using the
 screen on the phone (2026-11-01).
 

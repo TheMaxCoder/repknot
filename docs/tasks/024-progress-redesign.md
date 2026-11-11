@@ -1,7 +1,7 @@
 # 024 — Progress screen redesign
 
 Status: in progress
-Starting commit: 36317ac
+Starting commit: 844d18c
 
 ## Outcome and acceptance
 Implement the owner's approved combined mockup at `progress-combined.html` (local mockup, not in the repo) as a native Compose screen. The mockup is a visual guide, with illustrative data: do not hardcode its values. No introductory slogan or extra header copy. Keep the dark dynamic Material theme and accessible contrast.
@@ -26,7 +26,7 @@ Implement in `android/app/src/main/java/com/repknot/app/ui/ProgressScreen.kt` an
 - Body metrics use two columns when both measurements exist and available width divided by font scale is at least 250 dp; otherwise they stack. Goal caption and weight trend remain separate from the prominent measurements. BodyScreen retains its original presentation. The body-history tap region and check-in button are separate siblings. Group counts follow contiguous attention-ordered groups.
 
 ## Verification
-`scripts/check --offline` passed for the original implementation and again for the follow-up (debug build, lint, and unit tests); Gradle reported deprecated features. The first follow-up run failed on a Kotlin cross-module smart cast; corrected before the passing run. Added formatting tests for metric precision, configured goal and weight trend. Lead reran `scripts/check --offline` successfully and `git diff 36317ac..HEAD --check` passed. `cd android && ./gradlew :app:installDebug --offline` installed successfully on the test phone. The phone was locked; no visual or interaction verification was performed.
+`scripts/check --offline` passed for the original implementation and again for the follow-up (debug build, lint, and unit tests); Gradle reported deprecated features. The first follow-up run failed on a Kotlin cross-module smart cast; corrected before the passing run. Added formatting tests for metric precision, configured goal and weight trend. Lead reran `scripts/check --offline` successfully and `git diff 844d18c..HEAD --check` passed. `cd android && ./gradlew :app:installDebug --offline` installed successfully on the test phone. The phone was locked; no visual or interaction verification was performed.
 
 ## Handoff
 The latest alignment follow-up is implemented and offline checks pass. Next: lead review, install the latest build if the phone is available, and visually check both column and stacked layouts, long stale dates, scaled text, and independent actions. Device visual, accessibility and interaction verification remain pending. Unrelated untracked `work/` was left untouched.
@@ -50,7 +50,7 @@ Progress: [x] implement and test; [x] address further alignment feedback; [x] le
 ### Verification
 - `scripts/check --offline` passed (debug build, lint, unit tests; Gradle deprecation warning). Focused tests cover signed and missing rates, zero, estimate precision/absence, and unchanged percentage in Body details.
 - After the further alignment feedback, `scripts/check --offline` passed again (debug build, lint, unit tests; Gradle deprecation warning).
-- Lead reran `scripts/check --offline` and `git diff a9f80c7..HEAD --check` successfully; `cd android && ./gradlew :app:installDebug --offline` installed on the test phone. A screenshot of the real Progress screen showed aligned four-week rates, labeled estimate, separated verdict and date/action footer without visible clipping at the phone’s current size. No accessibility or interaction checks were performed. Commit `7d4b228` omitted its intended `Not verified:` trailer because the commit command split incorrectly; the missing limitation is recorded here and in the subsequent handoff commit.
+- Lead reran `scripts/check --offline` and `git diff 318e614..HEAD --check` successfully; `cd android && ./gradlew :app:installDebug --offline` installed on the test phone. A screenshot of the real Progress screen showed aligned four-week rates, labeled estimate, separated verdict and date/action footer without visible clipping at the phone’s current size. No accessibility or interaction checks were performed. Commit `64e3c99` omitted its intended `Not verified:` trailer because the commit command split incorrectly; the missing limitation is recorded here and in the subsequent handoff commit.
 
 ### Handoff
 Obtain owner feedback and arrange manual checks of scaled/narrow layout, missing data, long stale guidance, scrolling and both independent actions; the current-size screenshot alone does not verify interaction. Review: no known requirement guesses or plan deviations. Unrelated untracked `work/` remains untouched.

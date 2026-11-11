@@ -1,7 +1,7 @@
 # 032 — Public README, license and screenshots
 
 Status: done (2026-11-12)
-Starting commit: `79f5e8d`
+Starting commit: `354a65b`
 
 ## Outcome
 A visitor-facing README (owner's voice, claims linked to evidence, honest "Not done

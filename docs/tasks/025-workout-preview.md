@@ -1,7 +1,7 @@
 # 025 — Compact workout preview
 
 Status: done
-Starting commit: 9442701
+Starting commit: b385044
 
 ## Outcome / acceptance
 Owner approved the compact comparison design in chat (2026-11-01): `workout-preview-comparison.html` (local mockup, not in the repo). Implement native Compose using real data. All exercises in program order, compact numbered headings, aligned Plan/Last rows with columns Sets × reps, RIR, Load, and last-session date at far right. No program name, redundant standalone sets/reps/RIR legend, target suggestion or bottom Back button. Keep Next workout indication when suggested, workout name and exercise count, Progress and Settings actions. System back closes the preview. Start workout stays fixed at bottom with safe insets while all exercises scroll above it.
@@ -29,15 +29,15 @@ Lead device: verify full list scroll, Start remains visible, no overlap system b
 
 ## Verification
 - `scripts/check --offline` passed twice: debug build, lint and available JVM tests, including new preview formatting tests. Gradle reported deprecation warnings.
-- Review fix: `scripts/check --offline` passed (debug build, lint and available JVM tests; Gradle deprecation warning). Device/visual checks and lead diff review remain pending. Implementation commit: `212915e`.
-- Commit message correction: a shell line break dropped the intended `Not verified` and `Review` paragraphs from `212915e`; they are recorded in the following handoff commit and above/below.
+- Review fix: `scripts/check --offline` passed (debug build, lint and available JVM tests; Gradle deprecation warning). Device/visual checks and lead diff review remain pending. Implementation commit: `c7b4394`.
+- Commit message correction: a shell line break dropped the intended `Not verified` and `Review` paragraphs from `c7b4394`; they are recorded in the following handoff commit and above/below.
 
 ## Handoff
 Next: lead inspect the diff, re-run checks, install and perform the lead device checks (scroll, fixed Start/insets, local start/discard, system back, target absence, ordinary/narrow widths and large font). Lead updates status/architecture. No device actions performed by worker. Preserve unrelated `work/` and lead changes to `docs/status.md`.
 
 
 ## Lead verification and final handoff
-- `scripts/check --offline` passed independently; `git diff 9442701..HEAD --check` passed.
+- `scripts/check --offline` passed independently; `git diff b385044..HEAD --check` passed.
 - `cd android && ./gradlew :app:installDebug --offline` installed on the test phone.
 - Inspected actual Push 1 preview: five exercises, plan/last values, RIR, kg/plates and compact age columns, no program name/target/bottom Back, fixed Start and safe system insets. Android Back returned to selection.
 - Confirmed Upload workouts off in Settings without changing it. Started a new empty local test workout from fixed Start; current exercise and Up next had no target suggestion. Discarded only that new empty test workout through the confirmation, then reopened preview. Owner explicitly authorized this local test activity.

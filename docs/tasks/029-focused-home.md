@@ -1,7 +1,7 @@
 # 029 — Focused Home
 
 Status: done
-Starting commit: 01763eb2f9738dc6979ab0da595b5a7617879ba5
+Starting commit: f1cf6f3bfb0375e88c373ccef801b41c66d7ecc6
 Date: 2026-11-02
 Interrupts: [027](027-workout-timing.md) remains paused at its watch handoff;
 [028](028-explicit-upload.md) is done with owner interaction checks pending.
@@ -132,9 +132,9 @@ This is a one-off UI miss found by device testing; no worker rule changes are ne
 - Reviewed the complete implementation diff: app UI/resources, one existing program-ID
   mapping assertion, shared ProgressViewModel wiring and saveable selection only. No
   data/domain/sync/backend changes, dependencies, weakened tests, or new upload actions.
-- `scripts/check --offline` passed independently for 519f1d5 and again after 28f41a8
+- `scripts/check --offline` passed independently for 125ca7a and again after e0960fe
   (build, Android lint and JVM tests). Gradle still reports its existing deprecation notice.
-  `git diff 01763eb..HEAD --check` passed. Both installations used
+  `git diff f1cf6f3..HEAD --check` passed. Both installations used
   `cd android && ./gradlew :app:installDebug --offline` and succeeded on the test phone.
 - Device script `verify_home_phone.py` in the mockup's thread directory passed:
   choose Push 1 then Android Back retains Pull 1; choose/apply Legs 2 changes Home;
@@ -164,8 +164,8 @@ This is a one-off UI miss found by device testing; no worker rule changes are ne
 
 ## Handoff
 
-Implemented, reviewed, checked and installed. Worker UI commit: 519f1d5. Lead large-text
-fix: 28f41a8. Planning/scope records: 96b82c3, d8afc4a, abd3c81. Final routing/architecture
+Implemented, reviewed, checked and installed. Worker UI commit: 125ca7a. Lead large-text
+fix: e0960fe. Planning/scope records: 1e79277, 7bff5ba, 37b697b. Final routing/architecture
 and this verification are committed separately. No unfinished code or unrelated drift.
 Next: owner reviews Home on the phone; continue screen-by-screen only on request.
 Task 027's paused watch work and task 028's pending owner upload-flow check remain intact.

@@ -24,11 +24,15 @@ Updated: 2026-11-12
 
 ## Current task
 
-[032 — Public README](tasks/032-public-readme.md) is done: visitor README, MIT license and
-screenshots from invented test data. Next: owner's final read, then publish on GitHub.
+[033 — Second history scrub](tasks/033-second-history-scrub.md) is done: removed what an
+external review found after 031 (backend project ref, real-data quotes in task notes); the
+integration-test guard is configurable. Owner action pending: stronger account password.
 
-[031 — Public history scrub](tasks/031-public-history-scrub.md) is done: history rewritten
-without personal data or AI attribution; the repo is public-safe.
+[032 — Public README](tasks/032-public-readme.md) is done: visitor README, MIT license and
+screenshots from invented test data. Next: owner's final read, then publish on GitHub
+(after 033's password action).
+
+[031 — Public history scrub](tasks/031-public-history-scrub.md): first pass, incomplete (see 033).
 
 [030 — Navigation and history](tasks/030-navigation-history.md) is done: Home/History/
 Progress shell, recorded workout/exercise browsing and origin-aware Back implemented,

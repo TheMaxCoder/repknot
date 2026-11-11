@@ -2,7 +2,7 @@
 
 Status: done
 Updated: 2026-11-01
-Starting commit: 625f1ee
+Starting commit: bdc5bcc
 Lead task; steps are delegated as separate task files.
 
 ## Outcome and acceptance
@@ -30,8 +30,8 @@ checked the screens on the phone against the real history.
 4. [x] Light / modified day flag on a session, excluded from statuses. Needs a non-destructive
    server migration, `push_session` support, and the **first real Room migration** (v4→v5:
    from 2026-11-02 the phone holds unuploaded real workouts, so no destructive fallback).
-   Lead does migration + sync; UI toggle may be delegated. Server side done (4ae0f34:
-   `light` column, push/save keep it when omitted; pgTAP 007). Phone side 52678aa: Room v5
+   Lead does migration + sync; UI toggle may be delegated. Server side done (8ec0757:
+   `light` column, push/save keep it when omitted; pgTAP 007). Phone side 91d62e6: Room v5
    with an explicit migration (MigrationTest), sync payload, "Light day" switch. The installed
    app upgraded v4→v5 on the owner's phone without data loss or crash (2026-11-01).
 5. [x] Body card: check-ins to the phone (sync + entry form), waist now / cm to goal /
@@ -63,7 +63,7 @@ checked the screens on the phone against the real history.
 
 ## Handoff
 Done 2026-11-01. Steps 1–5 shipped and device-checked on the real history (tasks 020–023;
-check-in data layer e66fa9a, light day 4ae0f34/52678aa). Follow-ups, not blocking:
+check-in data layer 5f06d76, light day 8ec0757/91d62e6). Follow-ups, not blocking:
 - Watch whether "best" (+1 on reps+RIR) is too generous once phone logging accumulates.
 - Weekly hard sets per muscle (needs muscle tags) and e1RM as a kg-only secondary number.
 - Guard `raw`/`source_ref` before any past-session editing on the phone.

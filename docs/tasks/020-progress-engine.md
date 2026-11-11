@@ -2,7 +2,7 @@
 
 Status: done
 Updated: 2026-11-01
-Starting commit: f8d2884
+Starting commit: 55844a3
 Parent: [019](019-progress-milestone.md) step 1 · Delegated: yes (see
 [delegation](../delegation/README.md))
 
@@ -181,9 +181,9 @@ sessionDips emit and not-emit (2 of 3 below; 3 of 7 below).
   consequently a finished session can contain an exercise with no sets. The lineage
   definition does not specify a unit when the most recent session containing that
   exercise has no sets.
-- Clarification in `079d8a7`: skip sessions with no sets when selecting lineage unit.
+- Clarification in `102c2e2`: skip sessions with no sets when selecting lineage unit.
 - Pre-existing untracked `work/` and `docs/tasks/021-workout-card-targets.md` left untouched. An untracked `supabase/migrations/20261101070000_session_light_flag.sql` appeared during work and was also left untouched.
-- Clarification in `59e7d60`: same-date exposures tie and sort by name; no timestamps added. Attention ordering uses the latest exposure date, then name.
+- Clarification in `a43fb38`: same-date exposures tie and sort by name; no timestamps added. Attention ordering uses the latest exposure date, then name.
 - For externally constructed `ExerciseProgress` with no exposures, attention ordering places its missing date after dated entries within its group. Normal `progress` results always contain an exposure. Review: this is a conservative choice for an unspecified edge case.
 
 ## Verification
@@ -194,7 +194,7 @@ sessionDips emit and not-emit (2 of 3 below; 3 of 7 below).
 
 ## Handoff
 
-Step 1 was committed as `0aa81fb`. Engine and tests are complete after the same-date clarification. No blockers or unfinished task changes. Next: lead review of task 020 and proceed with milestone 019's dependent UI work. Unrelated untracked files remain untouched.
+Step 1 was committed as `0d48166`. Engine and tests are complete after the same-date clarification. No blockers or unfinished task changes. Next: lead review of task 020 and proceed with milestone 019's dependent UI work. Unrelated untracked files remain untouched.
 
 ## Lead review (2026-11-01)
 Accepted (after two clarification stops, see the delegation miss log). Code read against

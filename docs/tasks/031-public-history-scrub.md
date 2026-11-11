@@ -1,16 +1,20 @@
 # 031 — Public history scrub
 
 Status: done (2026-11-12)
-Starting commit: `1f214f4` (rewritten head; the pre-rewrite head no longer exists in this repo)
+Starting commit: `87f4c94` (rewritten head; the pre-rewrite head no longer exists in this repo)
 
 ## Outcome
-The repository can be published: no personal data in any commit's files or messages, no
-AI attribution trailers, and rules that keep it that way.
+History without the personal data this pass searched for, no AI attribution trailers, and
+rules that keep it that way. **Incomplete:** an external review found items this pass
+missed (the backend project ref, a quoted real failed-set note in task 018, device-check
+quotes derived from the real program, and a fixture value copied from real health
+context). They were removed by a second rewrite in
+[033](033-second-history-scrub.md).
 
-Acceptance:
-- Every blob and commit message in history is free of body measurements and goal prose,
-  quoted real training results and counts, phone/watch models and vendor, local absolute
-  paths, and `Co-Authored-By`/"Generated with" lines.
+Acceptance (as met by this pass):
+- No blob or commit message matches the searched categories: body measurements and goal
+  prose, quoted real training results and counts, phone/watch models and vendor, local
+  absolute paths, and `Co-Authored-By`/"Generated with" lines.
 - Same 153 commits, subjects, authors, dates and per-commit file lists as before.
 - `scripts/check --offline` passes on the rewritten head.
 - `AGENTS.md` forbids AI attribution and personal data; Claude Code attribution is off in

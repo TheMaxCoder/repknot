@@ -1,7 +1,7 @@
 # 026 — Flat focused workout logger
 
 Status: done
-Starting commit: 5e1caeb
+Starting commit: c49dd06
 Date: 2026-11-02
 
 ## Outcome / acceptance
@@ -35,7 +35,7 @@ Lead phone: actual flat layout/header absence; Log, Edit, RIR stepper, switching
 Worker: `scripts/check --offline` passed (debug build, lint and JVM tests), including after the review refinement. Device, large-font and screen-reader verification not run by worker.
 
 ## Lead verification
-- `scripts/check --offline` passed independently (build, lint, JVM tests); `git diff 5e1caeb..HEAD --check` passed. No new dependencies or changes to domain/data/ViewModel logic.
+- `scripts/check --offline` passed independently (build, lint, JVM tests); `git diff c49dd06..HEAD --check` passed. No new dependencies or changes to domain/data/ViewModel logic.
 - `cd android && ./gradlew :app:installDebug --offline` installed on the test phone. Inspected actual flat layout, removed header, compact Plan/Last, filled inputs, flat RIR controls, inline saved set with Edit and overflow Delete, outlined Finish and footer menu.
 - Phone already had a local test Push 1 session (some sets already logged). Kept it. Logged only one new test set (one set), edited its reps, verified updated row/delta and edit completion, then deleted that same added set through its overflow menu. Existing sets/session were not discarded or finished.
 - Enabled Light day, inspected visible status, and restored it to false. Opened Discard confirmation and canceled it. Opened session and exercise notes without saving; All exercises list and scrolling worked while footer remained fixed. An unsaved 16-rep entry survived Next/Previous selection; restored the original 14-rep entry afterward. Keyboard screenshot showed focused filled field and accessible Update action above IME; footer hid during text entry as before.
@@ -43,4 +43,4 @@ Worker: `scripts/check --offline` passed (debug build, lint and JVM tests), incl
 - Not manually checked: large font/screen reader, finished/conflict/share flows, unit-edge cases on device. Existing tests and code paths for those behaviors remain.
 
 ## Handoff
-Implemented, installed and checked. Owner can review the current workout screen; no test sets remain from verification. Existing session and unrelated work/ preserved. Commits: 921ffdd (layout) and b61d351 (saved rows/inputs refinement). Any further visual feedback can be scoped as a follow-up.
+Implemented, installed and checked. Owner can review the current workout screen; no test sets remain from verification. Existing session and unrelated work/ preserved. Commits: e56ce3d (layout) and 3092ad7 (saved rows/inputs refinement). Any further visual feedback can be scoped as a follow-up.
