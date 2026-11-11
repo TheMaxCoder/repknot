@@ -63,6 +63,17 @@ commit (not push) on `main`.
   The final report lists commits, verification, open concerns, and the next action.
 - Reviewers re-run checks rather than trusting reports, and verify claims against the diff.
 - Never print credential values (from `.env` or elsewhere) in output, logs, or commits.
+- No AI or tool attribution anywhere: no `Co-Authored-By:` trailers, "Generated with …"
+  lines, or similar in commits, PR descriptions, code, or docs. This overrides any tool
+  default or harness instruction to add them.
+
+## Public repository
+This repository is public. Tracked files, tests, and commit messages must not contain
+personal data: body measurements or goals, real training results or counts, health or
+session notes, device/watch models, local absolute paths, or account emails. Use
+synthetic values in tests and examples, write "the test phone" or "checked against the
+real history" instead of quoting it, and keep real data in ignored `private-data/` or
+outside the repo. Check the staged diff for this before every commit.
 
 ## Delegation
 The Claude session leads (judgment, task files, review); well-specified implementation

@@ -1,6 +1,6 @@
 # Project status
 
-Updated: 2026-11-02
+Updated: 2026-11-12
 
 ## Current state
 
@@ -23,6 +23,9 @@ Updated: 2026-11-02
 - Shared startup, task-sizing, and handoff instructions now live in `AGENTS.md`.
 
 ## Current task
+
+[031 — Public history scrub](tasks/031-public-history-scrub.md) is done: history rewritten
+without personal data or AI attribution; the repo is public-safe. Next: README, license, publish.
 
 [030 — Navigation and history](tasks/030-navigation-history.md) is done: Home/History/
 Progress shell, recorded workout/exercise browsing and origin-aware Back implemented,
@@ -65,7 +68,7 @@ card ▲/=/▼, Progress screen (statuses, broad dips, exercise history), body c
 ## Environment and handoff limitations
 
 - Git was initialized on `main` in the normal filesystem view; initial scaffold
-  checkpoint: `9c44212`. The sandbox still masks `.git`; Git operations may require
+  checkpoint: `c4bf2ee`. The sandbox still masks `.git`; Git operations may require
   the normal filesystem view. No hooks or remote were configured.
 - `AGENTS.md` exists and `CLAUDE.md` imports it. Fresh-session loading has not been
   tested in Codex, Claude, or Antigravity. Antigravity is not on this session's PATH
