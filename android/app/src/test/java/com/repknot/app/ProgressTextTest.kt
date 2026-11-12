@@ -45,13 +45,27 @@ class ProgressTextTest {
         assertEquals(listOf(ready, absent), flagText(item(ready = 2, days = 15)))
     }
 
+    @Test fun historyDipIdsUseSessionDips() {
+        fun workout(id: String, reps: Double, dayOffset: Long) = PastSession(id, null, null,
+            day.plusDays(dayOffset).atStartOfDay().toInstant(java.time.ZoneOffset.UTC).toEpochMilli(),
+            (0..2).map { PastExercise(it, "$it", listOf(PastSet(0, 20.0, LoadUnit.KG, reps, null, null))) }, false)
+        val history = listOf(workout("base", 10.0, 0), workout("dip", 8.0, 1))
+        assertEquals(sessionDips(history).map { it.sessionId }.toSet(), historyDipSessionIds(history))
+        assertEquals(setOf("dip"), historyDipSessionIds(history))
+    }
+
     @Test fun exposuresAndDips() {
         val set = PastSet(0, 25.0, LoadUnit.KG, 10.0, null, null)
         val e = Exposure("s", day, "Name", LoadUnit.KG, listOf(set), null, false)
         assertEquals("Oct 26 · 1 set · 25 kg × 10", exposureLine(e))
         assertEquals("Oct 26 · 1 set · 25 kg × 10 · light", exposureLine(e.copy(light = true)))
         val dip = SessionDip("s", day, 7, listOf("a", "b"))
-        assertEquals("Broad dip on Oct 26 — 2 of 7 exercises below usual (Row, b). Check sleep, food and recovery.", dipText(dip, mapOf("a" to "Row")))
-        assertEquals("Broad dip on Oct 26 — 2 of 7 exercises below usual (Row, Curl). Check sleep, food and recovery.", dipText(dip, mapOf("a" to "Row", "b" to "Curl")))
+        val status = DipStatus(dip, DipState.PENDING, listOf("a", "b"), 2)
+        val names = mapOf("a" to "Row")
+        fun text(kind: DipAlertKind) = dipAlertText(DipAlert(kind, listOf(status)), names)
+        assertEquals("Off day on Oct 26 — 2 of 7 exercises below usual (Row, b). Usually nothing; this clears when those exercises are back to normal.", text(DipAlertKind.NOTICE))
+        assertEquals("Still below usual since the dip on Oct 26 (Row, b) — recovery isn't catching up. Check sleep and food; consider a lighter session.", text(DipAlertKind.PERSISTING))
+        assertEquals("Broad dip on Oct 26 while losing over 1 % of bodyweight a week — consider eating a bit more.", text(DipAlertKind.FAST_LOSS))
+        assertEquals("1 broad dips in your last 8 workouts (Oct 26) — recovery may not be keeping up with the cut. Check sleep and food; consider eating a bit more or a lighter session.", text(DipAlertKind.PATTERN))
     }
 }

@@ -23,7 +23,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.text.input.KeyboardType
 import com.repknot.app.*
 import com.repknot.app.R
-import com.repknot.app.dipText
+import com.repknot.app.dipAlertText
+import com.repknot.domain.DipAlertKind
 import com.repknot.app.exposureLine
 import com.repknot.app.flagText
 import com.repknot.app.groupLabel
@@ -70,10 +71,12 @@ fun ProgressScreen(state: ProgressUiState, openBody: () -> Unit,
                     }
                 }
                 if (state.items.isEmpty()) Text(stringResource(R.string.no_finished_workouts))
-                state.dips.forEach { dip ->
-                    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer,
-                        contentColor = MaterialTheme.colorScheme.onErrorContainer), modifier = Modifier.fillMaxWidth()) {
-                        Text(dipText(dip, state.names), Modifier.padding(16.dp))
+                state.dipAlert?.let { alert ->
+                    val neutral = alert.kind == DipAlertKind.NOTICE
+                    Card(colors = CardDefaults.cardColors(
+                        containerColor = if (neutral) MaterialTheme.colorScheme.surfaceContainerHigh else MaterialTheme.colorScheme.errorContainer,
+                        contentColor = if (neutral) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onErrorContainer), modifier = Modifier.fillMaxWidth()) {
+                        Text(dipAlertText(alert, state.names), Modifier.padding(16.dp))
                     }
                 }
                 if (state.items.isNotEmpty()) {

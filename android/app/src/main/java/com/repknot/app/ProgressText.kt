@@ -47,5 +47,14 @@ fun flagText(p: ExerciseProgress): List<String> = buildList {
 
 fun exposureLine(e: Exposure): String = "${date(e.date)} · ${previousSummary(e.sets)}" + if (e.light) " · light" else ""
 
-fun dipText(d: SessionDip, names: Map<String, String>): String =
-    "Broad dip on ${date(d.date)} — ${d.below.size} of ${d.evaluable} exercises below usual (${d.below.joinToString(", ") { names[it] ?: it }}). Check sleep, food and recovery."
+fun dipAlertText(alert: DipAlert, names: Map<String, String>): String {
+    val status = alert.dips.last()
+    val dip = status.dip
+    fun named(ids: List<String>) = ids.joinToString(", ") { names[it] ?: it }
+    return when (alert.kind) {
+        DipAlertKind.PATTERN -> "${alert.dips.size} broad dips in your last 8 workouts (${alert.dips.joinToString(", ") { date(it.dip.date) }}) — recovery may not be keeping up with the cut. Check sleep and food; consider eating a bit more or a lighter session."
+        DipAlertKind.PERSISTING -> "Still below usual since the dip on ${date(dip.date)} (${named(status.stillBelow)}) — recovery isn't catching up. Check sleep and food; consider a lighter session."
+        DipAlertKind.FAST_LOSS -> "Broad dip on ${date(dip.date)} while losing over 1 % of bodyweight a week — consider eating a bit more."
+        DipAlertKind.NOTICE -> "Off day on ${date(dip.date)} — ${dip.below.size} of ${dip.evaluable} exercises below usual (${named(dip.below)}). Usually nothing; this clears when those exercises are back to normal."
+    }
+}

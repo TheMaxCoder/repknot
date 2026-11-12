@@ -198,6 +198,43 @@ class ProgressTest {
         assertEquals(listOf(SessionDip("s2", day.plusDays(2), 3, listOf("0", "1", "2"))), dips)
     }
 
+    private fun broad(n: Int, reps: Double = 10.0, light: Boolean = false, load: Double = 20.0) =
+        session(n, light = light).copy(exercises = (0..2).map { PastExercise(it, "$it", listOf(set(reps, load))) })
+
+    @Test fun dipRecoveryAndPersistence() {
+        val dip = listOf(broad(0), broad(1, 8.0))
+        assertEquals(DipState.PENDING, dipStatuses(dip).single().state)
+        assertEquals(0, dipStatuses(dip + broad(2, light = true)).single().evaluated)
+        assertEquals(DipState.RESOLVED, dipStatuses(dip + broad(2)).single().state)
+        assertEquals(DipState.RESOLVED, dipStatuses(dip + broad(2, 8.0, load = 25.0)).single().state)
+        val down = dipStatuses(dip + broad(2, 8.0, load = 15.0)).single()
+        assertEquals(DipState.PERSISTING, down.state)
+        assertEquals(listOf("0", "1", "2"), down.stillBelow)
+        val mixed = broad(2).copy(exercises = (0..2).map { i ->
+            PastExercise(i, "$i", listOf(if (i < 2) set(8.0) else set()))
+        })
+        assertEquals(DipState.PERSISTING, dipStatuses(dip + mixed).single().state)
+        val timed = broad(2).copy(exercises = (0..2).map { PastExercise(it, "$it", listOf(set(null, 15.0, duration = 30))) })
+        assertEquals(DipState.RESOLVED, dipStatuses(dip + timed).single().state)
+    }
+
+    @Test fun dipAlertPriorityAndBoundaries() {
+        val h = listOf(broad(0), broad(1, 8.0))
+        assertEquals(DipAlertKind.NOTICE, dipAlert(h, day.plusDays(11), null)?.kind)
+        assertNull(dipAlert(h, day.plusDays(12), null))
+        assertEquals(DipAlertKind.FAST_LOSS, dipAlert(h, day.plusDays(11), -1.01)?.kind)
+        assertEquals(DipAlertKind.NOTICE, dipAlert(h, day.plusDays(11), -1.0)?.kind)
+        assertNull(dipAlert(h + broad(2), day.plusDays(2), -2.0))
+        val persistent = h + broad(2, 8.0)
+        assertEquals(DipAlertKind.PERSISTING, dipAlert(persistent, day.plusDays(22), -2.0)?.kind)
+        assertNull(dipAlert(persistent, day.plusDays(23), -2.0))
+        val pattern = h + broad(2) + broad(3, 8.0)
+        assertEquals(DipAlertKind.PATTERN, dipAlert(pattern, day.plusDays(3), -2.0)?.kind)
+        val more = pattern + (4..9).map { broad(it) } + broad(10, light = true)
+        assertNotEquals(DipAlertKind.PATTERN, dipAlert(more, day.plusDays(10), null)?.kind)
+        assertNull(dipAlert(h, day, -2.0))
+    }
+
     @Test fun dipsAndAttention() {
         fun many(n: Int, count: Int, below: Int) = session(n).copy(exercises = (0 until count).map {
             PastExercise(it, "$it", listOf(set(if (n == 1 && it < below) 8.0 else 10.0)))

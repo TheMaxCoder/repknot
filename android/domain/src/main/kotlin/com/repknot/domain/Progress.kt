@@ -180,6 +180,51 @@ fun setDelta(logged: PastSet, index: Int, exerciseId: String, history: List<Past
     return when { d >= threshold -> SetDelta.UP; d <= -threshold -> SetDelta.DOWN; else -> SetDelta.SAME }
 }
 
+enum class DipState { RESOLVED, PERSISTING, PENDING }
+data class DipStatus(val dip: SessionDip, val state: DipState, val stillBelow: List<String>, val evaluated: Int)
+enum class DipAlertKind { PATTERN, PERSISTING, FAST_LOSS, NOTICE }
+data class DipAlert(val kind: DipAlertKind, val dips: List<DipStatus>)
+
+fun dipStatuses(history: List<PastSession>): List<DipStatus> {
+    val sessions = ordered(history).filterNot { it.light }
+    return sessionDips(history).map { dip ->
+        val index = sessions.indexOfFirst { it.id == dip.sessionId }
+        var evaluated = 0
+        val below = dip.below.filter { id ->
+            val unit = lineage(history, id).last().unit
+            val current = exposure(sessions[index], id, unit)!!
+            val baseline = sessions.take(index).asReversed().firstNotNullOf { session ->
+                exposure(session, id, unit)?.takeIf { compare(current, it) != Comparison.NOT_COMPARABLE }
+            }
+            val latest = sessions.drop(index + 1).asReversed().firstNotNullOfOrNull { exposure(it, id, unit) }
+                ?: return@filter false
+            evaluated++
+            val comparison = compare(latest, baseline)
+            comparison == Comparison.WORSE || (comparison == Comparison.NOT_COMPARABLE &&
+                latest.unit == baseline.unit && latest.timed == baseline.timed &&
+                latest.topLoad != null && baseline.topLoad != null && latest.topLoad!! < baseline.topLoad!!)
+        }
+        val state = when {
+            evaluated * 2 >= dip.below.size && below.size * 2 < evaluated -> DipState.RESOLVED
+            below.size >= 2 && below.size * 2 >= evaluated -> DipState.PERSISTING
+            else -> DipState.PENDING
+        }
+        DipStatus(dip, state, below, evaluated)
+    }
+}
+
+fun dipAlert(history: List<PastSession>, today: LocalDate, weightPctPerWeek: Double?): DipAlert? {
+    val recent = dipStatuses(history).filter { it.dip.date >= today.minusDays(21) && it.dip.date <= today }
+    val last8 = ordered(history).filterNot { it.light }.takeLast(8).map { it.id }.toSet()
+    val pattern = recent.filter { it.dip.sessionId in last8 }
+    if (pattern.size >= 2) return DipAlert(DipAlertKind.PATTERN, pattern)
+    recent.lastOrNull { it.state == DipState.PERSISTING }?.let { return DipAlert(DipAlertKind.PERSISTING, listOf(it)) }
+    val within10 = recent.filter { it.dip.date >= today.minusDays(10) }
+    if (weightPctPerWeek != null && weightPctPerWeek < -1.0)
+        within10.lastOrNull { it.state != DipState.RESOLVED }?.let { return DipAlert(DipAlertKind.FAST_LOSS, listOf(it)) }
+    return within10.lastOrNull { it.state == DipState.PENDING }?.let { DipAlert(DipAlertKind.NOTICE, listOf(it)) }
+}
+
 data class SessionDip(val sessionId: String, val date: LocalDate, val evaluable: Int, val below: List<String>)
 fun sessionDips(history: List<PastSession>): List<SessionDip> {
     val sessions = ordered(history)

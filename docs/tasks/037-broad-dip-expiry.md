@@ -1,6 +1,6 @@
 # 037 — Broad dips: resolve, expire, escalate on patterns
 
-Status: blocked
+Status: in progress
 Starting commit: 13f1c8a
 Date: 2026-11-12
 
@@ -86,9 +86,8 @@ Synthetic values only in tests.
 
 ## Plan / progress
 
-- [x] Worker: inspect existing domain and app wiring; stop for clarification before implementation.
-- [ ] Worker: domain + JVM tests; app wiring/UI/text; `scripts/check --offline`; commit (domain and
-  app may be one commit or two, each verified).
+- [x] Worker: inspect existing domain and app wiring; clarify comparison precedence.
+- [x] Worker: domain + JVM tests; app wiring/UI/text; `scripts/check --offline`; commit as one verified step.
 - [ ] Lead: review, rerun checks, verify on synthetic data (emulator, test2) where practical; owner
   checks the real Progress page.
 
@@ -104,7 +103,7 @@ Lead: diff review; independent checks; visual check on synthetic data.
 
 ## Decisions / discoveries
 
-- Blocked before implementation: the lower-load fallback and the instruction that timed mismatches are not below overlap when a follow-up changes both load and timed/reps mode. This affects whether an alert can become persisting; see Handoff.
+- Clarification: unit or timed mismatch is evaluated and never still below; the load-down fallback requires matching unit and timed mode. Follow-ups use the same unit chosen by `sessionDips`.
 - The old 28-day list and red-for-every-dip behavior is replaced (owner, 2026-11-12).
 - Rule 3 uses the raw weight rate, not `BodyVerdict.TOO_FAST`, because that verdict already
   depends on `recentDip` (would be circular).
@@ -113,12 +112,10 @@ Lead: diff review; independent checks; visual check on synthetic data.
 
 ## Verification
 
-- Inspected the task, project guidance, `Progress.kt`, and the existing Progress and History app wiring; no implementation or build checks run.
-- `git diff --check`, `git diff --cached --check`, and `scripts/privacy-check --staged` passed for the handoff; the privacy check warned that short passwords are not scanned.
-- `git status --short` was clean on entry; `git log -1 --oneline` showed the task planning commit.
+- `scripts/check --offline` passed: debug build, lint, and JVM tests. An intermediate rerun failed after removing required non-null assertions; those assertions were restored and the check rerun.
+- Synthetic JVM tests cover states, comparison fallback and timed mismatch, priority and date boundaries, light sessions, last-eight filtering, alert copy, and History dip IDs.
+- Device and visual checks are reserved for the lead; no install, adb, or database commands run.
 
 ## Handoff
 
-Blocked on requirement clarification: if a follow-up has a lower non-null top load than the baseline but changes between timed and reps-based sets, should it count as still below? The load-down fallback says a not-comparable lower-load exposure is below, while the following sentence says timed mismatches are evaluated but not below.
-
-Next action: clarify precedence, then implement the domain and app plan and run `scripts/check --offline`. No implementation changes are unfinished.
+Next action: lead reviews the implementation, reruns checks, and verifies the synthetic UI where practical; owner checks the real Progress page. No known unfinished implementation changes. Review the comparison precedence and alert thresholds, including the body-summary interaction.

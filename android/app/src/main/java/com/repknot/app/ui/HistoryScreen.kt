@@ -80,6 +80,7 @@ fun HistoryScreen(state: HistoryUiState, openWorkout: (String) -> Unit, openExer
                                         style = MaterialTheme.typography.bodySmall)
                                     Text(historyStatus(s), color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         style = MaterialTheme.typography.bodySmall)
+                                    if (s.row.id in state.dipSessionIds) BroadDipLabel()
                                 }
                                 Text("›", color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
@@ -119,12 +120,18 @@ private fun ExerciseRecords(s: SessionSnapshot, openExercise: (String) -> Unit) 
 }
 
 @Composable
+private fun BroadDipLabel() {
+    Text("Broad dip", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+}
+
+@Composable
 fun WorkoutHistoryScreen(state: HistoryUiState, id: String, openExercise: (String) -> Unit) {
     ArchiveLayout { ArchiveState(state) {
         val s = state.sessions.firstOrNull { it.row.id == id }?.let(::historyDisplay)
         if (s == null) Text("Workout no longer available.") else {
             Text(historyTitle(s), style = MaterialTheme.typography.headlineMedium)
             Text(listOfNotNull(s.row.performedOn, historyStatus(s), if (s.row.light) "Light day" else null, duration(s)).joinToString(" · "))
+            if (s.row.id in state.dipSessionIds) BroadDipLabel()
             s.row.notes?.takeIf { it.isNotBlank() }?.let { Text("Notes: $it") }
             ExerciseRecords(s, openExercise = openExercise)
         }

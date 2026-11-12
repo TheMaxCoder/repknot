@@ -21,7 +21,7 @@ import kotlinx.coroutines.withContext
 data class ProgressUiState(
     val loading: Boolean = true,
     val items: List<ExerciseProgress> = emptyList(),
-    val dips: List<SessionDip> = emptyList(),
+    val dipAlert: DipAlert? = null,
     val names: Map<String, String> = emptyMap(),
     val body: BodySummary? = null,
     val checkIns: List<CheckInRow> = emptyList(),
@@ -51,16 +51,16 @@ class ProgressViewModel(
                         val prescriptions = reference.activeProgram()?.workouts?.flatMap { it.exercises }.orEmpty()
                         val now = today()
                         val items = attentionOrder(progress(history, prescriptions, now))
-                        val allDips = sessionDips(history)
                         val declines = items.count { it.status == ProgressStatus.POSSIBLE_DECLINE && it.daysSinceLast <= 14 }
-                        val recentDip = allDips.any { it.date >= now.minusDays(14) && it.date <= now }
+                        val checks = rows.map { CheckIn(LocalDate.parse(it.checkedOn), it.weightKg, it.waistCm) }
+                        val weightRate = if (rows.isEmpty()) null else bodySummary(checks, now, goal, declines, false).weightPctPerWeek
+                        val alert = dipAlert(history, now, weightRate)
+                        val recentDip = alert != null
                         ProgressUiState(
                             loading = false, items = items,
-                            dips = allDips.filter { it.date >= now.minusDays(28) && it.date <= now }.sortedByDescending { it.date },
+                            dipAlert = alert,
                             names = items.associate { it.exerciseId to it.name },
-                            body = if (rows.isEmpty()) null else bodySummary(rows.map {
-                                CheckIn(LocalDate.parse(it.checkedOn), it.weightKg, it.waistCm)
-                            }, now, goal, declines, recentDip),
+                            body = if (rows.isEmpty()) null else bodySummary(checks, now, goal, declines, recentDip),
                             checkIns = rows.sortedByDescending { it.checkedOn }, declines = declines,
                             recentDip = recentDip, today = now,
                         )
