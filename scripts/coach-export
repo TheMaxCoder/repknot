@@ -69,7 +69,7 @@ const context = (await rows<Row>(supabase.from("context_entries")
     details: Object.keys(c.details ?? {}).length ? c.details : undefined }));
 
 const programs = await rows<Row>(supabase.from("programs")
-  .select("name, key, version, starts_on, is_active, rules, details, program_workouts(key, name, sequence_position, default_weekday, program_exercises(position, sets, rep_min, rep_max, rir_min, rir_max, rest_s_min, rest_s_max, load, unit, notes, exercises(name)))")
+  .select("name, key, version, starts_on, is_active, rules, details, program_workouts(key, name, sequence_position, default_weekday, program_exercises(position, sets, rep_min, rep_max, rir_min, rir_max, rest_s_min, rest_s_max, load, unit, notes, exercises(name, slug)))")
   .eq("is_active", true));
 const program = programs.map((p) => compact({
   name: p.name, key: p.key, version: p.version, starts_on: p.starts_on,
@@ -77,11 +77,19 @@ const program = programs.map((p) => compact({
   rotation: p.program_workouts.sort((a: Row, b: Row) => a.sequence_position - b.sequence_position).map((w: Row) => compact({
     key: w.key, name: w.name, weekday: w.default_weekday,
     exercises: w.program_exercises.sort(byPosition).map((e: Row) => compact({
-      name: e.exercises?.name, sets: e.sets, reps: e.rep_min ? `${e.rep_min}-${e.rep_max}` : undefined,
+      name: e.exercises?.name, slug: e.exercises?.slug, sets: e.sets, reps: e.rep_min ? `${e.rep_min}-${e.rep_max}` : undefined,
       rir: e.rir_min != null ? `${e.rir_min}-${e.rir_max}` : undefined,
       rest_s: e.rest_s_min ? `${e.rest_s_min}-${e.rest_s_max}` : undefined, load: e.load, unit: e.unit, notes: e.notes })),
   })),
 }))[0] ?? null;
+
+// Recent coach briefs (task 034), newest first, with exercise names instead of ids.
+const exerciseNames = new Map((await rows<Row>(supabase.from("exercises").select("id, name")))
+  .map((e) => [e.id, e.name]));
+const coachNotes = (await rows<Row>(supabase.from("coach_notes")
+  .select("published_at, based_on, headline, items").order("published_at", { ascending: false }).limit(5)))
+  .map((n) => compact({ published: n.published_at.slice(0, 10), based_on: n.based_on, headline: n.headline,
+    items: n.items.map((i: Row) => compact({ kind: i.kind, exercise: exerciseNames.get(i.exercise_id), text: i.text })) }));
 
 await Deno.mkdir(out, { recursive: true });
 const write = (name: string, value: unknown) => Deno.writeTextFile(`${out}/${name}`, JSON.stringify(value, null, 1) + "\n");
@@ -89,6 +97,7 @@ await write("sessions.json", sessions);
 await write("checkins.json", checkins);
 await write("context.json", context);
 await write("program.json", program);
+await write("coach_notes.json", coachNotes);
 await write("export.json", { exported_at: new Date().toISOString(), sessions: sessions.length,
-  checkins: checkins.length, context: context.length, program: program?.name ?? null });
-console.log(`Wrote ${sessions.length} sessions, ${checkins.length} check-ins, ${context.length} context entries, program ${program?.name ?? "(none)"} to ${out}`);
+  checkins: checkins.length, context: context.length, coach_notes: coachNotes.length, program: program?.name ?? null });
+console.log(`Wrote ${sessions.length} sessions, ${checkins.length} check-ins, ${context.length} context entries, ${coachNotes.length} coach briefs, program ${program?.name ?? "(none)"} to ${out}`);
