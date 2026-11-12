@@ -10,6 +10,8 @@
 //   scripts/repknot delete <#number|uuid>
 //   scripts/repknot seed-exercises <exercises.csv>
 //   scripts/repknot publish-program <program.json> [--inactive]
+//   scripts/repknot publish-notes <notes.json>   # coach brief shown on the phone's Home (task 034)
+//   scripts/repknot notes                         # latest published brief
 //   add --as test2 to act as the second (test) user
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { parse } from "jsr:@std/csv@1";
@@ -157,7 +159,62 @@ switch (command) {
     break;
   }
 
+  case "publish-notes": {
+    if (!arg) fail("give a notes JSON file");
+    const brief = JSON.parse(await Deno.readTextFile(arg));
+    const kinds = ["progress", "hold", "technique", "recovery", "focus"];
+    const problems: string[] = [];
+    const headline = typeof brief.headline === "string" ? brief.headline.trim() : "";
+    if (!headline || headline.length > 120) problems.push("headline: 1–120 characters");
+    if (brief.based_on !== undefined && !/^\d{4}-\d{2}-\d{2}$/.test(brief.based_on)) problems.push("based_on: YYYY-MM-DD");
+    if (!Array.isArray(brief.items) || brief.items.length < 1 || brief.items.length > 8) problems.push("items: 1–8 entries");
+    const items = Array.isArray(brief.items) ? brief.items : [];
+    items.forEach((item: Record<string, unknown>, i: number) => {
+      if (!kinds.includes(item.kind as string)) problems.push(`items[${i}].kind: one of ${kinds.join(", ")}`);
+      const text = typeof item.text === "string" ? item.text.trim() : "";
+      if (!text || text.length > 200) problems.push(`items[${i}].text: 1–200 characters`);
+      if (item.exercise !== undefined && typeof item.exercise !== "string") problems.push(`items[${i}].exercise: an exercise slug`);
+    });
+    if (problems.length) fail(`invalid notes file:\n  ${problems.join("\n  ")}`);
+    const slugs = [...new Set(items.map((item: Record<string, string>) => item.exercise).filter(Boolean))] as string[];
+    const ids = new Map<string, string>();
+    if (slugs.length) {
+      const { data, error } = await supabase.from("exercises").select("id, slug").in("slug", slugs);
+      if (error) fail(error);
+      for (const e of data) ids.set(e.slug, e.id);
+      const unknown = slugs.filter((slug) => !ids.has(slug));
+      if (unknown.length) fail(`unknown exercise slugs: ${unknown.join(", ")}`);
+    }
+    const { data, error } = await supabase.from("coach_notes").insert({
+      headline, based_on: brief.based_on ?? null, source: "cli",
+      items: items.map((item: Record<string, string>) => ({ kind: item.kind, text: item.text.trim(),
+        ...(item.exercise ? { exercise_id: ids.get(item.exercise) } : {}) })),
+    }).select("id, published_at").single();
+    if (error) fail(error);
+    console.log(`published coach notes (${items.length} item${items.length === 1 ? "" : "s"}) ${data.id} at ${data.published_at}`);
+    break;
+  }
+
+  case "notes": {
+    const { data, error } = await supabase.from("coach_notes")
+      .select("id, published_at, based_on, headline, items").order("published_at", { ascending: false }).limit(1).maybeSingle();
+    if (error) fail(error);
+    if (!data) { console.log("(no coach notes)"); break; }
+    const names = new Map<string, string>();
+    const ids = data.items.map((item: Record<string, string>) => item.exercise_id).filter(Boolean);
+    if (ids.length) {
+      const { data: exercises, error: exerciseError } = await supabase.from("exercises").select("id, name").in("id", ids);
+      if (exerciseError) fail(exerciseError);
+      for (const e of exercises) names.set(e.id, e.name);
+    }
+    console.log(`${data.headline}  · ${data.published_at.slice(0, 10)}${data.based_on ? ` (through ${data.based_on})` : ""}  ${data.id}`);
+    for (const item of data.items) {
+      console.log(`  [${item.kind}] ${item.exercise_id ? `${names.get(item.exercise_id) ?? "?"}: ` : ""}${item.text}`);
+    }
+    break;
+  }
+
   default:
-    console.log("usage: scripts/repknot [--as test2] whoami | list [n] | show <#n|uuid> | set-notes <#n|uuid> <notes> | log-test | delete <#n|uuid> | seed-exercises <exercises.csv> | publish-program <program.json> [--inactive]");
+    console.log("usage: scripts/repknot [--as test2] whoami | list [n] | show <#n|uuid> | set-notes <#n|uuid> <notes> | log-test | delete <#n|uuid> | seed-exercises <exercises.csv> | publish-program <program.json> [--inactive] | publish-notes <notes.json> | notes");
     Deno.exit(command ? 1 : 0);
 }
