@@ -1,7 +1,9 @@
-# 034 — Privacy gates for commits and pushes
+# 036 — Privacy gates for commits and pushes
 
 Status: done (2026-11-12)
 Starting commit: `dc134d8`
+Numbering: first committed as "034" (commit c4ec74f) while a parallel session used 034 for
+[coach notes](034-coach-notes.md); renumbered to 036.
 
 ## Outcome
 Personal data and secrets are caught automatically before they are committed or pushed,

@@ -132,4 +132,4 @@ Early security is intentionally lightweight for synthetic development. Record te
 relaxations and revisit them before real health data. Run relevant checks, inspect the
 diff, and report limitations. Tests and check scripts may evolve; don't weaken them to
 hide failures. No mandatory CI or approval for every plan. The privacy gates above are the
-one deliberate blocking guard (task 034); add no other command-blocking hooks.
+one deliberate blocking guard (task 036); add no other command-blocking hooks.

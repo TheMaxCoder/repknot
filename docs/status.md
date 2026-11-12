@@ -24,7 +24,7 @@ Updated: 2026-11-12
 
 ## Current task
 
-[034 — Privacy gates](tasks/034-privacy-gates.md) is done: pattern check on every commit, check
+[036 — Privacy gates](tasks/036-privacy-gates.md) is done: pattern check on every commit, check
 plus independent AI review on every push (`scripts/install-hooks` once per clone).
 
 [035 — Rest timer while typing, coach notes in the workout](tasks/035-rest-visibility-and-coach-notes-in-workout.md)
