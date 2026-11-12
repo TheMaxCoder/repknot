@@ -83,6 +83,10 @@ in the gym.
   twelve ([miss log](docs/delegation/README.md#miss-log)).
 - **Task records.** [docs/tasks](docs/tasks/) keeps each step's plan, decisions,
   verification and handoff, so any session can resume without chat history.
+- **Privacy gates.** The app holds my real training data but the repo is public, so every
+  commit passes a pattern check for personal data and secrets, and every push also gets an
+  independent AI review of what's leaving. The gate blocks if the review fails or can't
+  run ([`scripts/push-gate`](scripts/push-gate)).
 
 In hindsight I'd finalize the UI design before building screens. Several were redesigned
 after the first days of real use.
@@ -93,6 +97,7 @@ Requirements: Android SDK platform 36 with build tools 36.0.0 (`ANDROID_HOME` or
 `android/local.properties`), and a JDK that runs Gradle (Android Studio's bundled JBR works).
 
 ```sh
+scripts/install-hooks                  # once per clone: privacy checks on commit and push
 scripts/check                          # debug build, lint, unit tests
 cd android && ./gradlew :app:installDebug
 ```

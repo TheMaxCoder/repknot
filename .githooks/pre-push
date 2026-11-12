@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# Privacy check plus independent AI review of everything being pushed (see scripts/push-gate).
+exec "$(git rev-parse --show-toplevel)/scripts/push-gate" "$@"

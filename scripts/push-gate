@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+# Gate every push: privacy-check, then an independent AI privacy review of what is leaving.
+#   As the pre-push hook: .githooks/pre-push passes <remote> <url> and the ref lines on stdin.
+#   By hand (no push):    scripts/push-gate --revs <rev-list args>   e.g. --revs HEAD --not --remotes
+# PUSH_GATE_OVERRIDE="<reason>" skips only the AI review and is logged in .git/.
+set -euo pipefail
+root="$(git rev-parse --show-toplevel)"
+gitdir="$(git rev-parse --git-common-dir)"
+zero=0000000000000000000000000000000000000000
+
+gate() {  # rev-list args
+  [ -n "$(git rev-list -n1 "$@")" ] || return 0
+  echo "push-gate: privacy-check on $(git rev-list --count "$@") outgoing commit(s)" >&2
+  "$root/scripts/privacy-check" --revs "$@"
+  if [ -n "${PUSH_GATE_OVERRIDE:-}" ]; then
+    printf '%s skipped AI review for %s; reason: %s\n' "$(date -u +%FT%TZ)" "$*" "$PUSH_GATE_OVERRIDE" \
+      >>"$gitdir/push-gate-overrides.log"
+    echo "push-gate: AI review skipped by override (logged in .git/push-gate-overrides.log)" >&2
+    return 0
+  fi
+  command -v pi >/dev/null || { echo "push-gate: pi not installed; cannot run the AI review (blocked)" >&2; return 1; }
+  "$root/scripts/ai-privacy-review" "$@"
+}
+
+if [ "${1:-}" = "--revs" ]; then
+  shift; gate "$@"; echo "push-gate: passed" >&2; exit 0
+fi
+
+remote="${1:-origin}"
+while read -r _local_ref local_sha _remote_ref _remote_sha; do
+  [ "$local_sha" = "$zero" ] && continue          # deleting a remote ref sends nothing
+  gate "$local_sha" --not --remotes="$remote"       # everything this remote doesn't have yet
+done
+echo "push-gate: passed" >&2

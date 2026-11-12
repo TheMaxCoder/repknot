@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+# Enable the tracked privacy hooks (.githooks/) for this clone. Run once per clone.
+set -euo pipefail
+cd "$(git rev-parse --show-toplevel)"
+git config core.hooksPath .githooks
+echo "hooks enabled: pre-commit and commit-msg (privacy-check), pre-push (push-gate)"
+[ -f private-data/privacy-denylist.txt ] || echo "note: add your private values to private-data/privacy-denylist.txt (git-ignored)"

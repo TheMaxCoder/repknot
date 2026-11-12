@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# Block personal data, secrets and AI attribution in the commit message.
+exec "$(git rev-parse --show-toplevel)/scripts/privacy-check" --message "$1"

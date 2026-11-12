@@ -1,0 +1,193 @@
+#!/usr/bin/env -S python3 -I
+"""Block personal data and secrets before they are committed or pushed.
+
+Usage:
+  scripts/privacy-check --staged            staged changes (pre-commit hook)
+  scripts/privacy-check --message <file>    a commit message (commit-msg hook)
+  scripts/privacy-check --revs <rev-args>   commits in a range, e.g. origin/main..HEAD
+  scripts/privacy-check --history           every reachable file version and message
+
+Rules: generic patterns below, plus private values from the git-ignored
+private-data/privacy-denylist.txt and from .env (credentials, project ref).
+Private values are never printed. A line containing "privacy-check: allow" skips the
+generic rules (not private values). PRIVACY_CHECK_OVERRIDE="<reason>" lets a blocked
+run pass and logs the reason to .git/privacy-overrides.log.
+"""
+import os, re, subprocess, sys
+from datetime import datetime, timezone
+
+ROOT = subprocess.run(["git", "rev-parse", "--show-toplevel"], capture_output=True, text=True).stdout.strip()
+GIT_DIR = subprocess.run(["git", "rev-parse", "--git-common-dir"], capture_output=True, text=True).stdout.strip()
+
+PLACEHOLDER_DOMAINS = r"(?:test\.invalid|example\.(?:com|org|net)|email\.com|localhost|users\.noreply\.github\.com)"
+GENERIC = [
+    ("home path", r"(?<![\w.])(?:/home/[a-z_][\w-]*|/Users/[\w.-]+|[A-Za-z]:\\Users\\)"),
+    ("email address", r"[A-Za-z0-9._%+-]+@(?!" + PLACEHOLDER_DOMAINS + r"\b)[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}"),
+    ("Supabase project URL", r"https://[a-z0-9]{20}\.supabase\.(?:co|in)"),
+    ("Supabase key", r"\bsb_(?:secret|publishable)_[A-Za-z0-9_-]{10,}"),
+    ("JWT", r"\beyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\."),
+    ("private key", r"-----BEGIN [A-Z ]*PRIVATE KEY-----"),
+    ("access token", r"\b(?:ghp_|gho_|github_pat_|sk-ant-|sk-proj-|xox[bp]-)[A-Za-z0-9_-]{16,}|\bAKIA[0-9A-Z]{16}\b"),
+    ("AI attribution trailer", r"(?i)^\s*(?:co-authored-by|generated-by|assisted-by)\s*:"),
+    ("AI attribution line", r"(?i)generated (?:with|by) \[?(?:claude|chatgpt|codex|copilot|gemini)"),
+]
+GENERIC = [(name, re.compile(p)) for name, p in GENERIC]
+IMAGE = re.compile(r"\.(?:png|jpe?g|webp|gif|heic|mp4|mov)$", re.I)
+
+
+def load_private():
+    rules = []
+    deny = os.environ.get("PRIVACY_DENYLIST", os.path.join(ROOT, "private-data", "privacy-denylist.txt"))
+    if os.path.exists(deny):
+        for n, line in enumerate(open(deny, encoding="utf-8"), 1):
+            line = line.rstrip("\n")
+            if not line.strip() or line.lstrip().startswith("#"):
+                continue
+            if line.startswith("re:"):
+                rules.append((f"private denylist line {n}", re.compile(line[3:])))
+            else:
+                rules.append((f"private denylist line {n}", literal(line.strip())))
+    else:
+        print(f"privacy-check: note: {os.path.relpath(deny, ROOT)} missing; only generic and .env rules apply", file=sys.stderr)
+    env = os.environ.get("PRIVACY_ENV_FILE", os.path.join(ROOT, ".env"))
+    if os.path.exists(env):
+        for line in open(env, encoding="utf-8"):
+            m = re.match(r"^([A-Za-z0-9_]+)=(.*)$", line.strip())
+            if not m or len(m.group(2).strip()) < 6:
+                continue
+            key, value = m.group(1), m.group(2).strip()
+            if "PASSWORD" in key and len(value) < 12:
+                print(f"privacy-check: warning: .env {key} is short, so it is not scanned (it would match "
+                      "ordinary text); use a long unique password", file=sys.stderr)
+                continue
+            if key == "SUPABASE_URL":
+                ref = re.match(r"https://([a-z0-9]+)\.supabase\.", value)
+                if ref:
+                    rules.append((".env project ref", literal(ref.group(1))))
+            rules.append((f".env value {key}", literal(value)))
+    return rules
+
+
+def literal(value):
+    left = r"(?<![A-Za-z0-9])" if value[:1].isalnum() else ""
+    right = r"(?![A-Za-z0-9])" if value[-1:].isalnum() else ""
+    return re.compile(left + re.escape(value) + right, re.I)
+
+
+PRIVATE = load_private()
+
+
+def check_line(text):
+    """Return (rule names, masked text) for one line."""
+    hits, masked = [], text
+    for name, pat in PRIVATE:
+        if pat.search(masked):
+            hits.append(name)
+            masked = pat.sub("«private»", masked)
+    if "privacy-check: allow" not in text:
+        for name, pat in GENERIC:
+            if pat.search(masked):
+                hits.append(name)
+                masked = pat.sub("«match»", masked)
+    return hits, masked
+
+
+findings, warnings = [], []
+
+
+def scan_text(where, text, line_offset=1):
+    for i, line in enumerate(text.splitlines(), line_offset):
+        hits, masked = check_line(line)
+        if hits:
+            findings.append(f"{where}:{i}: {', '.join(dict.fromkeys(hits))}\n    {masked.strip()[:200]}")
+
+
+def git(*args):
+    return subprocess.run(["git", *args], capture_output=True, text=True, check=True).stdout
+
+
+def scan_diff(diff, label):
+    """Scan added lines of a unified diff (-U0)."""
+    path, lineno = None, 0
+    for line in diff.splitlines():
+        if line.startswith("+++ "):
+            path = line[6:] if line.startswith("+++ b/") else None
+        elif line.startswith("@@"):
+            m = re.search(r"\+(\d+)", line)
+            lineno = int(m.group(1)) if m else 0
+        elif line.startswith("Binary files ") and " and b/" in line:
+            p = line.split(" and b/", 1)[1].rsplit(" differ", 1)[0]
+            if IMAGE.search(p):
+                warnings.append(f"{label}{p}: image added or changed; confirm it shows only synthetic data")
+        elif line.startswith("+") and not line.startswith("+++") and path:
+            hits, masked = check_line(line[1:])
+            if hits:
+                findings.append(f"{label}{path}:{lineno}: {', '.join(dict.fromkeys(hits))}\n    {masked.strip()[:200]}")
+            lineno += 1
+
+
+def main(argv):
+    if not argv or argv[0] in ("-h", "--help"):
+        print(__doc__); return 0
+    mode = argv[0]
+    if mode == "--staged":
+        scan_diff(git("diff", "--cached", "-U0", "--no-color", "--src-prefix=a/", "--dst-prefix=b/", "--diff-filter=ACMR", "--no-ext-diff"), "")
+    elif mode == "--message" and len(argv) == 2:
+        text = open(argv[1], encoding="utf-8").read()
+        text = "\n".join(l for l in text.splitlines() if not l.startswith("#"))
+        scan_text("commit message", text)
+    elif mode == "--revs" and len(argv) >= 2:
+        for c in git("rev-list", "--reverse", *argv[1:]).split():
+            short = c[:7]
+            scan_text(f"{short} message", git("log", "-1", "--format=%B", c))
+            scan_diff(git("show", "--format=", "-U0", "--no-color", "--src-prefix=a/", "--dst-prefix=b/", "--first-parent", c), f"{short} ")
+    elif mode == "--history":
+        objs = git("rev-list", "--objects", "--all").splitlines()
+        paths = {}
+        for o in objs:
+            sha, _, p = o.partition(" ")
+            if p:
+                paths.setdefault(sha, p)
+        kinds = subprocess.run(["git", "cat-file", "--batch-check"], input="\n".join(paths), capture_output=True, text=True).stdout.splitlines()
+        blobs = [k.split()[0] for k in kinds if k.split()[1] == "blob"]
+        proc = subprocess.Popen(["git", "cat-file", "--batch"], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+        seen = set()
+        for sha in blobs:
+            proc.stdin.write((sha + "\n").encode()); proc.stdin.flush()
+            size = int(proc.stdout.readline().split()[2])
+            data = proc.stdout.read(size); proc.stdout.read(1)
+            if b"\0" in data[:8000]:
+                continue
+            for line in data.decode("utf-8", "replace").splitlines():
+                hits, masked = check_line(line)
+                key = (paths[sha], tuple(hits), masked.strip())
+                if hits and key not in seen:
+                    seen.add(key)
+                    findings.append(f"{paths[sha]} (some version): {', '.join(dict.fromkeys(hits))}\n    {masked.strip()[:200]}")
+        proc.stdin.close(); proc.wait()
+        for c in git("rev-list", "--all").split():
+            scan_text(f"{c[:7]} message", git("log", "-1", "--format=%B", c))
+    else:
+        print(__doc__, file=sys.stderr); return 2
+
+    for w in warnings:
+        print(f"privacy-check: warning: {w}", file=sys.stderr)
+    if not findings:
+        return 0
+    print("privacy-check: possible personal data or secrets:", file=sys.stderr)
+    for f in findings:
+        print(f"  {f}", file=sys.stderr)
+    reason = os.environ.get("PRIVACY_CHECK_OVERRIDE", "").strip()
+    if reason:
+        with open(os.path.join(GIT_DIR, "privacy-overrides.log"), "a", encoding="utf-8") as log:
+            log.write(f"{datetime.now(timezone.utc).isoformat()} {mode} {len(findings)} findings; reason: {reason}\n")
+        print("privacy-check: overridden (logged in .git/privacy-overrides.log)", file=sys.stderr)
+        return 0
+    print("privacy-check: blocked. Remove or rewrite the lines above. For a reviewed false positive on a\n"
+          "  generic rule, add 'privacy-check: allow' to that line, or rerun with\n"
+          "  PRIVACY_CHECK_OVERRIDE=\"<reason>\" (logged).", file=sys.stderr)
+    return 1
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))

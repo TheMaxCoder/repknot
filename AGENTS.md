@@ -74,6 +74,22 @@ session notes, device/watch models, local absolute paths, or account emails. Use
 synthetic values in tests and examples, write "the test phone" or "checked against the
 real history" instead of quoting it, and keep real data in ignored `private-data/` or
 outside the repo. Check the staged diff for this before every commit.
+- Describe, don't quote: verification notes state outcomes ("checked against the real
+  history: targets matched"), never values seen in the real program, history, check-ins,
+  or session notes.
+- Verify on synthetic data by default: the emulator signed in as test2, which has invented
+  demo data. Checks on the owner's phone or real data are the owner's; record outcomes only.
+- Backend identifiers (Supabase project ref, URLs, keys) live in `.env`, never in scripts,
+  notes, or tests. Screenshots and fixtures come only from the synthetic account.
+- Gates, enabled once per clone with `scripts/install-hooks`: pre-commit and commit-msg
+  run `scripts/privacy-check`; pre-push runs `scripts/push-gate` (the same check plus an
+  independent AI review of everything leaving; it fails closed). Real values to block go in
+  the ignored `private-data/privacy-denylist.txt`, never in tracked files.
+- When a gate blocks, fix the content. Never bypass it (`--no-verify`, override variables)
+  without the owner's explicit OK for that instance; overrides are logged in `.git/`.
+  Pushing always needs the owner's go-ahead.
+- The web companion follows the same rules and reuses these scripts and hooks, whether it
+  lives here or in its own repository.
 
 ## Delegation
 The Claude session leads (judgment, task files, review); well-specified implementation
@@ -93,6 +109,10 @@ loop, and the bounded rules for tuning `docs/delegation/worker-notes.md` live in
   coach workspace `../health` (its `./refresh` calls this).
 - `scripts/delegate <task-file> [feedback]` — run a task through the worker model;
   logs go to the ignored `.delegate-logs/`.
+- `scripts/install-hooks` — enable the privacy gates for this clone (once).
+- `scripts/privacy-check --staged|--revs <range>|--history` — the pattern check by hand.
+- `scripts/push-gate --revs <range>` — the full pre-push gate without pushing, e.g.
+  `--revs HEAD --not --remotes` before a first publish.
 
 ## Boundaries
 - Dark-only UI, including launch background and system bars. Use wallpaper-derived dynamic
@@ -111,4 +131,5 @@ personal health exports out of Git and privileged keys out of clients.
 Early security is intentionally lightweight for synthetic development. Record temporary
 relaxations and revisit them before real health data. Run relevant checks, inspect the
 diff, and report limitations. Tests and check scripts may evolve; don't weaken them to
-hide failures. No mandatory CI, command-blocking hooks, or approval for every plan.
+hide failures. No mandatory CI or approval for every plan. The privacy gates above are the
+one deliberate blocking guard (task 034); add no other command-blocking hooks.

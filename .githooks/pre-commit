@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# Block personal data and secrets in staged changes (see scripts/privacy-check).
+exec "$(git rev-parse --show-toplevel)/scripts/privacy-check" --staged
