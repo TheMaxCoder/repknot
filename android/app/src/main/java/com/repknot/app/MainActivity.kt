@@ -61,7 +61,11 @@ class MainActivity : ComponentActivity() {
                     app.settings.waistGoalCm, app::requestRefresh,
                 ))
                 val history: HistoryViewModel = viewModel(factory = HistoryViewModel.Factory(app.database.sessions()))
-                AppNavigation(workout, progress, history) {
+                val coachNotes: CoachNotesViewModel = viewModel(factory = CoachNotesViewModel.Factory(
+                    app.database.coachNotes(), app.database.reference(), app.settings.seenCoachNoteId,
+                    app.settings::markCoachNoteSeen,
+                ))
+                AppNavigation(workout, progress, history, coachNotes) {
                     val waistGoal by app.settings.waistGoalCm.collectAsState()
                     SettingsScreen(waistGoal, app.settings::setWaistGoalCm) {
                         CloudSection(cloudState, cloud::signIn, cloud::signOut)

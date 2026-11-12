@@ -10,6 +10,14 @@ class AppSettings(context: Context) {
     private val prefs = context.getSharedPreferences("settings", Context.MODE_PRIVATE)
     private val waistGoal = MutableStateFlow(prefs.getString(KEY_WAIST_GOAL, null)?.toDoubleOrNull() ?: 80.0)
     val waistGoalCm: StateFlow<Double> = waistGoal.asStateFlow()
+    private val seenNote = MutableStateFlow(prefs.getString(KEY_SEEN_COACH_NOTE, null))
+    val seenCoachNoteId: StateFlow<String?> = seenNote.asStateFlow()
+
+    fun markCoachNoteSeen(id: String) {
+        check(prefs.edit().putString(KEY_SEEN_COACH_NOTE, id).commit())
+        seenNote.value = id
+    }
+
     private val overrides = MutableStateFlow(prefs.all.mapNotNull { (key, value) ->
         if (key.startsWith(KEY_REST_PREFIX) && value is Int) key.removePrefix(KEY_REST_PREFIX) to value else null
     }.toMap())
@@ -26,6 +34,7 @@ class AppSettings(context: Context) {
     }
 
     private companion object {
+        const val KEY_SEEN_COACH_NOTE = "seen_coach_note_id"
         const val KEY_REST_PREFIX = "rest_target_s."
         const val KEY_WAIST_GOAL = "waist_goal_cm"
     }

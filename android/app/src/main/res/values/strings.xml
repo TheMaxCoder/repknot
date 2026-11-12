@@ -1,4 +1,20 @@
 <resources>
+    <string name="coach_notes">Coach notes</string>
+    <string name="coach_notes_dated">Coach notes · %1$s</string>
+    <string name="coach_new">New</string>
+    <string name="coach_expanded">Expanded</string>
+    <string name="coach_collapsed">Collapsed</string>
+    <string name="coach_for_count">%1$d for %2$s</string>
+    <string name="coach_for_workout">For %1$s</string>
+    <string name="coach_general">General</string>
+    <string name="coach_other">Other workouts</string>
+    <string name="coach_based_on">Based on workouts through %1$s</string>
+    <string name="coach_progress">Go up</string>
+    <string name="coach_hold">Hold</string>
+    <string name="coach_technique">Technique</string>
+    <string name="coach_recovery">Recovery</string>
+    <string name="coach_focus">Focus</string>
+    <plurals name="coach_note_count"><item quantity="one">%d note</item><item quantity="other">%d notes</item></plurals>
     <string name="progress">Progress</string>
     <string name="no_finished_workouts">No finished workouts yet.</string>
     <string name="settings">Settings</string>

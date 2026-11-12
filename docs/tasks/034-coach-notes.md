@@ -1,6 +1,6 @@
 # 034 — Coach notes on Home
 
-Status: blocked
+Status: in progress
 Starting commit: dc134d8
 Date: 2026-11-12
 Design: [ADR 005](../decisions/005-coach-notes.md)
@@ -125,8 +125,7 @@ Use only synthetic values in tests. Lead owns status/architecture docs.
 - [x] Lead: migration `20261112010000_coach_notes.sql` + `supabase/tests/009_coach_notes_test.sql`,
   CLI `publish-notes`/`notes`, `scripts/db --yes` passthrough, ADR 005.
 - [x] Lead: owner consent (2026-11-12), then `scripts/db push --yes` and `scripts/db test --yes`.
-- [ ] Worker: Android step above; `scripts/check --offline`; commit.
-  - Data/domain cache, sync, migration, grouping and JVM tests implemented; Home UI pending.
+- [x] Worker: Android data/domain and Home UI, JVM tests, offline checks and commit.
 - [ ] Lead: review diff, re-run checks, publish a real brief, install and check Home on the phone,
   run `MigrationTest` on the phone, coach workspace publish wrapper + instructions, docs.
 
@@ -139,6 +138,8 @@ Use only synthetic values in tests. Lead owns status/architecture docs.
   never breaks an older app.
 - Review: refresh now fetches and replaces the coach notes cache; failures are deferred until
   uploads have been attempted. This changes sync behavior as specified.
+- Lead approved modifying `ui/WorkoutScreen.kt` only to pass coach notes state and the mark-seen
+  callback through to Home; the earlier scope blocker is resolved.
 
 ## Verification
 
@@ -152,15 +153,14 @@ Use only synthetic values in tests. Lead owns status/architecture docs.
   path casing; `cd android && ./gradlew clean --offline && cd .. && scripts/check --offline` passed.
   `cd android && ./gradlew :data:compileDebugAndroidTestKotlin --offline` passed. Instrumented
   migration not run (lead owns device verification).
+- After Home UI implementation: `scripts/check --offline` passed (debug build, lint and JVM
+  tests including date and kind labels); `cd android && ./gradlew :data:compileDebugAndroidTestKotlin --offline`
+  passed (up to date). No device, install, or database commands run by worker.
 
 ## Handoff
 
-Blocked: `HomeScreen` is called inside `android/app/src/main/java/com/repknot/app/ui/WorkoutScreen.kt`
-(lines 50 and 115), which is outside the permitted worker scope. Passing coach note state and
-`markSeen` to Home via the existing composition requires wiring through that file.
-Question: May the worker modify `ui/WorkoutScreen.kt` for this wiring only? Otherwise, what
-in-scope wiring approach should be used?
-
-Next action after clarification: implement app settings, view model, text helpers and Home card,
-wire them through the approved path, then rerun checks. Data/domain is committed; Home UI is
-unfinished. The unrelated `scripts/coach-export` working-tree change was left untouched.
+Worker implementation complete; lead to review the Android diff and rerun checks, then publish
+and verify the card on the phone, including offline/restart behavior, selection/grouping,
+accessibility and layout, and run `MigrationTest` on the phone. Lead retains coach workspace
+and documentation follow-up. No worker changes remain uncommitted; the unrelated
+`scripts/coach-export` working-tree change was left untouched.

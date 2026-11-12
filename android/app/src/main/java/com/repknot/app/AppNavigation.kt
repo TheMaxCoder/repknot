@@ -16,7 +16,8 @@ import com.repknot.app.ui.*
 
 @Composable
 fun AppNavigation(workout: WorkoutViewModel, progress: ProgressViewModel,
-                  history: HistoryViewModel, settings: @Composable () -> Unit) {
+                  history: HistoryViewModel, coachNotes: CoachNotesViewModel, settings: @Composable () -> Unit) {
+    val coachNotesState by coachNotes.state.collectAsState()
     val progressState by progress.state.collectAsState()
     val historyState by history.state.collectAsState()
     val workoutState by workout.state.collectAsState()
@@ -66,7 +67,7 @@ fun AppNavigation(workout: WorkoutViewModel, progress: ProgressViewModel,
             }
             Box(Modifier.weight(1f)) {
                 if (showingLogger) holder.SaveableStateProvider("workout") {
-                    WorkoutScreen(workout, progressState, { nav = nav.select(RootTab.PROGRESS) }, { nav = nav.push("settings") })
+                    WorkoutScreen(workout, progressState, coachNotesState, coachNotes::markSeen, { nav = nav.select(RootTab.PROGRESS) }, { nav = nav.push("settings") })
                 } else if (route == "settings") holder.SaveableStateProvider("settings-${nav.selected}") { settings() }
                 else if (route == "body") holder.SaveableStateProvider("body") {
                     BodyScreen(progressState, progress::addCheckIn, progress::uploadCheckIn, progress::deleteCheckIn)
@@ -89,7 +90,7 @@ fun AppNavigation(workout: WorkoutViewModel, progress: ProgressViewModel,
                             TextButton(onClick = { nav = nav.select(RootTab.PROGRESS) }) { Text("From Progress") }
                         }
                     } else holder.SaveableStateProvider("workout") {
-                        WorkoutScreen(workout, progressState, { nav = nav.select(RootTab.PROGRESS) }, { nav = nav.push("settings") })
+                        WorkoutScreen(workout, progressState, coachNotesState, coachNotes::markSeen, { nav = nav.select(RootTab.PROGRESS) }, { nav = nav.push("settings") })
                     }
                     RootTab.HISTORY -> holder.SaveableStateProvider("history") {
                         HistoryScreen(historyState, { nav = nav.push("workout:$it") }, { nav = nav.push("exercise:$it") })
