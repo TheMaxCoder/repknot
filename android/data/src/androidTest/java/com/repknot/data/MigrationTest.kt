@@ -5,6 +5,7 @@ import androidx.room.testing.MigrationTestHelper
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.flow.first
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Rule
@@ -19,6 +20,7 @@ class MigrationTest {
     private val name7 = "migration-test-7.db"
     private val name8 = "migration-test-8.db"
     private val name9 = "migration-test-9.db"
+    private val name10 = "migration-test-10.db"
     @get:Rule val helper = MigrationTestHelper(InstrumentationRegistry.getInstrumentation(), WorkoutDatabase::class.java)
 
     @Test fun v4WorkoutSurvivesUpgradeToV5WithLightOff() {
@@ -34,7 +36,7 @@ class MigrationTest {
         }
         helper.runMigrationsAndValidate(name, 5, true, WorkoutDatabase.MIGRATION_4_5).close()
         val db = Room.databaseBuilder(InstrumentationRegistry.getInstrumentation().targetContext,
-            WorkoutDatabase::class.java, name).addMigrations(WorkoutDatabase.MIGRATION_4_5, WorkoutDatabase.MIGRATION_5_6, WorkoutDatabase.MIGRATION_6_7, WorkoutDatabase.MIGRATION_7_8, WorkoutDatabase.MIGRATION_8_9).build()
+            WorkoutDatabase::class.java, name).addMigrations(WorkoutDatabase.MIGRATION_4_5, WorkoutDatabase.MIGRATION_5_6, WorkoutDatabase.MIGRATION_6_7, WorkoutDatabase.MIGRATION_7_8, WorkoutDatabase.MIGRATION_8_9, WorkoutDatabase.MIGRATION_9_10).build()
         try {
             runBlocking {
                 val row = db.sessions().get("s1")!!
@@ -58,7 +60,7 @@ class MigrationTest {
         }
         helper.runMigrationsAndValidate(name6, 6, true, WorkoutDatabase.MIGRATION_5_6).close()
         val db = Room.databaseBuilder(InstrumentationRegistry.getInstrumentation().targetContext,
-            WorkoutDatabase::class.java, name6).addMigrations(WorkoutDatabase.MIGRATION_4_5, WorkoutDatabase.MIGRATION_5_6, WorkoutDatabase.MIGRATION_6_7, WorkoutDatabase.MIGRATION_7_8, WorkoutDatabase.MIGRATION_8_9).build()
+            WorkoutDatabase::class.java, name6).addMigrations(WorkoutDatabase.MIGRATION_4_5, WorkoutDatabase.MIGRATION_5_6, WorkoutDatabase.MIGRATION_6_7, WorkoutDatabase.MIGRATION_7_8, WorkoutDatabase.MIGRATION_8_9, WorkoutDatabase.MIGRATION_9_10).build()
         try {
             runBlocking {
                 assertEquals(true, db.sessions().get("s1")!!.light)
@@ -82,7 +84,7 @@ class MigrationTest {
         }
         helper.runMigrationsAndValidate(name7, 7, true, WorkoutDatabase.MIGRATION_6_7).close()
         val db = Room.databaseBuilder(InstrumentationRegistry.getInstrumentation().targetContext,
-            WorkoutDatabase::class.java, name7).addMigrations(WorkoutDatabase.MIGRATION_4_5, WorkoutDatabase.MIGRATION_5_6, WorkoutDatabase.MIGRATION_6_7, WorkoutDatabase.MIGRATION_7_8, WorkoutDatabase.MIGRATION_8_9).build()
+            WorkoutDatabase::class.java, name7).addMigrations(WorkoutDatabase.MIGRATION_4_5, WorkoutDatabase.MIGRATION_5_6, WorkoutDatabase.MIGRATION_6_7, WorkoutDatabase.MIGRATION_7_8, WorkoutDatabase.MIGRATION_8_9, WorkoutDatabase.MIGRATION_9_10).build()
         try {
             runBlocking {
                 val row = db.sessions().get("s1")!!
@@ -117,7 +119,7 @@ class MigrationTest {
         }
         helper.runMigrationsAndValidate(name8, 8, true, WorkoutDatabase.MIGRATION_7_8).close()
         val db = Room.databaseBuilder(InstrumentationRegistry.getInstrumentation().targetContext,
-            WorkoutDatabase::class.java, name8).addMigrations(WorkoutDatabase.MIGRATION_4_5, WorkoutDatabase.MIGRATION_5_6, WorkoutDatabase.MIGRATION_6_7, WorkoutDatabase.MIGRATION_7_8, WorkoutDatabase.MIGRATION_8_9).build()
+            WorkoutDatabase::class.java, name8).addMigrations(WorkoutDatabase.MIGRATION_4_5, WorkoutDatabase.MIGRATION_5_6, WorkoutDatabase.MIGRATION_6_7, WorkoutDatabase.MIGRATION_7_8, WorkoutDatabase.MIGRATION_8_9, WorkoutDatabase.MIGRATION_9_10).build()
         try {
             runBlocking {
                 val current = db.sessions().get("current")!!
@@ -135,6 +137,23 @@ class MigrationTest {
         } finally { db.close() }
     }
 
+    @Test fun v9UpgradesToV10WithEmptyCoachNotes() {
+        helper.createDatabase(name10, 9).apply {
+            execSQL("""INSERT INTO sessions (id, performedOn, title, status, localRevision, pushedLocalRevision, light, uploadRequested)
+                VALUES ('s1', '2026-01-01', 'Example', 'finished', 1, 0, 0, 0)""")
+            close()
+        }
+        helper.runMigrationsAndValidate(name10, 10, true, WorkoutDatabase.MIGRATION_9_10).close()
+        val db = Room.databaseBuilder(InstrumentationRegistry.getInstrumentation().targetContext,
+            WorkoutDatabase::class.java, name10).build()
+        try {
+            runBlocking {
+                assertEquals("Example", db.sessions().get("s1")!!.title)
+                assertEquals(null, db.coachNotes().observeLatest().first())
+            }
+        } finally { db.close() }
+    }
+
     @Test fun v8UpgradeToV9KeepsSessionsWithUnknownSource() {
         helper.createDatabase(name9, 8).apply {
             execSQL("""INSERT INTO sessions (id, performedOn, title, notes, status, localRevision, pushedLocalRevision,
@@ -145,7 +164,7 @@ class MigrationTest {
         helper.runMigrationsAndValidate(name9, 9, true, WorkoutDatabase.MIGRATION_8_9).close()
         val db = Room.databaseBuilder(InstrumentationRegistry.getInstrumentation().targetContext,
             WorkoutDatabase::class.java, name9).addMigrations(WorkoutDatabase.MIGRATION_4_5, WorkoutDatabase.MIGRATION_5_6,
-                WorkoutDatabase.MIGRATION_6_7, WorkoutDatabase.MIGRATION_7_8, WorkoutDatabase.MIGRATION_8_9).build()
+                WorkoutDatabase.MIGRATION_6_7, WorkoutDatabase.MIGRATION_7_8, WorkoutDatabase.MIGRATION_8_9, WorkoutDatabase.MIGRATION_9_10).build()
         try {
             runBlocking {
                 val row = db.sessions().get("s1")!!

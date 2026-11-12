@@ -8,11 +8,12 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Database(entities = [SessionRow::class, SessionExerciseRow::class, SetRow::class, ExerciseRow::class,
-    ProgramRow::class, ProgramWorkoutRow::class, ProgramExerciseRow::class, CheckInRow::class], version = 9, exportSchema = true)
+    ProgramRow::class, ProgramWorkoutRow::class, ProgramExerciseRow::class, CheckInRow::class, CoachNoteRow::class], version = 10, exportSchema = true)
 abstract class WorkoutDatabase : RoomDatabase() {
     abstract fun sessions(): SessionDao
     abstract fun reference(): ReferenceDao
     abstract fun checkIns(): CheckInDao
+    abstract fun coachNotes(): CoachNoteDao
 
     companion object {
         /** v4 → v5: session light flag. From v4 on the phone holds real workouts: migrate, never reset. */
@@ -50,9 +51,14 @@ abstract class WorkoutDatabase : RoomDatabase() {
                 db.execSQL("ALTER TABLE sessions ADD COLUMN source TEXT")
             }
         }
+        val MIGRATION_9_10 = object : Migration(9, 10) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("CREATE TABLE IF NOT EXISTS `coach_notes` (`id` TEXT NOT NULL, `publishedAt` TEXT NOT NULL, `basedOn` TEXT, `headline` TEXT NOT NULL, `items` TEXT NOT NULL, PRIMARY KEY(`id`))")
+            }
+        }
         // Versions 1–3 were synthetic building-phase data and may still be reset.
         fun open(context: Context): WorkoutDatabase = Room.databaseBuilder(
             context.applicationContext, WorkoutDatabase::class.java, "workouts.db",
-        ).addMigrations(MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9).fallbackToDestructiveMigrationFrom(true, 1, 2, 3).build()
+        ).addMigrations(MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10).fallbackToDestructiveMigrationFrom(true, 1, 2, 3).build()
     }
 }

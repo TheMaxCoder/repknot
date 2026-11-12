@@ -20,7 +20,7 @@ class RepknotApplication : Application() {
     val settings by lazy { AppSettings(this) }
     val database by lazy { WorkoutDatabase.open(this) }
     val cloud by lazy { CloudAccount(BuildConfig.SUPABASE_URL, BuildConfig.SUPABASE_PUBLISHABLE_KEY) }
-    val sync by lazy { SessionSync(cloud, database.sessions(), database.reference(), database.checkIns()) { userId ->
+    val sync by lazy { SessionSync(cloud, database.sessions(), database.reference(), database.checkIns(), database.coachNotes()) { userId ->
         val prefs = getSharedPreferences("sync_account", MODE_PRIVATE)
         val owner = prefs.getString("user_id", null)
         if (owner == null) prefs.edit().putString("user_id", userId).commit() else owner == userId

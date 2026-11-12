@@ -126,6 +126,7 @@ Use only synthetic values in tests. Lead owns status/architecture docs.
   CLI `publish-notes`/`notes`, `scripts/db --yes` passthrough, ADR 005.
 - [x] Lead: owner consent (2026-11-12), then `scripts/db push --yes` and `scripts/db test --yes`.
 - [ ] Worker: Android step above; `scripts/check --offline`; commit.
+  - Data/domain cache, sync, migration, grouping and JVM tests implemented; Home UI pending.
 - [ ] Lead: review diff, re-run checks, publish a real brief, install and check Home on the phone,
   run `MigrationTest` on the phone, coach workspace publish wrapper + instructions, docs.
 
@@ -136,6 +137,8 @@ Use only synthetic values in tests. Lead owns status/architecture docs.
   passthrough to `scripts/db`; the lead passes it only after the owner approves a run.
 - Server items are stored as JSON and parsed leniently on the phone so a newer kind or field
   never breaks an older app.
+- Review: refresh now fetches and replaces the coach notes cache; failures are deferred until
+  uploads have been attempted. This changes sync behavior as specified.
 
 ## Verification
 
@@ -145,6 +148,12 @@ Use only synthetic values in tests. Lead owns status/architecture docs.
   (009: 11/11). CLI: invalid file and unknown slug rejected before any write; `notes` reads
   "(no coach notes)".
 
+- Android: `scripts/check --offline` initially failed due to stale Gradle outputs with mismatched
+  path casing; `cd android && ./gradlew clean --offline && cd .. && scripts/check --offline` passed.
+  `cd android && ./gradlew :data:compileDebugAndroidTestKotlin --offline` passed. Instrumented
+  migration not run (lead owns device verification).
+
 ## Handoff
 
-Next action: worker Android step.
+Next action: implement the app settings, view model, text helpers and Home card; then rerun
+checks. The data/domain slice is implemented; Home UI remains unfinished.

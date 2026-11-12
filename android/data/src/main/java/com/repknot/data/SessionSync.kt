@@ -3,6 +3,7 @@ package com.repknot.data
 import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Columns
+import io.github.jan.supabase.postgrest.query.Order
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.sync.Mutex
@@ -21,6 +22,7 @@ private data class PushResult(val status: String, val session: ServerSession? = 
 class SessionSync(
     private val cloud: CloudAccount, private val dao: SessionDao, private val reference: ReferenceDao,
     private val checkIns: CheckInDao? = null,
+    private val coachNotes: CoachNoteDao? = null,
     private val checkOwner: (String) -> Boolean = { true },
 ) {
     private val mutex = Mutex()
@@ -35,6 +37,16 @@ class SessionSync(
         dao.replaceCache(remote)
         checkIns?.replaceCache(client.from("checkins").select(Columns.raw(CHECKIN_COLUMNS)).decodeList<ServerCheckIn>())
         var firstFailure: Exception? = null
+        try {
+            if (coachNotes != null) {
+                val notes = client.from("coach_notes").select(Columns.raw(COACH_NOTE_COLUMNS)) {
+                    order("published_at", Order.DESCENDING); limit(1)
+                }.decodeList<ServerCoachNote>()
+                coachNotes.replace(notes.firstOrNull()?.toRow())
+            }
+        }
+        catch (e: CancellationException) { throw e }
+        catch (e: Exception) { if (firstFailure == null) firstFailure = e }
         // Only rows marked for upload are pushed (task 028). Check-ins carry the phone's id, so a retried upload is a no-op on the server.
         for (row in checkIns?.pending().orEmpty()) {
             try {
