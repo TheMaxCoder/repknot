@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -32,6 +33,8 @@ import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.text.input.KeyboardType
@@ -41,6 +44,8 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.repeatOnLifecycle
 import kotlinx.coroutines.delay
 import com.repknot.app.ui.HomeScreen
+import com.repknot.app.ui.coachNoteStyle
+import com.repknot.domain.CoachNoteItem
 import com.repknot.data.ExerciseRow
 import com.repknot.data.SessionExerciseRow
 import com.repknot.data.SessionRow
@@ -51,7 +56,7 @@ import com.repknot.domain.SetDelta
 import java.time.LocalDate
 
 @Composable
-fun WorkoutScreen(vm: WorkoutViewModel, progress: ProgressUiState, coachNotes: CoachNotesUiState, markSeen: () -> Unit, openProgress: () -> Unit, openSettings: () -> Unit) {
+fun WorkoutScreen(vm: WorkoutViewModel, progress: ProgressUiState, coachNotes: CoachNotesUiState, markSeen: () -> Unit, toggleDone: (Int) -> Unit, openProgress: () -> Unit, openSettings: () -> Unit) {
     val state by vm.state.collectAsState()
     val error by vm.error.collectAsState()
     val session = state as? WorkoutUiState.Session
@@ -116,17 +121,17 @@ fun WorkoutScreen(vm: WorkoutViewModel, progress: ProgressUiState, coachNotes: C
             when (val current = state) {
                 WorkoutUiState.Loading -> CircularProgressIndicator()
                 WorkoutUiState.NoProgram -> Text(stringResource(R.string.no_program))
-                is WorkoutUiState.Today -> HomeScreen(current, selected ?: current.suggested, progress, coachNotes, markSeen,
+                is WorkoutUiState.Today -> HomeScreen(current, selected ?: current.suggested, progress, coachNotes, markSeen, toggleDone,
                     onSelect = { selectedKey = it }, onPreview = vm::preview, openProgress = openProgress)
-                is WorkoutUiState.Session -> SessionScreen(current, vm) { now }
-                is WorkoutUiState.Preview -> PreviewScreen(current, vm)
+                is WorkoutUiState.Session -> SessionScreen(current, vm, coachNotes) { now }
+                is WorkoutUiState.Preview -> PreviewScreen(current, vm, coachNotes)
             }
         }
     }
 }
 
 @Composable
-private fun PreviewScreen(preview: WorkoutUiState.Preview, vm: WorkoutViewModel) {
+private fun PreviewScreen(preview: WorkoutUiState.Preview, vm: WorkoutViewModel, notes: CoachNotesUiState) {
     BackHandler(onBack = vm::closePreview)
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom) {
         Column(Modifier.weight(1f)) {
@@ -143,6 +148,7 @@ private fun PreviewScreen(preview: WorkoutUiState.Preview, vm: WorkoutViewModel)
                 Text((index + 1).toString().padStart(2, '0'), color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelMedium)
                 Text(exercise.prescription.exerciseName, style = MaterialTheme.typography.titleSmall)
             }
+            notes.activeItemsFor(exercise.prescription.exerciseId).firstOrNull()?.let { CoachNoteMarker(it) }
             val last = previewLast(exercise.previous)
             val date = previewDate(exercise.previousOn, LocalDate.now())
             BoxWithConstraints {
@@ -185,7 +191,7 @@ private fun PreviewTableRow(label: String, values: PreviewValues, date: String, 
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun SessionScreen(session: WorkoutUiState.Session, vm: WorkoutViewModel, now: () -> Long) {
+private fun SessionScreen(session: WorkoutUiState.Session, vm: WorkoutViewModel, notes: CoachNotesUiState, now: () -> Long) {
     var picker by rememberSaveable(session.row.id) { mutableStateOf<String?>(null) }
     var selected by rememberSaveable(session.row.id) { mutableStateOf<String?>(null) }
     var showAll by rememberSaveable(session.row.id) { mutableStateOf(false) }
@@ -206,7 +212,7 @@ private fun SessionScreen(session: WorkoutUiState.Session, vm: WorkoutViewModel,
     if (index >= 0) {
         val exercise = session.exercises[index]
         holder.SaveableStateProvider(exercise.row.id) {
-            ExerciseCard(exercise, session.choices, index, session.exercises.size, vm) { picker = exercise.row.id }
+            ExerciseCard(exercise, session.choices, index, session.exercises.size, vm, notes) { picker = exercise.row.id }
         }
         FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             TextButton(enabled = index > 0, onClick = {
@@ -224,6 +230,7 @@ private fun SessionScreen(session: WorkoutUiState.Session, vm: WorkoutViewModel,
                 verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(stringResource(R.string.up_next), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Text(next.row.exerciseName, style = MaterialTheme.typography.titleMedium)
+                notes.activeItemsFor(next.row.exerciseId).firstOrNull()?.let { CoachNoteMarker(it) }
                 Prescription(next.row)
                 PreviousHint(next.previous, next.previousOn)
             }
@@ -339,7 +346,7 @@ private fun SessionActions(session: WorkoutUiState.Session, vm: WorkoutViewModel
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun ExerciseCard(exercise: ExerciseUi, choices: List<ExerciseRow>, index: Int, count: Int,
-                         vm: WorkoutViewModel, substitute: () -> Unit) {
+                         vm: WorkoutViewModel, notes: CoachNotesUiState, substitute: () -> Unit) {
     val row = exercise.row
     var editing by rememberSaveable(row.id) { mutableStateOf<String?>(null) }
     var remove by rememberSaveable(row.id) { mutableStateOf(false) }
@@ -361,6 +368,7 @@ private fun ExerciseCard(exercise: ExerciseUi, choices: List<ExerciseRow>, index
                     }
                 }
             }
+            notes.activeItemsFor(row.exerciseId).forEach { item -> key(item.index) { CoachNoteBox(item, row.id, notes.note?.id.orEmpty()) } }
             row.substitutedFor?.let { id ->
                 Text(stringResource(R.string.instead_of, choices.firstOrNull { it.id == id }?.name
                     ?: stringResource(R.string.prescribed_exercise)))
@@ -433,6 +441,29 @@ private fun ExerciseCard(exercise: ExerciseUi, choices: List<ExerciseRow>, index
         text = { Text(stringResource(R.string.remove_exercise_confirm, row.exerciseName)) },
         confirmButton = { TextButton(onClick = { vm.removeExercise(row.id); remove = false }) { Text(stringResource(R.string.remove)) } },
         dismissButton = { TextButton(onClick = { remove = false }) { Text(stringResource(R.string.cancel)) } })
+}
+
+@Composable
+private fun CoachNoteBox(item: CoachNoteItem, sessionExerciseId: String, noteId: String) {
+    var expanded by rememberSaveable(sessionExerciseId, noteId, item.index) { mutableStateOf(false) }
+    val style = coachNoteStyle(item.kind)
+    val description = stringResource(if (expanded) R.string.coach_expanded else R.string.coach_collapsed)
+    Surface(shape = RoundedCornerShape(8.dp), color = style.container,
+        modifier = Modifier.fillMaxWidth().semantics { stateDescription = description }.clickable(role = Role.Button) { expanded = !expanded }) {
+        Row(Modifier.padding(12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Top) {
+            Icon(painterResource(style.icon), stringResource(style.label), Modifier.size(20.dp), tint = style.tint)
+            Text(item.text, style = MaterialTheme.typography.bodyMedium, maxLines = if (expanded) Int.MAX_VALUE else 2, overflow = TextOverflow.Ellipsis)
+        }
+    }
+}
+
+@Composable
+private fun CoachNoteMarker(item: CoachNoteItem) {
+    val style = coachNoteStyle(item.kind)
+    Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.Top) {
+        Icon(painterResource(style.icon), stringResource(style.label), Modifier.size(16.dp), tint = style.tint)
+        Text(item.text, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2, overflow = TextOverflow.Ellipsis)
+    }
 }
 
 @Composable

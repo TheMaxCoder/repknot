@@ -67,7 +67,7 @@ fun AppNavigation(workout: WorkoutViewModel, progress: ProgressViewModel,
             }
             Box(Modifier.weight(1f)) {
                 if (showingLogger) holder.SaveableStateProvider("workout") {
-                    WorkoutScreen(workout, progressState, coachNotesState, coachNotes::markSeen, { nav = nav.select(RootTab.PROGRESS) }, { nav = nav.push("settings") })
+                    WorkoutScreen(workout, progressState, coachNotesState, coachNotes::markSeen, coachNotes::toggleDone, { nav = nav.select(RootTab.PROGRESS) }, { nav = nav.push("settings") })
                 } else if (route == "settings") holder.SaveableStateProvider("settings-${nav.selected}") { settings() }
                 else if (route == "body") holder.SaveableStateProvider("body") {
                     BodyScreen(progressState, progress::addCheckIn, progress::uploadCheckIn, progress::deleteCheckIn)
@@ -90,7 +90,7 @@ fun AppNavigation(workout: WorkoutViewModel, progress: ProgressViewModel,
                             TextButton(onClick = { nav = nav.select(RootTab.PROGRESS) }) { Text("From Progress") }
                         }
                     } else holder.SaveableStateProvider("workout") {
-                        WorkoutScreen(workout, progressState, coachNotesState, coachNotes::markSeen, { nav = nav.select(RootTab.PROGRESS) }, { nav = nav.push("settings") })
+                        WorkoutScreen(workout, progressState, coachNotesState, coachNotes::markSeen, coachNotes::toggleDone, { nav = nav.select(RootTab.PROGRESS) }, { nav = nav.push("settings") })
                     }
                     RootTab.HISTORY -> holder.SaveableStateProvider("history") {
                         HistoryScreen(historyState, { nav = nav.push("workout:$it") }, { nav = nav.push("exercise:$it") })

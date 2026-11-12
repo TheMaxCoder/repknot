@@ -42,10 +42,10 @@ abstract class CoachNoteDao {
 
 fun parseCoachNoteItems(json: String): List<CoachNoteItem> {
     val array = try { codec.parseToJsonElement(json) as? JsonArray } catch (_: IllegalArgumentException) { null }
-    return array.orEmpty().mapNotNull { element ->
-        val obj = element as? JsonObject ?: return@mapNotNull null
+    return array.orEmpty().mapIndexedNotNull { index, element ->
+        val obj = element as? JsonObject ?: return@mapIndexedNotNull null
         fun string(key: String): String? = (obj[key] as? JsonPrimitive)?.takeIf { it.isString }?.content
-        val text = string("text")?.takeIf { it.isNotBlank() } ?: return@mapNotNull null
-        CoachNoteItem(string("kind") ?: "focus", text, string("exercise_id"))
+        val text = string("text")?.takeIf { it.isNotBlank() } ?: return@mapIndexedNotNull null
+        CoachNoteItem(string("kind") ?: "focus", text, string("exercise_id"), index)
     }
 }

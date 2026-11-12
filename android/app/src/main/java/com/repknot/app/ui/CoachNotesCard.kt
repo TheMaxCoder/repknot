@@ -16,6 +16,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -34,10 +35,10 @@ import java.time.LocalDate
 import java.time.ZoneId
 
 @Composable
-fun CoachNotesCard(state: CoachNotesUiState, workout: ProgramWorkout, markSeen: () -> Unit) {
+fun CoachNotesCard(state: CoachNotesUiState, workout: ProgramWorkout, markSeen: () -> Unit, toggleDone: (Int) -> Unit) {
     val note = state.note ?: return
     var expanded by rememberSaveable(note.id) { mutableStateOf(false) }
-    val groups = groupCoachNotes(note.items, workout.exercises.map { it.exerciseId }.toSet())
+    val groups = groupCoachNotes(note.items, workout.exercises.map { it.exerciseId }.toSet(), state.done)
     val today = LocalDate.now()
     val date = coachNoteDate(note.publishedAt, ZoneId.systemDefault(), today)
     val description = stringResource(if (expanded) R.string.coach_expanded else R.string.coach_collapsed)
@@ -65,19 +66,22 @@ fun CoachNotesCard(state: CoachNotesUiState, workout: ProgramWorkout, markSeen: 
                 Icon(painterResource(R.drawable.ic_expand_more), null, modifier = Modifier.rotate(rotation))
             }
             if (!expanded) {
-                val count = pluralStringResource(R.plurals.coach_note_count, note.items.size, note.items.size)
+                val activeCount = note.items.size - groups.done.size
+                val count = if (activeCount == 0 && groups.done.isNotEmpty()) pluralStringResource(R.plurals.coach_all_done, groups.done.size, groups.done.size)
+                    else pluralStringResource(R.plurals.coach_note_count, activeCount, activeCount)
                 val relevant = if (groups.forWorkout.isNotEmpty()) " · " + stringResource(R.string.coach_for_count, groups.forWorkout.size, workout.name) else ""
-                Text(count + relevant, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                val doneText = if (activeCount > 0 && groups.done.isNotEmpty()) " · " + stringResource(R.string.coach_done_count, groups.done.size) else ""
+                Text(count + relevant + doneText, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             AnimatedVisibility(expanded, enter = expandVertically() + fadeIn(), exit = shrinkVertically() + fadeOut()) {
                 Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                    val sections = listOf(R.string.coach_for_workout to groups.forWorkout, R.string.coach_general to groups.general, R.string.coach_other to groups.other).filter { it.second.isNotEmpty() }
+                    val sections = listOf(R.string.coach_for_workout to groups.forWorkout, R.string.coach_general to groups.general, R.string.coach_other to groups.other, R.string.coach_done to groups.done).filter { it.second.isNotEmpty() }
                     sections.forEachIndexed { index, (title, items) ->
                         if (index > 0) HorizontalDivider()
                         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                             if (sections.size >= 2) Text(if (title == R.string.coach_for_workout) stringResource(title, workout.name) else stringResource(title),
                                 style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            items.forEach { CoachNoteItemRow(it, state.exerciseNames) }
+                            items.forEach { CoachNoteItemRow(it, state.exerciseNames, it.index in state.done) { toggleDone(it.index) } }
                         }
                     }
                     val based = note.basedOn?.let { runCatching { coachDate(LocalDate.parse(it), today) }.getOrNull() }
@@ -89,16 +93,9 @@ fun CoachNotesCard(state: CoachNotesUiState, workout: ProgramWorkout, markSeen: 
 }
 
 @Composable
-private fun CoachNoteItemRow(item: CoachNoteItem, names: Map<String, String>) {
-    val colors = MaterialTheme.colorScheme
-    val (icon, label, container, tint) = when (item.kind) {
-        "progress" -> NoteStyle(R.drawable.ic_note_progress, R.string.coach_progress, colors.primaryContainer, colors.onPrimaryContainer)
-        "hold" -> NoteStyle(R.drawable.ic_note_hold, R.string.coach_hold, colors.surfaceContainerHighest, colors.onSurfaceVariant)
-        "technique" -> NoteStyle(R.drawable.ic_note_technique, R.string.coach_technique, colors.secondaryContainer, colors.onSecondaryContainer)
-        "recovery" -> NoteStyle(R.drawable.ic_note_recovery, R.string.coach_recovery, colors.tertiaryContainer, colors.onTertiaryContainer)
-        else -> NoteStyle(R.drawable.ic_note_focus, R.string.coach_focus, colors.surfaceContainerHighest, colors.primary)
-    }
-    Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.Top) {
+private fun CoachNoteItemRow(item: CoachNoteItem, names: Map<String, String>, done: Boolean, toggleDone: () -> Unit) {
+    val (icon, label, container, tint) = coachNoteStyle(item.kind)
+    Row(Modifier.alpha(if (done) 0.5f else 1f), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.Top) {
         Surface(shape = CircleShape, color = container, modifier = Modifier.size(32.dp)) {
             Box(contentAlignment = Alignment.Center) { Icon(painterResource(icon), stringResource(label), tint = tint, modifier = Modifier.size(20.dp)) }
         }
@@ -106,7 +103,8 @@ private fun CoachNoteItemRow(item: CoachNoteItem, names: Map<String, String>) {
             item.exerciseId?.let { names[it] }?.let { Text(it, style = MaterialTheme.typography.labelLarge) }
             Text(item.text, style = MaterialTheme.typography.bodyMedium)
         }
+        IconButton(onClick = toggleDone, modifier = Modifier.size(48.dp)) {
+            Icon(painterResource(R.drawable.ic_note_done), stringResource(if (done) R.string.coach_mark_not_done else R.string.coach_mark_done))
+        }
     }
 }
-
-private data class NoteStyle(val icon: Int, val label: Int, val container: androidx.compose.ui.graphics.Color, val tint: androidx.compose.ui.graphics.Color)

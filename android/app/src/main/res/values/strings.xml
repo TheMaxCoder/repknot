@@ -162,4 +162,9 @@
         <item quantity="one">%1$d exercise needs a look</item>
         <item quantity="other">%1$d exercises need a look</item>
     </plurals>
+    <string name="coach_done">Done</string>
+    <string name="coach_done_count">%d done</string>
+    <string name="coach_mark_done">Mark done</string>
+    <string name="coach_mark_not_done">Mark not done</string>
+    <plurals name="coach_all_done"><item quantity="one">All %d done</item><item quantity="other">All %d done</item></plurals>
 </resources>

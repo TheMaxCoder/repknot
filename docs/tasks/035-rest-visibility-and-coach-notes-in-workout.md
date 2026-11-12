@@ -77,7 +77,7 @@ Synthetic values only in tests.
 
 ## Plan / progress
 
-- [ ] Worker: implement 1–6 and model changes; JVM tests; `scripts/check --offline`; commit in
+- [x] Worker: implement 1–6 and model changes; JVM tests; `scripts/check --offline`; commit in
   two steps if natural (rest timer; coach notes), each verified.
 - [ ] Lead: review, rerun checks, install, phone check (keyboard close on Log, strip above
   keyboard while typing during rest, progress colors, note box/expand, markers, done/undo and
@@ -94,12 +94,15 @@ Lead (device): all visual/keyboard/interaction behavior above.
 
 - Done state is device-local by design (ADR 005 keeps the phone read-only for coach notes).
 - Done key uses the item index within a brief; briefs are append-only, so indexes never shift.
-- Rest timer and keyboard slice implemented; coach-note slice remains.
+- Rest timer and keyboard slice implemented in `495eb51`; coach-note slice implemented separately.
+- Review: the first commit message omitted its pending device verification due to a shell command error; no commit was rewritten.
 
 ## Verification
 
-- `scripts/check --offline` passed after the rest timer and keyboard slice (build, lint, JVM tests). Device verification remains with the lead.
+- `scripts/check --offline` passed after the rest timer and keyboard slice, and again after the coach-note slice (build, lint, JVM tests).
+- JVM tests cover rest progress, grouped done items, skipped JSON indexes, active items, and done-key encoding/pruning.
+- Device keyboard, layout, interaction and persistence verification remain with the lead; no device commands were run.
 
 ## Handoff
 
-Next action: implement the coach-note model, persistence and UI slice, then run `scripts/check --offline`. Device verification remains with the lead.
+Next action: lead review and rerun checks, then install and perform the specified phone checks. Implementation is complete; task remains in progress until review and device verification. No unfinished working-tree changes are intended.

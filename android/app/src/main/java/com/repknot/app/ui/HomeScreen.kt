@@ -23,7 +23,7 @@ import com.repknot.domain.ProgramWorkout
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(today: WorkoutUiState.Today, selected: ProgramWorkout, progress: ProgressUiState,
-               coachNotes: CoachNotesUiState, markSeen: () -> Unit, onSelect: (String) -> Unit, onPreview: (String) -> Unit, openProgress: () -> Unit) {
+               coachNotes: CoachNotesUiState, markSeen: () -> Unit, toggleDone: (Int) -> Unit, onSelect: (String) -> Unit, onPreview: (String) -> Unit, openProgress: () -> Unit) {
     var choosing by remember { mutableStateOf(false) }
     var pending by remember { mutableStateOf(selected.key) }
     val exercises = selected.exercises.sortedBy { it.position }
@@ -57,7 +57,7 @@ fun HomeScreen(today: WorkoutUiState.Today, selected: ProgramWorkout, progress: 
     TextButton(onClick = { pending = selected.key; choosing = true }, modifier = Modifier.fillMaxWidth()) {
         Text(stringResource(R.string.home_choose))
     }
-    CoachNotesCard(coachNotes, selected, markSeen)
+    CoachNotesCard(coachNotes, selected, markSeen, toggleDone)
     Text(stringResource(R.string.home_from_progress), style = MaterialTheme.typography.titleSmall)
     Surface(onClick = openProgress, shape = RoundedCornerShape(8.dp), color = MaterialTheme.colorScheme.surfaceContainer,
         modifier = Modifier.fillMaxWidth()) {

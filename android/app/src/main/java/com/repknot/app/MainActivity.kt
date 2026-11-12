@@ -63,7 +63,7 @@ class MainActivity : ComponentActivity() {
                 val history: HistoryViewModel = viewModel(factory = HistoryViewModel.Factory(app.database.sessions()))
                 val coachNotes: CoachNotesViewModel = viewModel(factory = CoachNotesViewModel.Factory(
                     app.database.coachNotes(), app.database.reference(), app.settings.seenCoachNoteId,
-                    app.settings::markCoachNoteSeen,
+                    app.settings::markCoachNoteSeen, app.settings.doneCoachItems, app.settings::setCoachItemDone,
                 ))
                 AppNavigation(workout, progress, history, coachNotes) {
                     val waistGoal by app.settings.waistGoalCm.collectAsState()

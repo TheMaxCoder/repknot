@@ -17,10 +17,14 @@ import kotlinx.coroutines.launch
 data class CoachNoteUi(val id: String, val publishedAt: String, val basedOn: String?,
     val headline: String, val items: List<CoachNoteItem>)
 data class CoachNotesUiState(val note: CoachNoteUi? = null, val exerciseNames: Map<String, String> = emptyMap(),
-    val unseen: Boolean = false)
+    val unseen: Boolean = false, val done: Set<Int> = emptySet()) {
+    fun activeItemsFor(exerciseId: String): List<CoachNoteItem> =
+        note?.items.orEmpty().filter { it.exerciseId == exerciseId && it.index !in done }
+}
 
 class CoachNotesViewModel(private val notes: CoachNoteDao, private val reference: ReferenceDao,
-    private val seen: StateFlow<String?>, private val saveSeen: (String) -> Unit) : ViewModel() {
+    private val seen: StateFlow<String?>, private val saveSeen: (String) -> Unit,
+    private val done: StateFlow<Set<String>>, private val saveDone: (String, Int, Boolean) -> Unit) : ViewModel() {
     private val mutableState = MutableStateFlow(CoachNotesUiState())
     val state: StateFlow<CoachNotesUiState> = mutableState.asStateFlow()
 
@@ -31,19 +35,24 @@ class CoachNotesViewModel(private val notes: CoachNoteDao, private val reference
                 val names = if (row == null) emptyMap() else reference.getExercises().associate { it.id to it.name }
                 note to names
             }
-            combine(cached, seen) { (note, names), seenId ->
-                CoachNotesUiState(note, names, note != null && note.id != seenId)
+            combine(cached, seen, done) { (note, names), seenId, doneKeys ->
+                val indexes = note?.let { n -> doneKeys.mapNotNull { key ->
+                    key.takeIf { it.startsWith("${n.id}:") }?.removePrefix("${n.id}:")?.toIntOrNull()
+                }.toSet() }.orEmpty()
+                CoachNotesUiState(note, names, note != null && note.id != seenId, indexes)
             }.collect { mutableState.value = it }
         }
     }
 
     fun markSeen() { state.value.note?.id?.let(saveSeen) }
+    fun toggleDone(index: Int) { state.value.let { current -> current.note?.id?.let { saveDone(it, index, index !in current.done) } } }
 
     class Factory(private val notes: CoachNoteDao, private val reference: ReferenceDao,
-        private val seen: StateFlow<String?>, private val saveSeen: (String) -> Unit) : ViewModelProvider.Factory {
+        private val seen: StateFlow<String?>, private val saveSeen: (String) -> Unit,
+        private val done: StateFlow<Set<String>>, private val saveDone: (String, Int, Boolean) -> Unit) : ViewModelProvider.Factory {
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
             require(modelClass.isAssignableFrom(CoachNotesViewModel::class.java))
-            @Suppress("UNCHECKED_CAST") return CoachNotesViewModel(notes, reference, seen, saveSeen) as T
+            @Suppress("UNCHECKED_CAST") return CoachNotesViewModel(notes, reference, seen, saveSeen, done, saveDone) as T
         }
     }
 }
