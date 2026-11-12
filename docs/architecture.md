@@ -41,6 +41,8 @@ append-only briefs with `scripts/repknot publish-notes`; each refresh caches onl
 (Room `coach_notes`, replaced wholesale; a fetch failure never blocks uploads). Home shows it in a
 collapsible card after the workout chooser: items for the selected workout's exercises first, then
 general, then other workouts. The opened brief id is device-local (a New badge until opened).
+Task 035: items can be marked done on Home (device-local, per brief; hidden elsewhere); the
+logger shows an exercise's notes under its title, and Up next/preview show a one-line marker.
 
 History is read-only and reactive to session/exercise/set changes, loading consistent
 Room snapshots through a ViewModel. It includes finished, pushed and conflicted records,
@@ -61,6 +63,8 @@ Workout timing (task 027): sessions record `startedAt`/`finishedAt` and sets `lo
 footer shows a rest timer derived from the newest `loggedAt` (every Log restarts it, hidden
 after 15 min) with a 2:00/3:00 target from the program's `rest_s_max`, overridable per
 exercise on the device; it vibrates once at the target while the app is in the foreground.
+Log set closes the keyboard; while typing during a rest, a rest strip with progress sits above
+the keyboard instead of the hidden footer (task 035).
 
 Workout preview compares the prescription and previous performance in compact columns,
 with a fixed Start action above the navigation inset. Target suggestions are no longer

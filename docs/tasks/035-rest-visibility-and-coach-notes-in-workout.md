@@ -1,6 +1,6 @@
 # 035 — Rest timer visible while typing; coach notes in the workout; mark notes done
 
-Status: in progress
+Status: done
 Starting commit: b016f24
 Date: 2026-11-12
 Follows: [034](034-coach-notes.md), [ADR 005](../decisions/005-coach-notes.md)
@@ -79,7 +79,7 @@ Synthetic values only in tests.
 
 - [x] Worker: implement 1–6 and model changes; JVM tests; `scripts/check --offline`; commit in
   two steps if natural (rest timer; coach notes), each verified.
-- [ ] Lead: review, rerun checks, install, phone check (keyboard close on Log, strip above
+- [x] Lead: review, rerun checks, install, phone check (keyboard close on Log, strip above
   keyboard while typing during rest, progress colors, note box/expand, markers, done/undo and
   persistence across restart).
 
@@ -102,7 +102,19 @@ Lead (device): all visual/keyboard/interaction behavior above.
 - `scripts/check --offline` passed after the rest timer and keyboard slice, and again after the coach-note slice (build, lint, JVM tests).
 - JVM tests cover rest progress, grouped done items, skipped JSON indexes, active items, and done-key encoding/pruning.
 - Device keyboard, layout, interaction and persistence verification remain with the lead; no device commands were run.
+- Lead: full diff reviewed and accepted. `scripts/check --offline` passed; domain/data/app unit
+  tests rerun passed; `:app:installDebug` on the test phone.
+- Lead, test phone (throwaway session, discarded afterwards; server list unchanged): preview
+  markers on noted exercises; note box under the exercise title; Log set with the keyboard open
+  closed it and the footer showed the rest timer with progress; tapping Reps during rest showed
+  the rest strip directly above the keyboard, ticking; keyboard ✓ closed it without logging
+  (still 1/3); after 2:00 the bar was full in the tertiary color. Home: mark done moved the item
+  to a dimmed Done group; collapsed summary "7 notes · 2 for Push 2 · 1 done" after force-stop
+  and relaunch; undo restored "8 notes · 2 for Push 2".
+- Not verified: note box expand/collapse tap, TalkBack, large fonts, "All N done" state.
 
 ## Handoff
 
-Next action: lead review and rerun checks, then install and perform the specified phone checks. Implementation is complete; task remains in progress until review and device verification. No unfinished working-tree changes are intended.
+Done. Possible polish (not authorized): an empty-circle vs filled-check icon for not-done/done
+items (both currently show a check, only alpha differs); the at-target tertiary color is subtle
+on some wallpapers.

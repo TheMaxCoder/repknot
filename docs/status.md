@@ -24,6 +24,10 @@ Updated: 2026-11-12
 
 ## Current task
 
+[035 — Rest timer while typing, coach notes in the workout](tasks/035-rest-visibility-and-coach-notes-in-workout.md)
+is done: Log closes the keyboard, rest strip above the keyboard, per-exercise notes and done
+marks; checked on the test phone.
+
 [034 — Coach notes on Home](tasks/034-coach-notes.md) is done: coach briefs published with
 `scripts/repknot publish-notes` show on Home in a collapsible card; checked on the test phone.
 
