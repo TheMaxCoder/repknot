@@ -24,6 +24,9 @@ Updated: 2026-11-12
 
 ## Current task
 
+[037 — Broad dip expiry](tasks/037-broad-dip-expiry.md) is done: dips resolve on recovery,
+neutral/red alert rules, History tag; owner to check the real Progress page.
+
 [036 — Privacy gates](tasks/036-privacy-gates.md) is done: pattern check on every commit, check
 plus independent AI review on every push (`scripts/install-hooks` once per clone).
 

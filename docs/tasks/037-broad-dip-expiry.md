@@ -1,6 +1,6 @@
 # 037 — Broad dips: resolve, expire, escalate on patterns
 
-Status: in progress
+Status: done
 Starting commit: 13f1c8a
 Date: 2026-11-12
 
@@ -88,8 +88,8 @@ Synthetic values only in tests.
 
 - [x] Worker: inspect existing domain and app wiring; clarify comparison precedence.
 - [x] Worker: domain + JVM tests; app wiring/UI/text; `scripts/check --offline`; commit as one verified step.
-- [ ] Lead: review, rerun checks, verify on synthetic data (emulator, test2) where practical; owner
-  checks the real Progress page.
+- [x] Lead: review, rerun checks. Synthetic device check not practical (no emulator/AVD in this
+  environment); JVM tests are the proof. Owner checks the real Progress page.
 
 ## Verification responsibilities
 
@@ -115,7 +115,13 @@ Lead: diff review; independent checks; visual check on synthetic data.
 - `scripts/check --offline` passed: debug build, lint, and JVM tests. An intermediate rerun failed after removing required non-null assertions; those assertions were restored and the check rerun.
 - Synthetic JVM tests cover states, comparison fallback and timed mismatch, priority and date boundaries, light sessions, last-eight filtering, alert copy, and History dip IDs.
 - Device and visual checks are reserved for the lead; no install, adb, or database commands run.
+- Lead: full diff reviewed and accepted (baseline matches `sessionDips`' comparison; unit/timed
+  precedence as clarified). `scripts/check --offline` passed; `:domain:test :app:testDebugUnitTest
+  --rerun` passed. No emulator available, so no synthetic visual check; not installed on the
+  owner's phone (owner's call per AGENTS.md).
 
 ## Handoff
 
-Next action: lead reviews the implementation, reruns checks, and verifies the synthetic UI where practical; owner checks the real Progress page. No known unfinished implementation changes. Review the comparison precedence and alert thresholds, including the body-summary interaction.
+Done pending the owner's look at the real Progress page after installing
+(`cd android && ./gradlew :app:installDebug`). Expected: a dip whose exercises have since
+recovered no longer shows; a lone recent dip is a neutral "Off day" card.

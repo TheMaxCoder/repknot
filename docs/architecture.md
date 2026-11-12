@@ -99,7 +99,10 @@ and the signed-in user's session; RLS restricts every table to its owner. Schema
   Sessions carry a `light` flag excluded from
   progress statuses.
 - Progress (domain `Progress.kt`, `Body.kt`) is computed on the phone from the local cache,
-  so it works offline and includes unuploaded workouts; see task 019 for the rules.
+  so it works offline and includes unuploaded workouts; see task 019 for the rules. Broad dips
+  (task 037) resolve when their exercises recover; Progress shows at most one dip card: neutral
+  for a lone recent dip (≤ 10 days), red for a persisting dip, 2 dips in the last 8 sessions, or a
+  dip while losing > 1 %/week; nothing older than 21 days. History tags every dip session.
 - Persist edits and pending sync together, retain stable IDs, and handle retries without duplicates.
 - Upload acknowledgements must not discard newer local edits, and no writer (Android,
   web, ChatGPT, CLI) may silently overwrite another's change. Revision rules are in
