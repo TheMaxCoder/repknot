@@ -1,6 +1,6 @@
 # 034 — Coach notes on Home
 
-Status: in progress
+Status: blocked
 Starting commit: dc134d8
 Date: 2026-11-12
 Design: [ADR 005](../decisions/005-coach-notes.md)
@@ -155,5 +155,12 @@ Use only synthetic values in tests. Lead owns status/architecture docs.
 
 ## Handoff
 
-Next action: implement the app settings, view model, text helpers and Home card; then rerun
-checks. The data/domain slice is implemented; Home UI remains unfinished.
+Blocked: `HomeScreen` is called inside `android/app/src/main/java/com/repknot/app/ui/WorkoutScreen.kt`
+(lines 50 and 115), which is outside the permitted worker scope. Passing coach note state and
+`markSeen` to Home via the existing composition requires wiring through that file.
+Question: May the worker modify `ui/WorkoutScreen.kt` for this wiring only? Otherwise, what
+in-scope wiring approach should be used?
+
+Next action after clarification: implement app settings, view model, text helpers and Home card,
+wire them through the approved path, then rerun checks. Data/domain is committed; Home UI is
+unfinished. The unrelated `scripts/coach-export` working-tree change was left untouched.
