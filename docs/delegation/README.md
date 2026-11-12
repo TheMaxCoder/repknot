@@ -79,3 +79,5 @@ One line each: date · task · category (1–4) · what happened · action.
   text functions.
 - 2026-11-01 · 023 · 1 · spec asked a synchronous Boolean after a suspending write; worker
   stopped (correct) · clarified: validate sync, write async.
+- 2026-11-12 · 034 · 1 · Home is composed inside `ui/WorkoutScreen.kt`, which the scope list
+  omitted; worker stopped after committing data/domain (correct) · scope extended for wiring only.
