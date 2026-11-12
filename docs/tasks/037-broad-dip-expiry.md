@@ -37,8 +37,10 @@ fun dipAlert(history: List<PastSession>, today: LocalDate, weightPctPerWeek: Dou
   (X's last earlier comparable non-light exposure, same unit as `sessionDips` used). *Latest* =
   X's newest non-light exposure **after** S (same unit; ordered as `ordered`). If none → X is not
   evaluated. Otherwise X is evaluated, and *still below* when `compare(latest, baseline) == WORSE`,
-  or when not comparable and `latest.topLoad < baseline.topLoad` (both non-null). Not comparable
-  with a higher or equal top load, or other mismatches (unit/timed) → evaluated, not below.
+  or when not comparable **only because of load** (same unit and same `timed`) and
+  `latest.topLoad < baseline.topLoad` (both non-null). Any unit or timed mismatch → evaluated,
+  not below, regardless of load (mismatch takes precedence over the load-down fallback). Not
+  comparable with a higher or equal top load → evaluated, not below.
 - `evaluated` = number of evaluated exercises; `stillBelow` = ids still below (D.below order).
 - State: `RESOLVED` if `evaluated * 2 >= D.below.size` and `stillBelow.size * 2 < evaluated`;
   `PERSISTING` if `stillBelow.size >= 2` and `stillBelow.size * 2 >= evaluated`; otherwise `PENDING`.

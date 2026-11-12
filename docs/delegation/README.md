@@ -81,3 +81,5 @@ One line each: date · task · category (1–4) · what happened · action.
   stopped (correct) · clarified: validate sync, write async.
 - 2026-11-12 · 034 · 1 · Home is composed inside `ui/WorkoutScreen.kt`, which the scope list
   omitted; worker stopped after committing data/domain (correct) · scope extended for wiring only.
+- 2026-11-12 · 037 · 1 · load-down fallback vs unit/timed mismatch precedence unstated; worker
+  stopped (affects statuses, correct stop) · spec: mismatch wins.
