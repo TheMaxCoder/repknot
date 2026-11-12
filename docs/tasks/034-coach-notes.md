@@ -1,6 +1,6 @@
 # 034 — Coach notes on Home
 
-Status: in progress
+Status: done
 Starting commit: dc134d8
 Date: 2026-11-12
 Design: [ADR 005](../decisions/005-coach-notes.md)
@@ -126,7 +126,7 @@ Use only synthetic values in tests. Lead owns status/architecture docs.
   CLI `publish-notes`/`notes`, `scripts/db --yes` passthrough, ADR 005.
 - [x] Lead: owner consent (2026-11-12), then `scripts/db push --yes` and `scripts/db test --yes`.
 - [x] Worker: Android data/domain and Home UI, JVM tests, offline checks and commit.
-- [ ] Lead: review diff, re-run checks, publish a real brief, install and check Home on the phone,
+- [x] Lead: review diff, re-run checks, publish a real brief, install and check Home on the phone,
   run `MigrationTest` on the phone, coach workspace publish wrapper + instructions, docs.
 
 ## Decisions / discoveries
@@ -157,10 +157,23 @@ Use only synthetic values in tests. Lead owns status/architecture docs.
   tests including date and kind labels); `cd android && ./gradlew :data:compileDebugAndroidTestKotlin --offline`
   passed (up to date). No device, install, or database commands run by worker.
 
+- Lead review: data/domain/UI diff read in full; accepted. Minor: `kindLabel` is tested but
+  the card uses string resources for the same labels (harmless duplication).
+- Lead: `scripts/check --offline` passed; `./gradlew --offline :domain:test :data:testDebugUnitTest
+  :app:testDebugUnitTest --rerun` passed; `:data:connectedDebugAndroidTest` with `MigrationTest` on the
+  test phone: 6/6 passed, including `v9UpgradesToV10WithEmptyCoachNotes`.
+- Lead: published a real brief with the CLI (private file, not in the repo), `:app:installDebug`
+  upgraded the test phone in place. Home showed the card after the automatic refresh: date, New
+  badge, headline, note count and selected-workout count; expanding showed the three groups with
+  kind icons, exercise names and the based-on caption. After force-stop and relaunch the card
+  rendered from the cache, collapsed by default, without the New badge.
+- Not verified: airplane-mode launch (cache path covered by the restart check), TalkBack and
+  large-font layout.
+- Coach export now writes `coach_notes.json` (last 5 briefs, exercise names) and each program
+  exercise's `slug` for writing briefs. The coach workspace (outside this repo) got a
+  `publish-notes` wrapper and brief-writing instructions.
+
 ## Handoff
 
-Worker implementation complete; lead to review the Android diff and rerun checks, then publish
-and verify the card on the phone, including offline/restart behavior, selection/grouping,
-accessibility and layout, and run `MigrationTest` on the phone. Lead retains coach workspace
-and documentation follow-up. No worker changes remain uncommitted; the unrelated
-`scripts/coach-export` working-tree change was left untouched.
+Done. Possible follow-ups (not authorized): show an exercise's note inside the workout logger;
+per-item dismiss on the phone (ADR 005 alternatives).

@@ -24,6 +24,9 @@ Updated: 2026-11-12
 
 ## Current task
 
+[034 — Coach notes on Home](tasks/034-coach-notes.md) is done: coach briefs published with
+`scripts/repknot publish-notes` show on Home in a collapsible card; checked on the test phone.
+
 [033 — Second history scrub](tasks/033-second-history-scrub.md) is done: removed what an
 external review found after 031 (backend project ref, real-data quotes in task notes); the
 integration-test guard is configurable. Owner action pending: stronger account password.

@@ -36,6 +36,12 @@ count, with neutral copy while loading or at zero. Selection and preview do not 
 alter a workout. The Home header has a labeled Settings icon, no app title; Progress is
 available in bottom navigation and the summary shortcut.
 
+Coach notes (task 034, [ADR 005](decisions/005-coach-notes.md)): coach tools publish
+append-only briefs with `scripts/repknot publish-notes`; each refresh caches only the newest one
+(Room `coach_notes`, replaced wholesale; a fetch failure never blocks uploads). Home shows it in a
+collapsible card after the workout chooser: items for the selected workout's exercises first, then
+general, then other workouts. The opened brief id is device-local (a New badge until opened).
+
 History is read-only and reactive to session/exercise/set changes, loading consistent
 Room snapshots through a ViewModel. It includes finished, pushed and conflicted records,
 including phone-only, light and empty completed sessions, while excluding active drafts.
@@ -118,7 +124,7 @@ actual temporary policy relaxation here when introduced.
   only project. Before creating a prod project: log out and use `--db-url`, or keep prod in
   a separate account.
 - Room migrations: from v4 the phone holds real workouts. v4→v5 (session `light`),
-  v5→v6 (check-ins) and v6→v7 (timing) are explicit migrations tested by `MigrationTest`; every later schema
+  v5→v6 (check-ins), v6→v7 (timing), v7→v8 (upload intent), v8→v9 (session source) and v9→v10 (coach notes) are explicit migrations tested by `MigrationTest`; every later schema
   change needs one. Only the synthetic v1–v3 databases may still be reset.
 - Server: the project holds real training history ([ADR 003](decisions/003-single-canonical-project.md)).
   Migrations must preserve data; the 2026-11-01 drop-and-recreate was the last destructive one.
