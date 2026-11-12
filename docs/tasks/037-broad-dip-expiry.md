@@ -1,6 +1,6 @@
 # 037 — Broad dips: resolve, expire, escalate on patterns
 
-Status: in progress
+Status: blocked
 Starting commit: 13f1c8a
 Date: 2026-11-12
 
@@ -84,6 +84,7 @@ Synthetic values only in tests.
 
 ## Plan / progress
 
+- [x] Worker: inspect existing domain and app wiring; stop for clarification before implementation.
 - [ ] Worker: domain + JVM tests; app wiring/UI/text; `scripts/check --offline`; commit (domain and
   app may be one commit or two, each verified).
 - [ ] Lead: review, rerun checks, verify on synthetic data (emulator, test2) where practical; owner
@@ -101,6 +102,7 @@ Lead: diff review; independent checks; visual check on synthetic data.
 
 ## Decisions / discoveries
 
+- Blocked before implementation: the lower-load fallback and the instruction that timed mismatches are not below overlap when a follow-up changes both load and timed/reps mode. This affects whether an alert can become persisting; see Handoff.
 - The old 28-day list and red-for-every-dip behavior is replaced (owner, 2026-11-12).
 - Rule 3 uses the raw weight rate, not `BodyVerdict.TOO_FAST`, because that verdict already
   depends on `recentDip` (would be circular).
@@ -109,8 +111,12 @@ Lead: diff review; independent checks; visual check on synthetic data.
 
 ## Verification
 
-(pending)
+- Inspected the task, project guidance, `Progress.kt`, and the existing Progress and History app wiring; no implementation or build checks run.
+- `git diff --check`, `git diff --cached --check`, and `scripts/privacy-check --staged` passed for the handoff; the privacy check warned that short passwords are not scanned.
+- `git status --short` was clean on entry; `git log -1 --oneline` showed the task planning commit.
 
 ## Handoff
 
-Next action: worker implementation via `scripts/delegate`.
+Blocked on requirement clarification: if a follow-up has a lower non-null top load than the baseline but changes between timed and reps-based sets, should it count as still below? The load-down fallback says a not-comparable lower-load exposure is below, while the following sentence says timed mismatches are evaluated but not below.
+
+Next action: clarify precedence, then implement the domain and app plan and run `scripts/check --offline`. No implementation changes are unfinished.
