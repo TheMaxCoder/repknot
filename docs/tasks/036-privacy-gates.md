@@ -40,6 +40,8 @@ Out of scope: CI, GitHub settings (owner enables push protection when publishing
 ## Decisions and discoveries
 - Owner chose blocking hooks (reverses the earlier "no command-blocking hooks" stance for
   this purpose only), the AI review at push time only, and a different-model reviewer.
+- Reviewer model: `openai-codex/gpt-6.1-sol`, not `gpt-6.1-terra`, because terra is the
+  delegation worker and would review its own code. Override with `PUSH_REVIEW_MODEL`.
 - `/tmp` paths are not flagged (not personal); placeholder email domains are allowed.
 - Inline `privacy-check: allow` silences generic rules on that line only; private values
   can never be allowed inline.

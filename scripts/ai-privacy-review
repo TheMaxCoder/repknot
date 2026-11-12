@@ -7,11 +7,11 @@ Sends each commit's message and added lines (never the private denylist) to a re
 model through `pi`, with no tools, no project context and no session. The content is about
 to be published anyway. Exits 0 only if every chunk ends with "VERDICT: PASS"; any
 finding, error, timeout or unreadable answer blocks (fail closed).
-Env: PUSH_REVIEW_MODEL (default openai-codex/gpt-6.1-terra), PUSH_REVIEW_THINKING (medium).
+Env: PUSH_REVIEW_MODEL (default openai-codex/gpt-6.1-sol, not the delegation worker's model), PUSH_REVIEW_THINKING (medium).
 """
 import os, re, subprocess, sys, tempfile
 
-MODEL = os.environ.get("PUSH_REVIEW_MODEL", "openai-codex/gpt-6.1-terra")
+MODEL = os.environ.get("PUSH_REVIEW_MODEL", "openai-codex/gpt-6.1-sol")
 THINKING = os.environ.get("PUSH_REVIEW_THINKING", "medium")
 CHUNK = 80_000
 TIMEOUT = 900
