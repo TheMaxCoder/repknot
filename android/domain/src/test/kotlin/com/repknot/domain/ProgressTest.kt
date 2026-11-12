@@ -208,14 +208,23 @@ class ProgressTest {
         assertEquals(DipState.RESOLVED, dipStatuses(dip + broad(2)).single().state)
         assertEquals(DipState.RESOLVED, dipStatuses(dip + broad(2, 8.0, load = 25.0)).single().state)
         val down = dipStatuses(dip + broad(2, 8.0, load = 15.0)).single()
-        assertEquals(DipState.PERSISTING, down.state)
-        assertEquals(listOf("0", "1", "2"), down.stillBelow)
+        assertEquals(DipState.PENDING, down.state)
+        assertEquals(0, down.evaluated)
+        val stillBelow = dipStatuses(dip + broad(2, 8.0)).single()
+        assertEquals(DipState.PERSISTING, stillBelow.state)
+        assertEquals(listOf("0", "1", "2"), stillBelow.stillBelow)
         val mixed = broad(2).copy(exercises = (0..2).map { i ->
             PastExercise(i, "$i", listOf(if (i < 2) set(8.0) else set()))
         })
         assertEquals(DipState.PERSISTING, dipStatuses(dip + mixed).single().state)
         val timed = broad(2).copy(exercises = (0..2).map { PastExercise(it, "$it", listOf(set(null, 15.0, duration = 30))) })
-        assertEquals(DipState.RESOLVED, dipStatuses(dip + timed).single().state)
+        assertEquals(0, dipStatuses(dip + timed).single().evaluated)
+        // Usual is the last 3 pre-dip sessions: matching an ordinary one counts as recovered even
+        // when the session right before the dip was a peak.
+        val peak = listOf(broad(0, 10.0), broad(1, 10.0), broad(2, 13.0), broad(3, 8.0), broad(4, 10.0))
+        assertEquals(DipState.RESOLVED, dipStatuses(peak).single().state)
+        val olderThanUsual = listOf(broad(0, 10.0), broad(1, 13.0), broad(2, 13.0), broad(3, 13.0), broad(4, 8.0), broad(5, 10.0))
+        assertEquals(DipState.PERSISTING, dipStatuses(olderThanUsual).single().state)
     }
 
     @Test fun dipAlertPriorityAndBoundaries() {

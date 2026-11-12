@@ -192,17 +192,19 @@ fun dipStatuses(history: List<PastSession>): List<DipStatus> {
         var evaluated = 0
         val below = dip.below.filter { id ->
             val unit = lineage(history, id).last().unit
-            val current = exposure(sessions[index], id, unit)!!
-            val baseline = sessions.take(index).asReversed().firstNotNullOf { session ->
-                exposure(session, id, unit)?.takeIf { compare(current, it) != Comparison.NOT_COMPARABLE }
-            }
+            // "Usual" = the last 3 pre-dip exposures; recovered when the latest follow-up matches or
+            // beats any comparable one. A lower load is a programming choice: not evaluated (task 037).
+            val usual = sessions.take(index).mapNotNull { exposure(it, id, unit) }.takeLast(3)
             val latest = sessions.drop(index + 1).asReversed().firstNotNullOfOrNull { exposure(it, id, unit) }
                 ?: return@filter false
+            val comparable = usual.filter { compare(latest, it) != Comparison.NOT_COMPARABLE }
+            if (comparable.isEmpty()) {
+                val top = usual.mapNotNull { it.topLoad }.maxOrNull()
+                if (latest.topLoad != null && top != null && latest.topLoad!! > top) evaluated++
+                return@filter false
+            }
             evaluated++
-            val comparison = compare(latest, baseline)
-            comparison == Comparison.WORSE || (comparison == Comparison.NOT_COMPARABLE &&
-                latest.unit == baseline.unit && latest.timed == baseline.timed &&
-                latest.topLoad != null && baseline.topLoad != null && latest.topLoad!! < baseline.topLoad!!)
+            comparable.all { compare(latest, it) == Comparison.WORSE }
         }
         val state = when {
             evaluated * 2 >= dip.below.size && below.size * 2 < evaluated -> DipState.RESOLVED

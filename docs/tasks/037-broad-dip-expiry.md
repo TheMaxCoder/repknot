@@ -110,6 +110,13 @@ Lead: diff review; independent checks; visual check on synthetic data.
 - Thresholds (10 days, 21 days, 8 sessions, "≥ 2 still below") are judgment for a 4–6 sessions/week
   schedule, not research values; revisit after a few weeks of use.
 
+- Follow-up (owner report after install): the old dip turned into a red "still below" card.
+  Checked against the real history: two causes, both in the lead's spec — the baseline was the
+  single pre-dip session (a peak for one exercise), and a deliberate load reduction counted as
+  still below. Fix (lead): "usual" = the last 3 pre-dip exposures; recovered when the latest
+  follow-up matches or beats any comparable one; a lower load (or unit/timed mismatch) is not
+  evaluated; a higher load counts as recovered.
+
 ## Verification
 
 - `scripts/check --offline` passed: debug build, lint, and JVM tests. An intermediate rerun failed after removing required non-null assertions; those assertions were restored and the check rerun.
@@ -119,6 +126,10 @@ Lead: diff review; independent checks; visual check on synthetic data.
   precedence as clarified). `scripts/check --offline` passed; `:domain:test :app:testDebugUnitTest
   --rerun` passed. No emulator available, so no synthetic visual check; not installed on the
   owner's phone (owner's call per AGENTS.md).
+
+- Follow-up fix: `:domain:test --rerun` 13/13 ProgressTest passed (new peak-baseline and
+  older-than-usual cases); `scripts/check --offline` passed; installed on the owner's phone with the
+  owner's go-ahead; owner-visible result: the old dip card no longer shows.
 
 ## Handoff
 
