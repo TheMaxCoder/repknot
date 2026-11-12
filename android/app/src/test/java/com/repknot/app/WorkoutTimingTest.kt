@@ -54,6 +54,15 @@ class WorkoutTimingTest {
         assertEquals(RestState("f", 2), restState(3000, "in_progress", listOf(set, later.copy(loggedAt = 1000))))
     }
 
+    @Test fun progressClampsAndHandlesZeroTarget() {
+        assertEquals(0f, restProgress(0, 120), 0f)
+        assertEquals(0.5f, restProgress(60, 120), 0f)
+        assertEquals(1f, restProgress(120, 120), 0f)
+        assertEquals(1f, restProgress(180, 120), 0f)
+        assertEquals(1f, restProgress(0, 0), 0f)
+        assertEquals(0f, restProgress(-1, 120), 0f)
+    }
+
     @Test fun formatRest() {
         assertEquals("0:05", restText(5))
         assertEquals("1:47", restText(107))

@@ -17,6 +17,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -26,6 +27,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.res.stringResource
@@ -101,7 +105,7 @@ fun WorkoutScreen(vm: WorkoutViewModel, progress: ProgressUiState, coachNotes: C
             }
         }
     }) { padding ->
-        Column(Modifier.fillMaxSize().padding(padding).imePadding().verticalScroll(rememberScrollState()).padding(24.dp),
+        Column(Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding).imePadding().verticalScroll(rememberScrollState()).padding(24.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)) {
             if (session == null && preview != null) Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                 IconButton(onClick = openSettings) {
@@ -253,13 +257,33 @@ private fun RestLine(session: WorkoutUiState.Session, vm: WorkoutViewModel, now:
     if (rest == null || restedExercise == null) return
     val target = restTargetS(restedExercise.row.exerciseId, restedExercise.programRestS, overrides)
     val description = stringResource(R.string.rest_target_description, restedExercise.row.exerciseName)
-    FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center, verticalArrangement = Arrangement.Center) {
-        Text(stringResource(R.string.rest_elapsed, restText(rest.elapsedS)),
-            color = if (rest.elapsedS >= target) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-            style = MaterialTheme.typography.labelMedium, modifier = Modifier.align(Alignment.CenterVertically))
-        TextButton(onClick = { vm.toggleRestTarget(restedExercise.row.exerciseId, target) },
-            modifier = Modifier.semantics { contentDescription = description },
-            contentPadding = PaddingValues(horizontal = 8.dp)) { Text(restText(target.toLong())) }
+    Column(Modifier.fillMaxWidth()) {
+        FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center, verticalArrangement = Arrangement.Center) {
+            Text(stringResource(R.string.rest_elapsed, restText(rest.elapsedS)),
+                color = if (rest.elapsedS >= target) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.labelMedium, modifier = Modifier.align(Alignment.CenterVertically))
+            TextButton(onClick = { vm.toggleRestTarget(restedExercise.row.exerciseId, target) },
+                modifier = Modifier.semantics { contentDescription = description },
+                contentPadding = PaddingValues(horizontal = 8.dp)) { Text(restText(target.toLong())) }
+        }
+        LinearProgressIndicator(progress = { restProgress(rest.elapsedS, target) },
+            modifier = Modifier.fillMaxWidth().height(4.dp),
+            color = if (rest.elapsedS >= target) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.primary,
+            trackColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+            strokeCap = androidx.compose.ui.graphics.StrokeCap.Round)
+    }
+}
+
+@Composable
+private fun RestStrip(session: WorkoutUiState.Session, vm: WorkoutViewModel, now: () -> Long, overrides: Map<String, Int>) {
+    // Read the clock only here, so the rest of the footer does not tick.
+    val rest = restState(now(), session.row.status, session.exercises.flatMap { it.sets })
+    if (rest != null && session.exercises.any { it.row.id == rest.sessionExerciseId }) {
+        Surface(Modifier.imePadding(), color = MaterialTheme.colorScheme.surface) {
+            Column(Modifier.padding(horizontal = 16.dp, vertical = 4.dp)) {
+                RestLine(session, vm, now, overrides)
+            }
+        }
     }
 }
 
@@ -272,7 +296,9 @@ private fun SessionActions(session: WorkoutUiState.Session, vm: WorkoutViewModel
     var confirmFinish by rememberSaveable(session.row.id) { mutableStateOf(false) }
     var notes by rememberSaveable(session.row.id) { mutableStateOf(session.row.notes.orEmpty()) }
     val keyboardOpen = WindowInsets.ime.getBottom(LocalDensity.current) > 0
-    if (!keyboardOpen) Surface(color = MaterialTheme.colorScheme.surface) {
+    if (keyboardOpen) {
+        RestStrip(session, vm, now, overrides)
+    } else Surface(color = MaterialTheme.colorScheme.surface) {
         Column(Modifier.fillMaxWidth().navigationBarsPadding()) {
             HorizontalDivider()
             Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -464,6 +490,7 @@ private fun DeltaHint(delta: SetDelta) {
 
 @Composable
 private fun SetInput(exercise: ExerciseUi, set: SetRow?, vm: WorkoutViewModel, cancel: () -> Unit) {
+    val focusManager = LocalFocusManager.current
     val suggestion = exercise.suggestion
     // Primitive keys are saveable and represent all fields of the suggestion.
     val keys = arrayOf<Any?>(exercise.row.id, exercise.sets.size, set?.id, suggestion.load, suggestion.unit.name, suggestion.reps)
@@ -474,8 +501,8 @@ private fun SetInput(exercise: ExerciseUi, set: SetRow?, vm: WorkoutViewModel, c
     val unit = set?.unit?.uppercase()?.let(LoadUnit::valueOf) ?: suggestion.unit
     if (set == null && exercise.previous is Prefill.Previous) Text(stringResource(R.string.suggested_previous), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-        if (unit != LoadUnit.BODYWEIGHT) TextField(load, { load = it }, modifier = Modifier.weight(1f), label = { Text(if (set != null && set.unit == null) stringResource(R.string.label_load) else "${stringResource(R.string.label_load)} · ${unit.name.lowercase()}") }, singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal))
-        TextField(reps, { reps = it }, modifier = Modifier.weight(1f), label = { Text(stringResource(R.string.label_reps)) }, singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal))
+        if (unit != LoadUnit.BODYWEIGHT) TextField(load, { load = it }, modifier = Modifier.weight(1f), label = { Text(if (set != null && set.unit == null) stringResource(R.string.label_load) else "${stringResource(R.string.label_load)} · ${unit.name.lowercase()}") }, singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Next), keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Next) }))
+        TextField(reps, { reps = it }, modifier = Modifier.weight(1f), label = { Text(stringResource(R.string.label_reps)) }, singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Done), keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }))
     }
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Text(stringResource(R.string.label_rir), modifier = Modifier.weight(1f))
@@ -483,7 +510,7 @@ private fun SetInput(exercise: ExerciseUi, set: SetRow?, vm: WorkoutViewModel, c
         Text(rir.toString(), modifier = Modifier.padding(horizontal = 12.dp))
         IconButton(onClick = { rir++ }, enabled = rir < rirMax, modifier = Modifier.size(48.dp).semantics { contentDescription = "Increase RIR" }) { Text("+") }
     }
-    Button(onClick = { vm.logSet(exercise.row.id, set?.id, load, unit, reps, rir.toString()) }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(if (set == null) R.string.log_set else R.string.update_set)) }
+    Button(onClick = { focusManager.clearFocus(); vm.logSet(exercise.row.id, set?.id, load, unit, reps, rir.toString()) }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(if (set == null) R.string.log_set else R.string.update_set)) }
     if (set != null) TextButton(onClick = cancel) { Text(stringResource(R.string.cancel)) }
 }
 

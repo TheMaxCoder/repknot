@@ -94,11 +94,12 @@ Lead (device): all visual/keyboard/interaction behavior above.
 
 - Done state is device-local by design (ADR 005 keeps the phone read-only for coach notes).
 - Done key uses the item index within a brief; briefs are append-only, so indexes never shift.
+- Rest timer and keyboard slice implemented; coach-note slice remains.
 
 ## Verification
 
-(pending)
+- `scripts/check --offline` passed after the rest timer and keyboard slice (build, lint, JVM tests). Device verification remains with the lead.
 
 ## Handoff
 
-Next action: worker implementation via `scripts/delegate`.
+Next action: implement the coach-note model, persistence and UI slice, then run `scripts/check --offline`. Device verification remains with the lead.

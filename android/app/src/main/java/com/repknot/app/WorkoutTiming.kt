@@ -31,6 +31,9 @@ fun restState(nowMillis: Long, status: String, sets: List<SetRow>): RestState? {
     return if (elapsed > 900) null else RestState(newest.sessionExerciseId, elapsed)
 }
 
+fun restProgress(elapsedS: Long, targetS: Int): Float =
+    if (targetS <= 0) 1f else (elapsedS.toFloat() / targetS).coerceIn(0f, 1f)
+
 fun restText(seconds: Long): String = "${seconds / 60}:${(seconds % 60).toString().padStart(2, '0')}"
 
 fun elapsedWorkoutText(startedAt: Long?, nowMillis: Long, status: String): String? {
