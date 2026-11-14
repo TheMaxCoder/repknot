@@ -1,6 +1,6 @@
 # Project status
 
-Updated: 2026-11-12
+Updated: 2026-11-14
 
 ## Current state
 
@@ -23,6 +23,10 @@ Updated: 2026-11-12
 - Shared startup, task-sizing, and handoff instructions now live in `AGENTS.md`.
 
 ## Current task
+
+[038 — Coach publishes program changes](tasks/038-coach-publishes-program.md) is done: the
+rotation survives program republishes ([ADR 006](decisions/006-program-versions-and-coach-publishing.md));
+`../health` publishes briefs and program versions directly. Pending: install the new build, device test.
 
 [037 — Broad dip expiry](tasks/037-broad-dip-expiry.md) is done: dips resolve on recovery,
 neutral/red alert rules, History tag; owner to check the real Progress page.

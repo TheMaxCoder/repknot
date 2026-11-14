@@ -1,6 +1,6 @@
 # 038 — Coach publishes program changes directly
 
-Status: in progress · starting commit `032e789` · decision: [ADR 006](../decisions/006-program-versions-and-coach-publishing.md)
+Status: done (device test and phone install pending) · starting commit `032e789` · decision: [ADR 006](../decisions/006-program-versions-and-coach-publishing.md)
 
 ## Outcome / acceptance
 - The coach workspace (`../health`) publishes program changes and coach briefs to the app
@@ -23,8 +23,8 @@ Out of scope: showing last-used load in the Plan row (suggested to the owner, no
 
 ## Plan / progress
 - [x] 1. Domain + mapping change with JVM tests; `scripts/check`; commit.
-- [ ] 2. Coach workspace wiring; dry-run check that the wrapper finds the CLI.
-- [ ] 3. ADR + architecture + status; commit.
+- [x] 2. Coach workspace wiring; dry-run check that the wrapper finds the CLI.
+- [x] 3. ADR + architecture + status; commit.
 
 ## Decisions / discoveries
 - `publish_program` inserts a new `programs` row per version (new id). `todaysWorkout`
@@ -39,4 +39,15 @@ Out of scope: showing last-used load in the Plan row (suggested to the owner, no
   `WorkoutDatabaseTest.activeProgramListsEveryVersionOfItsKey` was **not run**: no
   device or emulator attached, and no AVD configured.
 
+- Step 2: before moving it, `private-data/programs/ppl-2026-11.json` was compared field by
+  field with the live program from `../health/refresh`: same sequence, exercises, sets, ranges,
+  rest, loads, units and notes (live is v1). `../health/publish-program` without arguments
+  prints its usage. Nothing was published.
+
 ## Handoff
+- Changes in `../health` (separate local repo, left **uncommitted** for the owner, mixed with
+  their earlier uncommitted edits): `AGENTS.md` (direct publishing, "Program changes"
+  section), new `publish-program`, `programs/ppl-2026-11.json` (moved from `private-data/`).
+- Owner: install the new build (`cd android && ./gradlew :app:installDebug`) before the
+  coach's first program republish; older builds restart the rotation after a republish.
+- Not run: `WorkoutDatabaseTest.activeProgramListsEveryVersionOfItsKey` (needs a device).

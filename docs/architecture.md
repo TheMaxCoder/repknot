@@ -36,6 +36,10 @@ count, with neutral copy while loading or at zero. Selection and preview do not 
 alter a workout. The Home header has a labeled Settings icon, no app title; Progress is
 available in bottom navigation and the summary shortcut.
 
+Program versions (task 038, [ADR 006](decisions/006-program-versions-and-coach-publishing.md)):
+the coach workspace publishes new versions directly; the rotation counts sessions from every
+cached version with the active program's key, matched by workout key.
+
 Coach notes (task 034, [ADR 005](decisions/005-coach-notes.md)): coach tools publish
 append-only briefs with `scripts/repknot publish-notes`; each refresh caches only the newest one
 (Room `coach_notes`, replaced wholesale; a fetch failure never blocks uploads). Home shows it in a
