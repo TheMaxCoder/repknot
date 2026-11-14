@@ -29,6 +29,15 @@ class ProgramTest {
         assertEquals(a, todaysWorkout(program, sessions.drop(1)))
     }
 
+    @Test fun rotationContinuesAcrossVersionsOfTheSameProgram() {
+        val republished = Program("p2", listOf(c, a, b), setOf("p", "p2"))
+        val sessions = listOf(session("before-republish", 5, "b", "p"), session("older", 4, "a", "p2"),
+            session("other-program", 9, "a", "other"))
+        assertEquals(c, todaysWorkout(republished, sessions))
+        assertEquals(b, todaysWorkout(Program("p2", listOf(c, a, b)), sessions.drop(1)))
+        assertEquals(a, todaysWorkout(Program("p2", listOf(c, a, b)), sessions.take(1)))
+    }
+
     @Test fun latestFinishedWorkoutAdvancesWrapsAndTiesUseInputOrder() {
         assertEquals(c, todaysWorkout(program, listOf(session("new", 5, "b"), session("old", 4, "c"))))
         assertEquals(a, todaysWorkout(program, listOf(session("first", 5, "b"), session("last", 5, "c"))))

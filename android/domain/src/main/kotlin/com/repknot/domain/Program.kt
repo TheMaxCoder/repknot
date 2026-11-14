@@ -9,7 +9,9 @@ data class Prescription(
 )
 data class ProgramWorkout(val key: String, val name: String, val sequencePosition: Int,
     val exercises: List<Prescription>)
-data class Program(val id: String, val workouts: List<ProgramWorkout>)
+/** [versionIds]: every published version of this program (same key), including [id]; the
+ *  rotation continues across versions, so republishing a program does not restart it. */
+data class Program(val id: String, val workouts: List<ProgramWorkout>, val versionIds: Set<String> = setOf(id))
 
 data class PastSet(val position: Int, val load: Double?, val unit: LoadUnit,
     val reps: Double?, val durationS: Int?, val rir: Int?)
@@ -29,7 +31,7 @@ fun todaysWorkout(program: Program, sessions: List<PastSession>): ProgramWorkout
     val keys = sequence.map { it.key }.toSet()
     val latest = sessions.withIndex()
         .filter { (_, session) ->
-            session.finishedAtMillis != null && session.programId == program.id &&
+            session.finishedAtMillis != null && session.programId in program.versionIds &&
                 session.programWorkoutKey in keys
         }
         .maxWithOrNull(compareBy({ it.value.finishedAtMillis }, { it.index }))

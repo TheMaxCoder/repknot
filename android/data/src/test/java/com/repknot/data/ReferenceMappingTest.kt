@@ -82,6 +82,13 @@ class ReferenceMappingTest {
         )), toDomainProgram(rows.programs[0], rows.workouts, rows.prescriptions, rows.exercises))
     }
 
+    @Test fun `domain program always includes its own id among version ids`() {
+        val rows = snapshot().toRows()
+        assertEquals(setOf("p1"), toDomainProgram(rows.programs[0], rows.workouts, rows.prescriptions, rows.exercises).versionIds)
+        assertEquals(setOf("p0", "p1"), toDomainProgram(rows.programs[0], rows.workouts, rows.prescriptions,
+            rows.exercises, listOf("p0")).versionIds)
+    }
+
     @Test fun `missing exercise names id in exception`() {
         val rows = snapshot().toRows()
         try {

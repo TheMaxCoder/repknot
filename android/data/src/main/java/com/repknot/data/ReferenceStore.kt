@@ -59,6 +59,8 @@ interface ReferenceDao {
 
     @Query("SELECT * FROM programs WHERE isActive = 1 LIMIT 1")
     suspend fun getActiveProgram(): ProgramRow?
+    @Query("SELECT id FROM programs WHERE `key` = :key")
+    suspend fun getProgramVersionIds(key: String): List<String>
     @Query("SELECT * FROM programs WHERE isActive = 1 LIMIT 1")
     fun observeActiveProgramRow(): Flow<ProgramRow?>
     @Query("SELECT * FROM exercises WHERE archived = 0 ORDER BY name")
@@ -86,7 +88,8 @@ interface ReferenceDao {
     @Transaction
     suspend fun activeProgram(): Program? {
         val program = getActiveProgram() ?: return null
-        return toDomainProgram(program, getWorkouts(program.id), getPrescriptions(), getExercises())
+        return toDomainProgram(program, getWorkouts(program.id), getPrescriptions(), getExercises(),
+            getProgramVersionIds(program.key))
     }
 }
 
@@ -118,6 +121,7 @@ fun parseUnit(value: String): LoadUnit = when (value.lowercase()) {
 fun toDomainProgram(
     program: ProgramRow, workouts: List<ProgramWorkoutRow>,
     prescriptions: List<ProgramExerciseRow>, exercises: List<ExerciseRow>,
+    versionIds: Collection<String> = emptyList(),
 ): Program {
     val names = exercises.associate { it.id to it.name }
     return Program(program.id, workouts.filter { it.programId == program.id }.map { workout ->
@@ -127,5 +131,5 @@ fun toDomainProgram(
                 Prescription(row.position, row.exerciseId, name, row.sets, row.repMin, row.repMax,
                     row.rirMin, row.rirMax, row.load, parseUnit(row.unit))
             })
-    })
+    }, versionIds.toSet() + program.id)
 }

@@ -54,6 +54,14 @@ class WorkoutDatabaseTest {
         assertNull(db.reference().activeProgram())
     }
 
+    @Test fun activeProgramListsEveryVersionOfItsKey() = runBlocking {
+        fun program(id: String, key: String, version: Int, active: Boolean) =
+            ServerProgram(id, key, key, version, "2026-11-02", null, active, emptyList())
+        db.reference().replaceAll(ReferenceSnapshot(emptyList(), listOf(
+            program("v1", "ppl", 1, false), program("v2", "ppl", 2, true), program("x1", "upper-lower", 1, false))))
+        assertEquals(setOf("v1", "v2"), db.reference().activeProgram()!!.versionIds)
+    }
+
     @Test fun exerciseEditsKeepOrderTrackTheOriginalAndBumpTheRevision() = runBlocking {
         val dao = db.sessions()
         dao.start(draft("s"), listOf(
