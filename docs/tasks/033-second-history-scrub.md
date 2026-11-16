@@ -1,6 +1,6 @@
 # 033 — Second history scrub
 
-Status: done (2026-11-12) · owner action pending (password)
+Status: done (2026-11-12); account password changed 2026-11-16
 Starting commit: `f964b8b` (rewritten; the pre-rewrite history is kept only in a local bundle)
 
 ## Outcome
@@ -43,5 +43,5 @@ notes were remapped to the new IDs.
   that no assertion reads.
 
 ## Handoff
-Next: owner changes the account password, optionally runs `scripts/db test` themselves,
+Next: (password changed 2026-11-16 with `scripts/repknot set-password`) owner optionally runs `scripts/db test` themselves,
 then decides on publishing.

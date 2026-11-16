@@ -47,11 +47,11 @@ marks; checked on the test phone.
 
 [033 — Second history scrub](tasks/033-second-history-scrub.md) is done: removed what an
 external review found after 031 (backend project ref, real-data quotes in task notes); the
-integration-test guard is configurable. Owner action pending: stronger account password.
+integration-test guard is configurable. Account password changed (2026-11-16).
 
 [032 — Public README](tasks/032-public-readme.md) is done: visitor README, MIT license and
 screenshots from invented test data. Next: owner's final read, then publish on GitHub
-(after 033's password action).
+(first push uses the approved one-time AI-review override; see 036).
 
 [031 — Public history scrub](tasks/031-public-history-scrub.md): first pass, incomplete (see 033).
 
