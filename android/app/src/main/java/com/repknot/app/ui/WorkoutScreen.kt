@@ -206,14 +206,14 @@ private fun SessionScreen(session: WorkoutUiState.Session, vm: WorkoutViewModel,
             ElapsedText(session.row, now)
             if (index >= 0) Text(stringResource(R.string.exercise_position, index + 1, session.exercises.size),
                 style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            WorkoutMenu(session, vm)
+            WorkoutMenu(session, vm, session.exercises.getOrNull(index)) { picker = it }
         }
     }
     if (session.row.light) Text(stringResource(R.string.light_day), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
     if (index >= 0) {
         val exercise = session.exercises[index]
         holder.SaveableStateProvider(exercise.row.id) {
-            ExerciseCard(exercise, session.choices, index, session.exercises.size, vm, notes) { picker = exercise.row.id }
+            ExerciseCard(exercise, session.choices, vm, notes)
         }
         FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             TextButton(enabled = index > 0, onClick = {
@@ -304,7 +304,6 @@ private fun SessionActions(session: WorkoutUiState.Session, vm: WorkoutViewModel
         RestStrip(session, vm, now, overrides)
     } else Surface(color = MaterialTheme.colorScheme.surface) {
         Column(Modifier.fillMaxWidth().navigationBarsPadding()) {
-            HorizontalDivider()
             Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 RestLine(session, vm, now, overrides)
                 FinishSection(session.row, vm, { confirmDiscard = true }) { confirmFinish = true }
@@ -322,21 +321,34 @@ private fun SessionActions(session: WorkoutUiState.Session, vm: WorkoutViewModel
     if (confirmDiscard && session.row.discardable()) DiscardDialog(vm) { confirmDiscard = false }
 }
 
-/** The workout ⋯ in the session header (task 039): add exercise, session notes, light day, discard. */
+/**
+ * The logger's only ⋯ (task 039), in the session header: the current exercise's actions, then
+ * workout actions, then Discard. Reordering keeps the sheet open so several moves take one visit.
+ */
 @Composable
-private fun WorkoutMenu(session: WorkoutUiState.Session, vm: WorkoutViewModel) {
+private fun WorkoutMenu(session: WorkoutUiState.Session, vm: WorkoutViewModel, current: ExerciseUi?, substitute: (String) -> Unit) {
     var menuOpen by rememberSaveable(session.row.id) { mutableStateOf(false) }
     var picker by rememberSaveable(session.row.id) { mutableStateOf(false) }
     var notesOpen by rememberSaveable(session.row.id) { mutableStateOf(false) }
     var confirmDiscard by rememberSaveable(session.row.id) { mutableStateOf(false) }
+    var removeId by rememberSaveable(session.row.id) { mutableStateOf<String?>(null) }
     var notes by rememberSaveable(session.row.id) { mutableStateOf(session.row.notes.orEmpty()) }
-    val menuLabel = stringResource(R.string.workout_menu)
-    TextButton(onClick = { menuOpen = true }, modifier = Modifier.semantics { contentDescription = menuLabel }) { Text("⋯") }
-    if (menuOpen) WorkoutOptionsSheet(session.row, onLight = vm::setLight,
+    IconButton(onClick = { menuOpen = true }) {
+        Icon(painterResource(R.drawable.ic_more_vert), contentDescription = stringResource(R.string.workout_menu))
+    }
+    if (menuOpen) WorkoutOptionsSheet(session, current, vm,
+        onSubstitute = { menuOpen = false; substitute(it) },
+        onRemove = { menuOpen = false; removeId = it },
         onAddExercise = { menuOpen = false; picker = true },
         onNotes = { menuOpen = false; notes = session.row.notes.orEmpty(); notesOpen = true },
         onDiscard = { menuOpen = false; confirmDiscard = true }) { menuOpen = false }
     if (confirmDiscard && session.row.discardable()) DiscardDialog(vm) { confirmDiscard = false }
+    session.exercises.firstOrNull { it.row.id == removeId }?.let { target ->
+        AlertDialog(onDismissRequest = { removeId = null }, title = { Text(stringResource(R.string.remove_exercise)) },
+            text = { Text(stringResource(R.string.remove_exercise_confirm, target.row.exerciseName)) },
+            confirmButton = { TextButton(onClick = { vm.removeExercise(target.row.id); removeId = null }) { Text(stringResource(R.string.remove)) } },
+            dismissButton = { TextButton(onClick = { removeId = null }) { Text(stringResource(R.string.cancel)) } })
+    }
     if (picker) ExercisePicker(session.choices, onDismiss = { picker = false }) { vm.addExercise(it); picker = false }
     if (notesOpen) AlertDialog(onDismissRequest = { notesOpen = false }, title = { Text(stringResource(R.string.session_notes)) },
         text = { OutlinedTextField(notes, { notes = it }, modifier = Modifier.fillMaxWidth()) },
@@ -354,29 +366,16 @@ private fun DiscardDialog(vm: WorkoutViewModel, dismiss: () -> Unit) = AlertDial
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun ExerciseCard(exercise: ExerciseUi, choices: List<ExerciseRow>, index: Int, count: Int,
-                         vm: WorkoutViewModel, notes: CoachNotesUiState, substitute: () -> Unit) {
+private fun ExerciseCard(exercise: ExerciseUi, choices: List<ExerciseRow>, vm: WorkoutViewModel, notes: CoachNotesUiState) {
     val row = exercise.row
     var editing by rememberSaveable(row.id) { mutableStateOf<String?>(null) }
-    var remove by rememberSaveable(row.id) { mutableStateOf(false) }
     // An update succeeded when the edited set's values change in state: leave edit mode then.
     val edited = exercise.sets.firstOrNull { it.id == editing }
     var editStart by remember(editing) { mutableStateOf(edited) }
     LaunchedEffect(edited) { if (editing != null && edited != editStart) { editing = null; editStart = null } }
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            var menuExpanded by remember { mutableStateOf(false) }
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Text(row.exerciseName, modifier = Modifier.weight(1f), style = MaterialTheme.typography.titleLarge)
-                Box {
-                    TextButton(onClick = { menuExpanded = true }) { Text("⋯") }
-                    DropdownMenu(expanded = menuExpanded, onDismissRequest = { menuExpanded = false }) {
-                        DropdownMenuItem(text = { Text(stringResource(R.string.move_up)) }, enabled = index > 0, onClick = { menuExpanded = false; vm.moveExercise(row.id, -1) })
-                        DropdownMenuItem(text = { Text(stringResource(R.string.move_down)) }, enabled = index < count - 1, onClick = { menuExpanded = false; vm.moveExercise(row.id, 1) })
-                        DropdownMenuItem(text = { Text(stringResource(R.string.substitute)) }, onClick = { menuExpanded = false; substitute() })
-                        DropdownMenuItem(text = { Text(stringResource(R.string.remove)) }, onClick = { menuExpanded = false; remove = true })
-                    }
-                }
-            }
+            // Exercise actions live in the header menu (task 039: one ⋯ per screen).
+            Text(row.exerciseName, style = MaterialTheme.typography.titleLarge)
             notes.activeItemsFor(row.exerciseId).forEach { item -> key(item.index) { CoachNoteBox(item, row.id, notes.note?.id.orEmpty()) } }
             row.substitutedFor?.let { id ->
                 Text(stringResource(R.string.instead_of, choices.firstOrNull { it.id == id }?.name
@@ -446,10 +445,6 @@ private fun ExerciseCard(exercise: ExerciseUi, choices: List<ExerciseRow>, index
                 OutlinedButton(onClick = { vm.saveExerciseNotes(row.id, notes) }) { Text(stringResource(R.string.save_notes)) }
             }
     }
-    if (remove) AlertDialog(onDismissRequest = { remove = false }, title = { Text(stringResource(R.string.remove_exercise)) },
-        text = { Text(stringResource(R.string.remove_exercise_confirm, row.exerciseName)) },
-        confirmButton = { TextButton(onClick = { vm.removeExercise(row.id); remove = false }) { Text(stringResource(R.string.remove)) } },
-        dismissButton = { TextButton(onClick = { remove = false }) { Text(stringResource(R.string.cancel)) } })
 }
 
 @Composable
@@ -622,44 +617,77 @@ private fun FinishSection(row: SessionRow, vm: WorkoutViewModel, requestDiscard:
 private fun SessionRow.discardable(): Boolean =
     (status == "in_progress" || status == "finished") && !uploadRequested && number == null && baseRevision == null
 
-/** Workout-level options as a bottom sheet from the header ⋯ (owner redesign of the dropdown; task 039). */
+@Composable
+private fun MenuItem(icon: Int, text: String, onClick: () -> Unit, supporting: String? = null,
+                     color: Color = Color.Unspecified, trailing: (@Composable () -> Unit)? = null) = ListItem(
+    headlineContent = { Text(text, color = color) },
+    supportingContent = supporting?.let { { Text(it, maxLines = 1, overflow = TextOverflow.Ellipsis) } },
+    leadingContent = { Icon(painterResource(icon), contentDescription = null,
+        tint = if (color == Color.Unspecified) MaterialTheme.colorScheme.onSurfaceVariant else color) },
+    trailingContent = trailing,
+    colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+    modifier = Modifier.clickable(role = Role.Button, onClick = onClick).padding(horizontal = 8.dp),
+)
+
+@Composable
+private fun MenuSection(title: String, subtitle: String? = null) =
+    Row(Modifier.fillMaxWidth().padding(start = 24.dp, end = 24.dp, top = 8.dp, bottom = 4.dp), verticalAlignment = Alignment.Bottom) {
+        Text(title, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary,
+            maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
+        subtitle?.let { Text("  $it", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+    }
+
+/** Bottom sheet behind the header ⋯ (owner redesign of the dropdown; task 039 merged the exercise menu in). */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun WorkoutOptionsSheet(row: SessionRow, onLight: (Boolean) -> Unit, onAddExercise: () -> Unit, onNotes: () -> Unit,
-                                onDiscard: () -> Unit, onDismiss: () -> Unit) {
+private fun WorkoutOptionsSheet(session: WorkoutUiState.Session, current: ExerciseUi?, vm: WorkoutViewModel,
+                                onSubstitute: (String) -> Unit, onRemove: (String) -> Unit, onAddExercise: () -> Unit,
+                                onNotes: () -> Unit, onDiscard: () -> Unit, onDismiss: () -> Unit) {
+    val row = session.row
     ModalBottomSheet(onDismissRequest = onDismiss) {
-        Column(Modifier.fillMaxWidth().navigationBarsPadding().padding(bottom = 16.dp)) {
-            Text(stringResource(R.string.workout_options), style = MaterialTheme.typography.titleLarge,
-                modifier = Modifier.padding(start = 24.dp, end = 24.dp, bottom = 8.dp))
-            ListItem(
-                headlineContent = { Text(stringResource(R.string.add_exercise)) },
-                colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                modifier = Modifier.clickable(role = Role.Button, onClick = onAddExercise).padding(horizontal = 8.dp),
-            )
-            ListItem(
-                headlineContent = { Text(stringResource(R.string.session_notes)) },
-                supportingContent = row.notes?.takeIf { it.isNotBlank() }?.let { { Text(it, maxLines = 1, overflow = TextOverflow.Ellipsis) } },
-                colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                modifier = Modifier.clickable(role = Role.Button, onClick = onNotes).padding(horizontal = 8.dp),
-            )
-            HorizontalDivider(Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
+        Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).navigationBarsPadding().padding(bottom = 16.dp)) {
+            current?.let { exercise ->
+                // Look the position up live: reordering keeps the sheet open.
+                val index = session.exercises.indexOfFirst { it.row.id == exercise.row.id }
+                MenuSection(exercise.row.exerciseName)
+                ListItem(
+                    headlineContent = { Text(stringResource(R.string.exercise_order)) },
+                    supportingContent = { Text(stringResource(R.string.exercise_position, index + 1, session.exercises.size)) },
+                    leadingContent = { Icon(painterResource(R.drawable.ic_reorder), contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant) },
+                    trailingContent = {
+                        Row {
+                            FilledTonalIconButton(onClick = { vm.moveExercise(exercise.row.id, -1) }, enabled = index > 0) {
+                                Icon(painterResource(R.drawable.ic_arrow_up), contentDescription = stringResource(R.string.move_up))
+                            }
+                            FilledTonalIconButton(onClick = { vm.moveExercise(exercise.row.id, 1) }, enabled = index < session.exercises.lastIndex) {
+                                Icon(painterResource(R.drawable.ic_arrow_down), contentDescription = stringResource(R.string.move_down))
+                            }
+                        }
+                    },
+                    colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                    modifier = Modifier.padding(horizontal = 8.dp),
+                )
+                MenuItem(R.drawable.ic_swap, stringResource(R.string.substitute), { onSubstitute(exercise.row.id) })
+                MenuItem(R.drawable.ic_remove_circle, stringResource(R.string.remove_from_workout), { onRemove(exercise.row.id) })
+                HorizontalDivider(Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
+            }
+            MenuSection(stringResource(R.string.menu_section_workout))
+            MenuItem(R.drawable.ic_add, stringResource(R.string.add_exercise), onAddExercise)
+            MenuItem(R.drawable.ic_notes, stringResource(R.string.session_notes), onNotes, supporting = row.notes?.takeIf { it.isNotBlank() })
             ListItem(
                 headlineContent = { Text(stringResource(R.string.light_day)) },
                 supportingContent = { Text(stringResource(R.string.light_day_description)) },
+                leadingContent = { Icon(painterResource(R.drawable.ic_light_day), contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant) },
                 trailingContent = { Switch(checked = row.light, onCheckedChange = null) },
                 colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                modifier = Modifier.toggleable(value = row.light, role = Role.Switch, onValueChange = onLight)
+                modifier = Modifier.toggleable(value = row.light, role = Role.Switch, onValueChange = vm::setLight)
                     .padding(horizontal = 8.dp),
             )
-            if (row.status == "in_progress") {
+            if (row.status == "in_progress" && row.discardable()) {
                 HorizontalDivider(Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
-                val danger = MaterialTheme.colorScheme.error
-                ListItem(
-                    headlineContent = { Text(stringResource(R.string.discard_workout), color = danger) },
-                    leadingContent = { Icon(painterResource(R.drawable.ic_delete), contentDescription = null, tint = danger) },
-                    colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                    modifier = Modifier.clickable(role = Role.Button, onClick = onDiscard).padding(horizontal = 8.dp),
-                )
+                MenuItem(R.drawable.ic_delete, stringResource(R.string.discard_workout), onDiscard, color = MaterialTheme.colorScheme.error)
             }
         }
     }

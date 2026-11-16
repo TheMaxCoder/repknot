@@ -13,6 +13,10 @@ Status: in progress · starting commit `7a58b77`
 2. Workout logger: Add exercise and Session notes move from the footer into the workout ⋯
    menu, and that ⋯ moves from the footer to the session header (owner choice, 2026-11-16).
    The footer keeps the rest timer and Finish/upload actions.
+3. Owner follow-up (2026-11-16): one ⋯ only. The exercise card's ⋯ is gone; its actions (order
+   up/down, Substitute, Remove from workout) are the first section of the header sheet, under the
+   exercise name, then Workout (Add exercise, Session notes, Light day), then Discard. Icons on
+   every item; the header ⋯ is a vertical-dots icon. No divider line above Finish.
 
 ## Scope
 - App module only: `CheckInReminder.kt` (schedule rule, alarm, receiver, notification),
@@ -28,7 +32,8 @@ Out of scope: configurable days/time.
       dialog, rest-alert clearing scoped by tag.
 - [x] 2. Workout menu move.
 - [x] 3. `scripts/check`; commit; architecture + status.
-- [ ] 4. Device check (owner): see Handoff.
+- [x] 4. Follow-up: merge the exercise menu, sheet redesign, footer divider removed.
+- [ ] 5. Device check (owner): see Handoff.
 
 ## Decisions / discoveries
 - `RestAlert` cleared with `cancelAll()` ("rest alerts are the app's only notifications");
@@ -37,6 +42,8 @@ Out of scope: configurable days/time.
 - The reminder receiver handles only its own alarm action and the four system actions
   (lint `UnsafeProtectedBroadcastReceiver`). A late alarm still reminds on the same day if it
   is a reminder day, never on another day.
+- Reordering from the sheet keeps it open and shows the live position, so several moves take
+  one visit. The per-set ⋯ (Delete) in logged-set rows is unchanged.
 - The notification tap leaves a running workout's logger like system Back does (session kept).
 - No emulator/AVD exists on this machine; the only attached device is the owner's phone, so
   no install or on-device check was done by the lead.
@@ -48,6 +55,9 @@ Out of scope: configurable days/time.
 - 2026-11-16 installed on the owner's phone at their request (`:app:installDebug`); without
   opening the app, the update broadcast scheduled the next reminder: `dumpsys alarm` shows an
   exact RTC_WAKEUP alarm for Wednesday 08:00. Notification, tap and menu still owner-checked.
+- 2026-11-16 follow-up: `scripts/check --offline` BUILD SUCCESSFUL, lint 27 (none new; the
+  now-unused `workout_options` string removed); installed on the phone; layout not inspected by
+  the lead.
 
 ## Handoff
 Status: code done, device check pending (owner). On the phone after
@@ -57,7 +67,8 @@ Status: code done, device check pending (owner). On the phone after
 2. Tap the notification: Progress → Body opens with Add check-in; saving a check-in dated
    today removes an open reminder.
 3. Log a set during a workout while the reminder is showing: the reminder stays.
-4. Workout logger: ⋯ next to the timer in the header opens Add exercise, Session notes, Light
-   day, Discard; the footer shows only the rest line and Finish.
+4. Workout logger: the only ⋯ (header, next to the timer) opens the exercise section (order
+   arrows, Substitute, Remove) and the Workout section (Add exercise, Session notes, Light day),
+   then Discard; the footer shows only the rest line and Finish, with no divider above it.
 5. Optional: `adb shell dumpsys alarm | grep -A3 repknot` shows the next alarm at 08:00 on
    the next Mon/Wed/Fri.

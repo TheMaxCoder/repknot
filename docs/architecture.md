@@ -13,8 +13,9 @@ the original start load; editing a saved set preserves its recorded unit. Unit c
 per-set logging control. Bodyweight inputs omit load; no conversions are inferred.
 
 The active workout uses a flat focused logger with Plan/Last comparison, saved-set rows,
-filled load/reps entry and RIR controls. The session header has the workout ⋯ menu (Add
-exercise, Session notes, Light day, Discard; task 039); the footer holds the rest timer and a
+filled load/reps entry and RIR controls. The session header has the logger's only ⋯ menu
+(task 039): the current exercise's order/Substitute/Remove, then Add exercise, Session notes,
+Light day, Discard; the footer holds the rest timer and a
 quiet Finish action. Session headers omit date
 and global navigation; selection/preview retain their navigation.
 

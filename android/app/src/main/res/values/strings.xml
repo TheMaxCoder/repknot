@@ -70,6 +70,9 @@
     <string name="log_set">Log set</string>
     <string name="update_set">Update set</string>
     <string name="cancel">Cancel</string>
+    <string name="menu_section_workout">Workout</string>
+    <string name="exercise_order">Order</string>
+    <string name="remove_from_workout">Remove from workout</string>
     <string name="move_up">Move up</string>
     <string name="move_down">Move down</string>
     <string name="substitute">Substitute</string>
@@ -92,7 +95,6 @@
     <string name="notes">Notes</string>
     <string name="light_day">Light day</string>
     <string name="light_day_description">Not counted in progress</string>
-    <string name="workout_options">Workout options</string>
     <string name="error_invalid_input">Enter a non-negative load, positive whole reps, and optional non-negative whole RIR.</string>
     <string name="cloud_title">Cloud (dev)</string>
     <string name="cloud_not_configured">Supabase is not configured for this build (.env missing).</string>
