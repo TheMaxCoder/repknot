@@ -30,6 +30,11 @@ class RepknotApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         scope.launch { cloud.state.collect { if (it is CloudState.SignedIn) refresh() } }
+        CheckInReminder.schedule(this)
+        // A check-in saved for today makes an open reminder obsolete.
+        scope.launch { database.checkIns().observeAll().collect { rows ->
+            if (rows.any { it.checkedOn == java.time.LocalDate.now().toString() }) CheckInReminder.clear(this@RepknotApplication)
+        } }
         val connectivity = getSystemService(ConnectivityManager::class.java)
         val validation = NetworkValidation<Network>()
         connectivity.registerDefaultNetworkCallback(object : ConnectivityManager.NetworkCallback() {

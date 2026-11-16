@@ -22,6 +22,7 @@ object RestAlert {
     private const val CHANNEL = "rest_alert_quiet"
     private val OLD_CHANNELS = listOf("rest_timer", "rest_alert", "rest_alert_sound")
     private const val EXTRA_TEXT = "text"
+    private const val TAG = "rest_alert"
 
     fun schedule(context: Context, atMillis: Long, text: String) {
         clearNotification(context)
@@ -37,9 +38,11 @@ object RestAlert {
         clearNotification(context)
     }
 
-    // Rest alerts are the app's only notifications, so clearing all of them is safe.
-    private fun clearNotification(context: Context) =
-        context.getSystemService(NotificationManager::class.java).cancelAll()
+    // Only rest alerts: the check-in reminder (task 039) must survive a Log tap.
+    private fun clearNotification(context: Context) {
+        val manager = context.getSystemService(NotificationManager::class.java)
+        manager.activeNotifications.filter { it.tag == TAG }.forEach { manager.cancel(it.tag, it.id) }
+    }
 
     // Same request code and component every time, so a new schedule replaces the previous one.
     private fun alarmIntent(context: Context, text: String?): PendingIntent = PendingIntent.getBroadcast(
@@ -65,7 +68,7 @@ object RestAlert {
         // A new id per alert: reusing one id made each alert an update of the previous
         // notification, which a mirrored watch may show without buzzing.
         val now = System.currentTimeMillis()
-        manager.notify(id ?: (now / 1000).toInt(), Notification.Builder(context, CHANNEL)
+        manager.notify(TAG, id ?: (now / 1000).toInt(), Notification.Builder(context, CHANNEL)
             .setSmallIcon(R.drawable.ic_notification)
             // Unique text per alert in case the watch de-duplicates identical notifications.
             .setContentTitle(context.getString(R.string.rest_done_at,

@@ -36,6 +36,13 @@ import com.repknot.app.ui.theme.RepknotTheme
 import com.repknot.data.CloudState
 
 class MainActivity : ComponentActivity() {
+    // Set by a check-in reminder tap (task 039); AppNavigation consumes it.
+    private val openCheckIn = kotlinx.coroutines.flow.MutableStateFlow(false)
+
+    override fun onNewIntent(intent: android.content.Intent) {
+        super.onNewIntent(intent)
+        if (intent.getBooleanExtra(CheckInReminder.EXTRA_OPEN_CHECK_IN, false)) openCheckIn.value = true
+    }
     override fun onStart() {
         super.onStart()
         (application as RepknotApplication).requestRefresh()
@@ -47,6 +54,7 @@ class MainActivity : ComponentActivity() {
             navigationBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT),
         )
         val app = application as RepknotApplication
+        if (savedInstanceState == null && intent.getBooleanExtra(CheckInReminder.EXTRA_OPEN_CHECK_IN, false)) openCheckIn.value = true
         val cloudFactory = CloudViewModel.Factory(app.cloud)
         setContent {
             RepknotTheme {
@@ -65,7 +73,8 @@ class MainActivity : ComponentActivity() {
                     app.database.coachNotes(), app.database.reference(), app.settings.seenCoachNoteId,
                     app.settings::markCoachNoteSeen, app.settings.doneCoachItems, app.settings::setCoachItemDone,
                 ))
-                AppNavigation(workout, progress, history, coachNotes) {
+                val checkInRequested by openCheckIn.collectAsState()
+                AppNavigation(workout, progress, history, coachNotes, checkInRequested, { openCheckIn.value = false }) {
                     val waistGoal by app.settings.waistGoalCm.collectAsState()
                     SettingsScreen(waistGoal, app.settings::setWaistGoalCm) {
                         CloudSection(cloudState, cloud::signIn, cloud::signOut)

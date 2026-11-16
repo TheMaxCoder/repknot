@@ -16,7 +16,8 @@ import com.repknot.app.ui.*
 
 @Composable
 fun AppNavigation(workout: WorkoutViewModel, progress: ProgressViewModel,
-                  history: HistoryViewModel, coachNotes: CoachNotesViewModel, settings: @Composable () -> Unit) {
+                  history: HistoryViewModel, coachNotes: CoachNotesViewModel,
+                  checkInRequested: Boolean, checkInOpened: () -> Unit, settings: @Composable () -> Unit) {
     val coachNotesState by coachNotes.state.collectAsState()
     val progressState by progress.state.collectAsState()
     val historyState by history.state.collectAsState()
@@ -33,6 +34,16 @@ fun AppNavigation(workout: WorkoutViewModel, progress: ProgressViewModel,
     LaunchedEffect(session?.row?.id, workoutState is WorkoutUiState.Loading) {
         if (session != null && session.row.id != previousId) { focused = true; previousId = session.row.id }
         if (session == null && workoutState !is WorkoutUiState.Loading) previousId = null
+    }
+    var checkInDialog by rememberSaveable { mutableStateOf(false) }
+    // Reminder tap: Progress → Body with the check-in dialog open; a running workout is kept (like Back).
+    LaunchedEffect(checkInRequested) {
+        if (checkInRequested) {
+            focused = false
+            nav = nav.copy(selected = RootTab.PROGRESS, stacks = nav.stacks + (RootTab.PROGRESS to listOf("body")))
+            checkInDialog = true
+            checkInOpened()
+        }
     }
     val showingLogger = session != null && focused
     val keyboardVisible = WindowInsets.ime.getBottom(LocalDensity.current) > 0
@@ -70,7 +81,7 @@ fun AppNavigation(workout: WorkoutViewModel, progress: ProgressViewModel,
                     WorkoutScreen(workout, progressState, coachNotesState, coachNotes::markSeen, coachNotes::toggleDone, { nav = nav.select(RootTab.PROGRESS) }, { nav = nav.push("settings") })
                 } else if (route == "settings") holder.SaveableStateProvider("settings-${nav.selected}") { settings() }
                 else if (route == "body") holder.SaveableStateProvider("body") {
-                    BodyScreen(progressState, progress::addCheckIn, progress::uploadCheckIn, progress::deleteCheckIn)
+                    BodyScreen(progressState, checkInDialog, { checkInDialog = it }, progress::addCheckIn, progress::uploadCheckIn, progress::deleteCheckIn)
                 } else if (route?.startsWith("exercise:") == true) holder.SaveableStateProvider("${nav.selected}-${nav.details.lastIndex}-$route") {
                     ExerciseHistoryScreen(historyState, progressState, route.removePrefix("exercise:")) { nav = nav.push("workout:$it") }
                 } else if (route?.startsWith("workout:") == true) holder.SaveableStateProvider("${nav.selected}-${nav.details.lastIndex}-$route") {

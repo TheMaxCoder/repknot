@@ -2,6 +2,7 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <!-- Rest alerts at the exact end of a rest. USE_EXACT_ALARM is granted without a prompt on
          API 33+; Play restricts it to alarm apps, but Repknot is sideloaded (task 027). -->
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" android:maxSdkVersion="32" />
@@ -20,5 +21,15 @@
             </intent-filter>
         </activity>
         <receiver android:name=".RestAlertReceiver" android:exported="false" />
+        <!-- Check-in reminder (task 039): its own alarm, plus rescheduling after boot, app
+             updates and clock changes. System broadcasts reach non-exported receivers. -->
+        <receiver android:name=".CheckInReminderReceiver" android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+                <action android:name="android.intent.action.TIME_SET" />
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+            </intent-filter>
+        </receiver>
     </application>
 </manifest>

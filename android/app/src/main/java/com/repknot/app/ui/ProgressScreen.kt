@@ -121,16 +121,15 @@ fun ProgressScreen(state: ProgressUiState, openBody: () -> Unit,
 }
 
 @Composable
-fun BodyScreen(state: ProgressUiState, addCheckIn: (String, String, String, String) -> Boolean,
-               upload: (String) -> Unit, delete: (String) -> Unit) {
-    var showDialog by rememberSaveable { mutableStateOf(false) }
-    if (showDialog) CheckInDialog(state, addCheckIn) { showDialog = false }
+fun BodyScreen(state: ProgressUiState, showDialog: Boolean, setShowDialog: (Boolean) -> Unit,
+               addCheckIn: (String, String, String, String) -> Boolean, upload: (String) -> Unit, delete: (String) -> Unit) {
+    if (showDialog) CheckInDialog(state, addCheckIn) { setShowDialog(false) }
     ProgressLayout(state.loading, title = {
         Text(stringResource(R.string.body), style = MaterialTheme.typography.titleLarge)
     }) {
         if (state.loading) CircularProgressIndicator() else {
             BodyLines(state)
-            TextButton(onClick = { showDialog = true }) { Text(stringResource(R.string.add_check_in)) }
+            TextButton(onClick = { setShowDialog(true) }) { Text(stringResource(R.string.add_check_in)) }
             state.checkIns.forEach { row ->
                 Text(checkInLine(row))
                 // Phone-only check-ins reach the server only after Upload is tapped (task 028).

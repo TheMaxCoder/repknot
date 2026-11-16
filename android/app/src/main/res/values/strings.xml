@@ -135,6 +135,10 @@
     <string name="open_exercise">Open %1$s</string>
     <string name="rest_done_at">Rest done · %1$s</string>
     <string name="rest_alert_text">%1$s · %2$s</string>
+    <string name="checkin_channel_name">Check-in reminder</string>
+    <string name="checkin_channel_description">Mon, Wed and Fri at 8:00 unless today\'s check-in is already logged.</string>
+    <string name="checkin_reminder_title">Morning check-in</string>
+    <string name="checkin_reminder_text">After the toilet, before eating: log weight and navel waist.</string>
     <string name="rest_channel_name">Rest timer</string>
     <string name="rest_channel_description">Vibrates (no sound) when a rest reaches its target, so a connected watch buzzes too.</string>
     <string name="finish_confirm_title">Finish this workout?</string>
