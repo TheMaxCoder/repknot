@@ -65,6 +65,10 @@ Out of scope: CI, GitHub settings (owner enables push protection when publishing
   are not (rule in `AGENTS.md`, encoded in the reviewer prompt). Owner approved a one-time
   `PUSH_GATE_OVERRIDE` for the first push of the existing history only; later pushes get the
   full review.
+- Rerun with the new prompt (`scripts/ai-privacy-review HEAD`): still BLOCK, about half as
+  many findings. Left in old commits: counts and dates from real records, one note phrase the
+  importer parses, and the 80 cm waist-goal default (also in current code and tests). Owner
+  accepted all of these for the one-time first-push override (2026-11-16).
 
 ## Verification
 - `scripts/privacy-check --history` on the current history: exit 0 (no findings).
