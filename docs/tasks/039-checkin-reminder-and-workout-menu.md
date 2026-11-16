@@ -45,6 +45,9 @@ Out of scope: configurable days/time.
 - 2026-11-16 `scripts/check --offline`: BUILD SUCCESSFUL; `CheckInReminderTest` 8/8 pass
   (next-time rule: same morning, exactly 08:00, Tue→Wed, Fri→Mon, month end). Lint: the one new
   issue (unsafe protected-broadcast receiver) was fixed; 27 issues remain, none new.
+- 2026-11-16 installed on the owner's phone at their request (`:app:installDebug`); without
+  opening the app, the update broadcast scheduled the next reminder: `dumpsys alarm` shows an
+  exact RTC_WAKEUP alarm for Wednesday 08:00. Notification, tap and menu still owner-checked.
 
 ## Handoff
 Status: code done, device check pending (owner). On the phone after
