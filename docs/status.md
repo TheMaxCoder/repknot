@@ -50,8 +50,8 @@ external review found after 031 (backend project ref, real-data quotes in task n
 integration-test guard is configurable. Account password changed (2026-11-16).
 
 [032 — Public README](tasks/032-public-readme.md) is done: visitor README, MIT license and
-screenshots from invented test data. Next: owner's final read, then publish on GitHub
-(first push uses the approved one-time AI-review override; see 036).
+screenshots from invented test data. Published 2026-11-16 as a public GitHub repo with
+secret scanning and push protection on; every push runs the privacy gate (036).
 
 [031 — Public history scrub](tasks/031-public-history-scrub.md): first pass, incomplete (see 033).
 
