@@ -1,6 +1,6 @@
 # Project status
 
-Updated: 2026-11-14
+Updated: 2026-11-16
 
 ## Current state
 
@@ -23,6 +23,10 @@ Updated: 2026-11-14
 - Shared startup, task-sizing, and handoff instructions now live in `AGENTS.md`.
 
 ## Current task
+
+[039 — Check-in reminder and workout menu](tasks/039-checkin-reminder-and-workout-menu.md): code
+done and checked; Mon/Wed/Fri 08:00 check-in reminder, Add exercise/Session notes in the header ⋯.
+Pending: owner installs and checks on the phone (steps in the task).
 
 [038 — Coach publishes program changes](tasks/038-coach-publishes-program.md) is done: the
 rotation survives program republishes ([ADR 006](decisions/006-program-versions-and-coach-publishing.md));

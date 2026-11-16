@@ -206,6 +206,7 @@ private fun SessionScreen(session: WorkoutUiState.Session, vm: WorkoutViewModel,
             ElapsedText(session.row, now)
             if (index >= 0) Text(stringResource(R.string.exercise_position, index + 1, session.exercises.size),
                 style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            WorkoutMenu(session, vm)
         }
     }
     if (session.row.light) Text(stringResource(R.string.light_day), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
@@ -296,12 +297,8 @@ private fun RestStrip(session: WorkoutUiState.Session, vm: WorkoutViewModel, now
 
 @Composable
 private fun SessionActions(session: WorkoutUiState.Session, vm: WorkoutViewModel, now: () -> Long, overrides: Map<String, Int>) {
-    var picker by rememberSaveable(session.row.id) { mutableStateOf(false) }
-    var notesOpen by rememberSaveable(session.row.id) { mutableStateOf(false) }
-    var menuOpen by rememberSaveable(session.row.id) { mutableStateOf(false) }
     var confirmDiscard by rememberSaveable(session.row.id) { mutableStateOf(false) }
     var confirmFinish by rememberSaveable(session.row.id) { mutableStateOf(false) }
-    var notes by rememberSaveable(session.row.id) { mutableStateOf(session.row.notes.orEmpty()) }
     val keyboardOpen = WindowInsets.ime.getBottom(LocalDensity.current) > 0
     if (keyboardOpen) {
         RestStrip(session, vm, now, overrides)
@@ -310,18 +307,10 @@ private fun SessionActions(session: WorkoutUiState.Session, vm: WorkoutViewModel
             HorizontalDivider()
             Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 RestLine(session, vm, now, overrides)
-                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    TextButton(onClick = { picker = true }, modifier = Modifier.weight(1f)) { Text(stringResource(R.string.add_exercise)) }
-                    TextButton(onClick = { notes = session.row.notes.orEmpty(); notesOpen = true }, modifier = Modifier.weight(1f)) { Text(stringResource(R.string.session_notes)) }
-                    val menuLabel = stringResource(R.string.workout_menu)
-                    TextButton(onClick = { menuOpen = true }, modifier = Modifier.semantics { contentDescription = menuLabel }) { Text("⋯") }
-                }
                 FinishSection(session.row, vm, { confirmDiscard = true }) { confirmFinish = true }
             }
         }
     }
-    if (menuOpen) WorkoutOptionsSheet(session.row, onLight = vm::setLight,
-        onDiscard = { menuOpen = false; confirmDiscard = true }) { menuOpen = false }
     // Finish sits at the bottom of a footer whose height changes, so one stray tap must not end the workout.
     if (confirmFinish && session.row.status == "in_progress") AlertDialog(
         onDismissRequest = { confirmFinish = false }, title = { Text(stringResource(R.string.finish_confirm_title)) },
@@ -330,18 +319,38 @@ private fun SessionActions(session: WorkoutUiState.Session, vm: WorkoutViewModel
         confirmButton = { TextButton(onClick = { vm.finish(); confirmFinish = false }) { Text(stringResource(R.string.finish)) } },
         dismissButton = { TextButton(onClick = { confirmFinish = false }) { Text(stringResource(R.string.cancel)) } },
     )
-    if (confirmDiscard && session.row.discardable()) AlertDialog(
-        onDismissRequest = { confirmDiscard = false }, title = { Text(stringResource(R.string.discard_confirm_title)) },
-        text = { Text(stringResource(R.string.discard_confirm_message)) },
-        confirmButton = { TextButton(onClick = { vm.discard(); confirmDiscard = false }) { Text(stringResource(R.string.discard)) } },
-        dismissButton = { TextButton(onClick = { confirmDiscard = false }) { Text(stringResource(R.string.cancel)) } },
-    )
+    if (confirmDiscard && session.row.discardable()) DiscardDialog(vm) { confirmDiscard = false }
+}
+
+/** The workout ⋯ in the session header (task 039): add exercise, session notes, light day, discard. */
+@Composable
+private fun WorkoutMenu(session: WorkoutUiState.Session, vm: WorkoutViewModel) {
+    var menuOpen by rememberSaveable(session.row.id) { mutableStateOf(false) }
+    var picker by rememberSaveable(session.row.id) { mutableStateOf(false) }
+    var notesOpen by rememberSaveable(session.row.id) { mutableStateOf(false) }
+    var confirmDiscard by rememberSaveable(session.row.id) { mutableStateOf(false) }
+    var notes by rememberSaveable(session.row.id) { mutableStateOf(session.row.notes.orEmpty()) }
+    val menuLabel = stringResource(R.string.workout_menu)
+    TextButton(onClick = { menuOpen = true }, modifier = Modifier.semantics { contentDescription = menuLabel }) { Text("⋯") }
+    if (menuOpen) WorkoutOptionsSheet(session.row, onLight = vm::setLight,
+        onAddExercise = { menuOpen = false; picker = true },
+        onNotes = { menuOpen = false; notes = session.row.notes.orEmpty(); notesOpen = true },
+        onDiscard = { menuOpen = false; confirmDiscard = true }) { menuOpen = false }
+    if (confirmDiscard && session.row.discardable()) DiscardDialog(vm) { confirmDiscard = false }
     if (picker) ExercisePicker(session.choices, onDismiss = { picker = false }) { vm.addExercise(it); picker = false }
     if (notesOpen) AlertDialog(onDismissRequest = { notesOpen = false }, title = { Text(stringResource(R.string.session_notes)) },
         text = { OutlinedTextField(notes, { notes = it }, modifier = Modifier.fillMaxWidth()) },
         confirmButton = { TextButton(onClick = { vm.saveSessionNotes(notes); notesOpen = false }) { Text(stringResource(R.string.save_notes)) } },
         dismissButton = { TextButton(onClick = { notesOpen = false }) { Text(stringResource(R.string.cancel)) } })
 }
+
+@Composable
+private fun DiscardDialog(vm: WorkoutViewModel, dismiss: () -> Unit) = AlertDialog(
+    onDismissRequest = dismiss, title = { Text(stringResource(R.string.discard_confirm_title)) },
+    text = { Text(stringResource(R.string.discard_confirm_message)) },
+    confirmButton = { TextButton(onClick = { vm.discard(); dismiss() }) { Text(stringResource(R.string.discard)) } },
+    dismissButton = { TextButton(onClick = dismiss) { Text(stringResource(R.string.cancel)) } },
+)
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -613,14 +622,27 @@ private fun FinishSection(row: SessionRow, vm: WorkoutViewModel, requestDiscard:
 private fun SessionRow.discardable(): Boolean =
     (status == "in_progress" || status == "finished") && !uploadRequested && number == null && baseRevision == null
 
-/** Workout-level options as a bottom sheet next to the ⋯ footer button (owner redesign of the dropdown). */
+/** Workout-level options as a bottom sheet from the header ⋯ (owner redesign of the dropdown; task 039). */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun WorkoutOptionsSheet(row: SessionRow, onLight: (Boolean) -> Unit, onDiscard: () -> Unit, onDismiss: () -> Unit) {
+private fun WorkoutOptionsSheet(row: SessionRow, onLight: (Boolean) -> Unit, onAddExercise: () -> Unit, onNotes: () -> Unit,
+                                onDiscard: () -> Unit, onDismiss: () -> Unit) {
     ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(Modifier.fillMaxWidth().navigationBarsPadding().padding(bottom = 16.dp)) {
             Text(stringResource(R.string.workout_options), style = MaterialTheme.typography.titleLarge,
                 modifier = Modifier.padding(start = 24.dp, end = 24.dp, bottom = 8.dp))
+            ListItem(
+                headlineContent = { Text(stringResource(R.string.add_exercise)) },
+                colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                modifier = Modifier.clickable(role = Role.Button, onClick = onAddExercise).padding(horizontal = 8.dp),
+            )
+            ListItem(
+                headlineContent = { Text(stringResource(R.string.session_notes)) },
+                supportingContent = row.notes?.takeIf { it.isNotBlank() }?.let { { Text(it, maxLines = 1, overflow = TextOverflow.Ellipsis) } },
+                colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                modifier = Modifier.clickable(role = Role.Button, onClick = onNotes).padding(horizontal = 8.dp),
+            )
+            HorizontalDivider(Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
             ListItem(
                 headlineContent = { Text(stringResource(R.string.light_day)) },
                 supportingContent = { Text(stringResource(R.string.light_day_description)) },

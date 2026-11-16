@@ -13,8 +13,9 @@ the original start load; editing a saved set preserves its recorded unit. Unit c
 per-set logging control. Bodyweight inputs omit load; no conversions are inferred.
 
 The active workout uses a flat focused logger with Plan/Last comparison, saved-set rows,
-filled load/reps entry and RIR controls. Its footer contains Add exercise, Session notes,
-a workout menu (Light day/Discard), and a quiet Finish action. Session headers omit date
+filled load/reps entry and RIR controls. The session header has the workout ⋯ menu (Add
+exercise, Session notes, Light day, Discard; task 039); the footer holds the rest timer and a
+quiet Finish action. Session headers omit date
 and global navigation; selection/preview retain their navigation.
 
 The app shell (task 030, [ADR 004](decisions/004-app-navigation-and-history.md)) has
@@ -69,6 +70,11 @@ after 15 min) with a 2:00/3:00 target from the program's `rest_s_max`, overridab
 exercise on the device; it vibrates once at the target while the app is in the foreground.
 Log set closes the keyboard; while typing during a rest, a rest strip with progress sits above
 the keyboard instead of the hidden footer (task 035).
+
+Check-in reminder (task 039): an exact alarm posts a notification Mon/Wed/Fri at 08:00 local
+time unless a check-in dated today exists (a check-in saved today clears it); the tap opens
+Progress → Body with Add check-in. Rescheduled on firing, app start, boot, app update and
+clock changes. Rest alerts clear only their own (tagged) notifications.
 
 Workout preview compares the prescription and previous performance in compact columns,
 with a fixed Start action above the navigation inset. Target suggestions are no longer
