@@ -119,7 +119,7 @@ def parse_rir(token):
 
 
 def per_set_loads(notes):
-    """'7p x12 @3 RIR. 8p x9' / '3 kg x 10,16,10' -> [(load, unit)] in note order."""
+    """'6p x10 @2 RIR. 7p x8' / '4 kg x 12,11,10' -> [(load, unit)] in note order."""
     loads = []
     for m in re.finditer(r"(\d+(?:\.\d+)?)\s*(kg|p)\b\s*x\s*(\d+(?:\s*,\s*\d+)*)", notes):
         unit = "plates" if m[2] == "p" else "kg"

@@ -109,8 +109,8 @@ Lead (device): all visual/keyboard/interaction behavior above.
   closed it and the footer showed the rest timer with progress; tapping Reps during rest showed
   the rest strip directly above the keyboard, ticking; keyboard ✓ closed it without logging
   (still 1/3); after 2:00 the bar was full in the tertiary color. Home: mark done moved the item
-  to a dimmed Done group; collapsed summary "7 notes · 2 for Push 2 · 1 done" after force-stop
-  and relaunch; undo restored "8 notes · 2 for Push 2".
+  to a dimmed Done group; the collapsed summary counted the done item after force-stop and
+  relaunch; undo restored the previous counts.
 - Not verified: note box expand/collapse tap, TalkBack, large fonts, "All N done" state.
 
 ## Handoff

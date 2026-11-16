@@ -9,11 +9,11 @@ import org.junit.Test
 
 class HistoryMappingTest {
     @Test fun importedWorkoutsShowCleanTitlesAndNoNotes() {
-        val row = SessionRow("w", "2026-10-30", "2026-10-30 - Upper B with shoulder-machine test", "Long analysis", "pushed", 0, 0, 1, null, 152, null, source = "import")
+        val row = SessionRow("w", "2026-10-30", "2026-10-30 - Upper A with machine trial", "Long analysis", "pushed", 0, 0, 1, null, 42, null, source = "import")
         val exercise = SessionExerciseRow("e", "w", 0, "row", "Seated row", notes = "Exercise analysis")
         val set = SetRow("s", "w", "e", 0, 9.0, "plates", 11.0, rir = 1, notes = "Set analysis")
         val imported = SessionSnapshot(row, listOf(exercise), listOf(set))
-        assertEquals("Upper B with shoulder-machine test", historyTitle(imported))
+        assertEquals("Upper A with machine trial", historyTitle(imported))
         val clean = historyDisplay(imported)
         assertNull(clean.row.notes); assertNull(clean.exercises.single().notes); assertNull(clean.sets.single().notes)
         assertEquals("9p × 11 reps · RIR 1", historySetText(clean.sets.single()))

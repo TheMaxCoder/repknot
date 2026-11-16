@@ -29,9 +29,18 @@ Flag anything in the commit messages or added lines that plausibly is:
 - secrets: passwords, API keys, tokens, private keys, JWTs;
 - AI attribution lines (Co-Authored-By trailers, "Generated with ..." lines).
 
-Do NOT flag: clearly synthetic or invented values (test fixtures, "synthetic"/"demo"/"test"
-data, spec examples like `25 kg x 10`), placeholder emails (example.com, test.invalid),
-generic exercise names, documentation that describes these rules, or relative paths.
+The owner has decided these are fine to publish, so do NOT flag them: that the owner trains
+and is cutting (losing fat); the program type and workout names (e.g. PPL, "Push 1",
+"Pull 1"); training habits such as rest length, batch logging, or using the phone on a
+stand; development or logging-start dates; database row or session numbers; process notes
+naming the AI models or sessions that implemented or reviewed work (only authorship
+trailers and "Generated with ..." lines count as attribution).
+Also do NOT flag: clearly synthetic or invented values (test fixtures, "synthetic"/"demo"/
+"test" data, spec examples like `25 kg x 10`), placeholder emails (example.com,
+test.invalid), generic exercise names, documentation that describes these rules, or
+relative paths.
+Still flag numbers that look copied from real records (body values, loads, reps, counts of
+real records), real note text, and health or injury details.
 Judge whether a value looks copied from real records; when it plausibly is real and you
 are unsure, flag it.
 

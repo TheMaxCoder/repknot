@@ -74,6 +74,11 @@ session notes, device/watch models, local absolute paths, or account emails. Use
 synthetic values in tests and examples, write "the test phone" or "checked against the
 real history" instead of quoting it, and keep real data in ignored `private-data/` or
 outside the repo. Check the staged diff for this before every commit.
+- Fine to publish (owner decision, 2026-11-16): that the owner trains and is cutting, the
+  program type and workout names (e.g. PPL, "Push 1"), training habits such as rest length,
+  development dates, database row numbers, and process notes naming models or sessions that
+  reviewed work. Not fine: numbers from real records (body values, loads, reps, record
+  counts), real note text, health or injury details.
 - Describe, don't quote: verification notes state outcomes ("checked against the real
   history: targets matched"), never values seen in the real program, history, check-ins,
   or session notes.

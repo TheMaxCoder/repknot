@@ -54,6 +54,18 @@ Out of scope: CI, GitHub settings (owner enables push protection when publishing
   also covers force-pushes and new branches. A first publish reviews the whole history
   (19 chunks of at most 80 KB with the current history).
 
+### First-publish review (2026-11-16)
+- Full dry run (`scripts/push-gate --revs HEAD --not --remotes`, 185 commits, 20 chunks,
+  gpt-6.1-sol): pattern check clean; AI review blocked with about 80 findings. Checked against
+  the pre-scrub backup: the flagged body values are the synthetic replacements from 033, and
+  the ADR 001 example notes predate real data. The rest was training context (program type,
+  workout names, cutting, rest habits, dates, row numbers, reviewer-model mentions) plus three
+  small real-derived examples, now replaced with synthetic ones in the current files.
+- Owner decision: training context is fine to publish; numbers, note text and health details
+  are not (rule in `AGENTS.md`, encoded in the reviewer prompt). Owner approved a one-time
+  `PUSH_GATE_OVERRIDE` for the first push of the existing history only; later pushes get the
+  full review.
+
 ## Verification
 - `scripts/privacy-check --history` on the current history: exit 0 (no findings).
 - Commit hooks in a scratch clone with this repo's private list and `.env`: a home path and
