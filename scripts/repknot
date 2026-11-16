@@ -12,6 +12,7 @@
 //   scripts/repknot publish-program <program.json> [--inactive]
 //   scripts/repknot publish-notes <notes.json>   # coach brief shown on the phone's Home (task 034)
 //   scripts/repknot notes                         # latest published brief
+//   scripts/repknot set-password                  # change to REPKNOT_NEW_PASSWORD from .env
 //   add --as test2 to act as the second (test) user
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { parse } from "jsr:@std/csv@1";
@@ -192,6 +193,17 @@ switch (command) {
     }).select("id, published_at").single();
     if (error) fail(error);
     console.log(`published coach notes (${items.length} item${items.length === 1 ? "" : "s"}) ${data.id} at ${data.published_at}`);
+    break;
+  }
+
+  case "set-password": {
+    const current = asTest2 ? "REPKNOT_TEST2_PASSWORD" : "REPKNOT_PASSWORD";
+    const next = asTest2 ? "REPKNOT_TEST2_NEW_PASSWORD" : "REPKNOT_NEW_PASSWORD";
+    const password = need(next);
+    if (password.length < 16) fail(`${next} is shorter than 16 characters`);
+    const { error } = await supabase.auth.updateUser({ password });
+    if (error) fail(error);
+    console.log(`Password changed for ${auth.user.email}. In .env, copy ${next}'s value to ${current}, then delete the ${next} line.`);
     break;
   }
 
