@@ -10,7 +10,9 @@ fail() { echo "scripts/db: $*" >&2; exit 1; }
 command -v supabase >/dev/null || fail "supabase CLI not installed"
 command -v jq >/dev/null || fail "jq not installed"
 [ -f "$root/.env" ] || fail ".env missing (copy .env.example)"
-set -a; . "$root/.env"; set +a
+while IFS= read -r line || [ -n "$line" ]; do  # literal KEY=value lines; values are never shell-expanded
+  if [[ $line =~ ^([A-Za-z0-9_]+)=(.*)$ ]]; then export "${BASH_REMATCH[1]}=${BASH_REMATCH[2]%$'\r'}"; fi
+done < "$root/.env"
 : "${SUPABASE_URL:?SUPABASE_URL is empty in .env}"
 
 ref="$(sed -E 's#^https://([a-z0-9]+)\.supabase\.co/?$#\1#' <<<"$SUPABASE_URL")"
