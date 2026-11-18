@@ -17,7 +17,7 @@ import com.repknot.app.ui.*
 @Composable
 fun AppNavigation(workout: WorkoutViewModel, progress: ProgressViewModel,
                   history: HistoryViewModel, coachNotes: CoachNotesViewModel,
-                  checkInRequested: Boolean, checkInOpened: () -> Unit, settings: @Composable () -> Unit) {
+                  checkInRequested: Boolean, checkInOpened: () -> Unit, signedOut: Boolean, settings: @Composable () -> Unit) {
     val coachNotesState by coachNotes.state.collectAsState()
     val progressState by progress.state.collectAsState()
     val historyState by history.state.collectAsState()
@@ -71,14 +71,12 @@ fun AppNavigation(workout: WorkoutViewModel, progress: ProgressViewModel,
                         Text(today.programName, color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelLarge,
                             maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(start = 24.dp))
                     Spacer(Modifier.weight(1f))
-                    IconButton(onClick = { nav = nav.push("settings") }) {
-                        Icon(painterResource(R.drawable.ic_settings), contentDescription = stringResource(R.string.settings))
-                    }
+                    SettingsButton(signedOut) { nav = nav.push("settings") }
                 }
             }
             Box(Modifier.weight(1f)) {
                 if (showingLogger) holder.SaveableStateProvider("workout") {
-                    WorkoutScreen(workout, progressState, coachNotesState, coachNotes::markSeen, coachNotes::toggleDone, { nav = nav.select(RootTab.PROGRESS) }, { nav = nav.push("settings") })
+                    WorkoutScreen(workout, progressState, coachNotesState, coachNotes::markSeen, coachNotes::toggleDone, { nav = nav.select(RootTab.PROGRESS) }, signedOut) { nav = nav.push("settings") }
                 } else if (route == "settings") holder.SaveableStateProvider("settings-${nav.selected}") { settings() }
                 else if (route == "body") holder.SaveableStateProvider("body") {
                     BodyScreen(progressState, checkInDialog, { checkInDialog = it }, progress::addCheckIn, progress::uploadCheckIn, progress::deleteCheckIn)
@@ -101,7 +99,7 @@ fun AppNavigation(workout: WorkoutViewModel, progress: ProgressViewModel,
                             TextButton(onClick = { nav = nav.select(RootTab.PROGRESS) }) { Text("From Progress") }
                         }
                     } else holder.SaveableStateProvider("workout") {
-                        WorkoutScreen(workout, progressState, coachNotesState, coachNotes::markSeen, coachNotes::toggleDone, { nav = nav.select(RootTab.PROGRESS) }, { nav = nav.push("settings") })
+                        WorkoutScreen(workout, progressState, coachNotesState, coachNotes::markSeen, coachNotes::toggleDone, { nav = nav.select(RootTab.PROGRESS) }, signedOut) { nav = nav.push("settings") }
                     }
                     RootTab.HISTORY -> holder.SaveableStateProvider("history") {
                         HistoryScreen(historyState, { nav = nav.push("workout:$it") }, { nav = nav.push("exercise:$it") })

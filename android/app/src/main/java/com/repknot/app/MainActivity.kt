@@ -74,7 +74,8 @@ class MainActivity : ComponentActivity() {
                     app.settings::markCoachNoteSeen, app.settings.doneCoachItems, app.settings::setCoachItemDone,
                 ))
                 val checkInRequested by openCheckIn.collectAsState()
-                AppNavigation(workout, progress, history, coachNotes, checkInRequested, { openCheckIn.value = false }) {
+                AppNavigation(workout, progress, history, coachNotes, checkInRequested, { openCheckIn.value = false },
+                    signedOut = cloudState.cloud is CloudState.SignedOut) {
                     val waistGoal by app.settings.waistGoalCm.collectAsState()
                     SettingsScreen(waistGoal, app.settings::setWaistGoalCm) {
                         CloudSection(cloudState, cloud::signIn, cloud::signOut)

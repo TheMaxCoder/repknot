@@ -44,6 +44,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.repeatOnLifecycle
 import kotlinx.coroutines.delay
 import com.repknot.app.ui.HomeScreen
+import com.repknot.app.ui.SettingsButton
 import com.repknot.app.ui.coachNoteStyle
 import com.repknot.domain.CoachNoteItem
 import com.repknot.data.ExerciseRow
@@ -56,7 +57,7 @@ import com.repknot.domain.SetDelta
 import java.time.LocalDate
 
 @Composable
-fun WorkoutScreen(vm: WorkoutViewModel, progress: ProgressUiState, coachNotes: CoachNotesUiState, markSeen: () -> Unit, toggleDone: (Int) -> Unit, openProgress: () -> Unit, openSettings: () -> Unit) {
+fun WorkoutScreen(vm: WorkoutViewModel, progress: ProgressUiState, coachNotes: CoachNotesUiState, markSeen: () -> Unit, toggleDone: (Int) -> Unit, openProgress: () -> Unit, signedOut: Boolean, openSettings: () -> Unit) {
     val state by vm.state.collectAsState()
     val error by vm.error.collectAsState()
     val session = state as? WorkoutUiState.Session
@@ -113,9 +114,7 @@ fun WorkoutScreen(vm: WorkoutViewModel, progress: ProgressUiState, coachNotes: C
         Column(Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding).imePadding().verticalScroll(rememberScrollState()).padding(24.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)) {
             if (session == null && preview != null) Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                IconButton(onClick = openSettings) {
-                    Icon(androidx.compose.ui.res.painterResource(R.drawable.ic_settings), contentDescription = stringResource(R.string.settings))
-                }
+                SettingsButton(signedOut, openSettings)
             }
             error?.let { Text(stringResource(it), color = MaterialTheme.colorScheme.error) }
             when (val current = state) {
