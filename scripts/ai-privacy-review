@@ -5,11 +5,12 @@ Usage: scripts/ai-privacy-review <rev-list args>   e.g. origin/main..HEAD, or HE
 
 Sends each commit's message and added lines (never the private denylist) to a reviewer
 model through `pi`, with no tools, no project context and no session. The content is about
-to be published anyway. Exits 0 only if every chunk ends with "VERDICT: PASS"; any
-finding, error, timeout or unreadable answer blocks (fail closed).
+to be published anyway. Each finding is HARD (blocks) or SOFT (warning only, also appended to
+.git/privacy-soft-findings.log). Exits 0 only if no chunk has a HARD finding; an unlabeled
+finding counts as HARD, and an error, timeout or unreadable answer blocks (fail closed).
 Env: PUSH_REVIEW_MODEL (default openai-codex/gpt-6.1-sol, not the delegation worker's model), PUSH_REVIEW_THINKING (medium).
 """
-import os, re, subprocess, sys, tempfile
+import datetime, os, re, subprocess, sys, tempfile
 
 MODEL = os.environ.get("PUSH_REVIEW_MODEL", "openai-codex/gpt-6.1-sol")
 THINKING = os.environ.get("PUSH_REVIEW_THINKING", "medium")
@@ -36,17 +37,28 @@ stand; development or logging-start dates; database row or session numbers; proc
 naming the AI models or sessions that implemented or reviewed work (only authorship
 trailers and "Generated with ..." lines count as attribution).
 Also do NOT flag: clearly synthetic or invented values (test fixtures, "synthetic"/"demo"/
-"test" data, spec examples like `25 kg x 10`), placeholder emails (example.com,
+"test" data, spec examples like `25 kg x 10`, anything seen on the emulator or the "test2"
+account, which hold only invented demo data), placeholder emails (example.com,
 test.invalid), generic exercise names, documentation that describes these rules, or
 relative paths.
-Still flag numbers that look copied from real records (body values, loads, reps, counts of
-real records), real note text, and health or injury details.
-Judge whether a value looks copied from real records; when it plausibly is real and you
-are unsure, flag it.
+
+Label every finding HARD or SOFT:
+- HARD: a reader learns a real value or a private fact. Numbers that look copied from real
+  records (body values, loads, reps, counts of real records), real note text, health or
+  injury details, identifying details, backend identifiers, secrets, attribution lines.
+  When a value plausibly is real and you are unsure, it is HARD.
+- SOFT: qualitative statements drawn from real data that contain no value: the direction or
+  shape of a real trend, vague amounts ("several", "most", "a few"), outcomes of checks
+  against real data ("matched", "followed the longer pattern").
+Examples. HARD: "waist went from 101.5 to 100.25 cm"; "14 real check-ins since October";
+"note: left knee sore after squats"; "tested on the Pixel 9". SOFT: "several check-ins sat
+on the phone unnoticed"; "the real 4-week trend was flat"; "checked against the real history:
+targets matched". Not a finding: "Push 1 on 2026-11-16", "session #487", "25 kg x 10" in a
+test.
 
 Answer format, nothing else:
-FINDING: <commit> <file or "message">: <what> - <why>   (one line per finding; none if clean)
-VERDICT: PASS   or   VERDICT: BLOCK
+FINDING: HARD|SOFT <commit> <file or "message">: "<quoted text>" - <why>   (one line each)
+VERDICT: BLOCK if any finding is HARD, otherwise VERDICT: PASS
 """
 
 
@@ -96,14 +108,20 @@ def review(n, total, text):
         try:
             r = subprocess.run(cmd, cwd=tmp, stdin=subprocess.DEVNULL, capture_output=True, text=True, timeout=TIMEOUT)
         except subprocess.TimeoutExpired:
-            return False, [f"chunk {n}/{total}: reviewer timed out"]
+            return False, [f"chunk {n}/{total}: reviewer timed out"], []
     answer = r.stdout.strip()
     verdicts = re.findall(r"^VERDICT:\s*(PASS|BLOCK)\s*$", answer, re.M)
     findings = [l.strip() for l in answer.splitlines() if l.strip().startswith("FINDING:")]
     if r.returncode != 0 or not verdicts:
         detail = (r.stderr.strip() or answer)[-500:]
-        return False, [f"chunk {n}/{total}: no readable verdict (exit {r.returncode}): {detail}"]
-    return verdicts[-1] == "PASS" and not findings, findings
+        return False, [f"chunk {n}/{total}: no readable verdict (exit {r.returncode}): {detail}"], []
+    soft = [f for f in findings if re.match(r"FINDING:\s*SOFT\b", f)]
+    hard = [f for f in findings if f not in soft]  # unlabeled counts as hard
+    if hard:
+        return False, hard, soft
+    if verdicts[-1] != "PASS":  # BLOCK without a hard finding is contradictory: fail closed
+        return False, [f"chunk {n}/{total}: verdict BLOCK without a HARD finding"], soft
+    return True, [], soft
 
 
 def main(argv):
@@ -114,14 +132,22 @@ def main(argv):
         print("ai-privacy-review: nothing to review"); return 0
     parts = list(chunks(commits))
     print(f"ai-privacy-review: {len(commits)} commit(s) in {len(parts)} chunk(s), reviewer {MODEL}", file=sys.stderr)
-    ok_all, all_findings = True, []
+    ok_all, all_hard, all_soft = True, [], []
     for i, text in enumerate(parts, 1):
         print(f"ai-privacy-review: chunk {i}/{len(parts)}…", file=sys.stderr)
-        ok, findings = review(i, len(parts), text)
+        ok, hard, soft = review(i, len(parts), text)
         ok_all &= ok
-        all_findings += findings
-    for f in all_findings:
+        all_hard += hard; all_soft += soft
+    for f in all_hard:
         print(f"  {f}", file=sys.stderr)
+    for f in all_soft:
+        print(f"  warning: {f}", file=sys.stderr)
+    if all_soft:
+        log = os.path.join(git("rev-parse", "--git-common-dir").strip(), "privacy-soft-findings.log")
+        with open(log, "a", encoding="utf-8") as f:
+            stamp = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+            f.writelines(f"{stamp} {line}\n" for line in all_soft)
+        print(f"ai-privacy-review: {len(all_soft)} soft finding(s) do not block (logged in .git/privacy-soft-findings.log)", file=sys.stderr)
     print(f"ai-privacy-review: {'PASS' if ok_all else 'BLOCK'}", file=sys.stderr)
     return 0 if ok_all else 1
 

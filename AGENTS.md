@@ -88,7 +88,9 @@ outside the repo. Check the staged diff for this before every commit.
   notes, or tests. Screenshots and fixtures come only from the synthetic account.
 - Gates, enabled once per clone with `scripts/install-hooks`: pre-commit and commit-msg
   run `scripts/privacy-check`; pre-push runs `scripts/push-gate` (the same check plus an
-  independent AI review of everything leaving; it fails closed). Real values to block go in
+  independent AI review of everything leaving; it fails closed). Hard findings (real values,
+  notes, health details, identifiers) block; soft ones (vague or qualitative statements drawn
+  from real data) only warn and go to `.git/privacy-soft-findings.log`. Real values to block go in
   the ignored `private-data/privacy-denylist.txt`, never in tracked files.
 - When a gate blocks, fix the content. Never bypass it (`--no-verify`, override variables)
   without the owner's explicit OK for that instance; overrides are logged in `.git/`.

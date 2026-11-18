@@ -38,6 +38,12 @@ Out of scope: CI, GitHub settings (owner enables push protection when publishing
 6. [x] `AGENTS.md` and README; commit.
 
 ## Decisions and discoveries
+- 2026-11-18 (owner): the AI review labels findings HARD or SOFT. Only HARD blocks; SOFT is a
+  warning, logged in `.git/privacy-soft-findings.log`. Reason: vague statements (a trend's
+  direction, "several") blocked pushes as hard as real values did, and the same content could
+  pass on one run and block on the next. Unlabeled findings count as HARD; test2/emulator values
+  are synthetic. Checked: the waiting commits pass with 2 soft warnings; a planted body-value
+  commit in a throwaway worktree is HARD and blocks.
 - Owner chose blocking hooks (reverses the earlier "no command-blocking hooks" stance for
   this purpose only), the AI review at push time only, and a different-model reviewer.
 - Reviewer model: `openai-codex/gpt-6.1-sol`, not `gpt-6.1-terra`, because terra is the
