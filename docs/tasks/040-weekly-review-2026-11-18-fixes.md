@@ -40,7 +40,9 @@ here with a reason after an owner decision.
 ## Plan / progress
 - [x] 1 — `CheckInUploads` serializes each row's upload with Delete (per-row lock, re-read before
   upsert); Delete also removes a server copy left by an unacknowledged upload.
-- [ ] 2 · [ ] 3 · [ ] 4
+- [x] 2 — `LoggerFocus` (NavigationState.kt): a reminder tap while the workout is still loading
+  holds focus off for that load; the hold clears once loading ends.
+- [ ] 3 · [ ] 4
 
 ## Decisions / discoveries
 - Item 1 touches sync logic and item 3 changes a 037 rule: flag both under `Review:`.
@@ -54,6 +56,9 @@ here with a reason after an owner decision.
   delete not serialized) and passes with the fix. `:data:connectedDebugAndroidTest` on the emulator
   → 26 tests, BUILD SUCCESSFUL. `scripts/test-sync-integration` (test2, dev) → OK (2 tests),
   including the new lost-acknowledgement Delete case. `scripts/check` → BUILD SUCCESSFUL.
+- Item 2: `NavigationStateTest` (4 tests) passes; with the hold disabled the cold-start test fails.
+  Emulator (test2, open workout): force-stop + reminder intent ×3 → check-in dialog each time;
+  force-stop + normal launch → workout logger.
 
 ## Handoff
-Next action: item 2 (reminder tap vs. workout focus in `AppNavigation`).
+Next action: item 3 (dip recovery mismatch rule in `dipStatuses`, plus task 037 wording).

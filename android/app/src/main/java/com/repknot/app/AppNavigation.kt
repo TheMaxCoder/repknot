@@ -28,29 +28,31 @@ fun AppNavigation(workout: WorkoutViewModel, progress: ProgressViewModel,
         restore = { map -> @Suppress("UNCHECKED_CAST") NavigationState(RootTab.valueOf(map["selected"] as String), mapOf(RootTab.HOME to (map["home"] as List<String>), RootTab.HISTORY to (map["history"] as List<String>), RootTab.PROGRESS to (map["progress"] as List<String>))) }
     ) }
     var nav by rememberSaveable(stateSaver = saver) { mutableStateOf(NavigationState()) }
-    var focused by rememberSaveable { mutableStateOf(true) }
-    var previousId by rememberSaveable { mutableStateOf<String?>(null) }
+    val focusSaver = remember { mapSaver(
+        save = { f: LoggerFocus -> mapOf("focused" to f.focused, "previousId" to f.previousId, "hold" to f.holdForReminder) },
+        restore = { LoggerFocus(it["focused"] as Boolean, it["previousId"] as String?, it["hold"] as Boolean) },
+    ) }
+    var focus by rememberSaveable(stateSaver = focusSaver) { mutableStateOf(LoggerFocus()) }
     val session = workoutState as? WorkoutUiState.Session
     LaunchedEffect(session?.row?.id, workoutState is WorkoutUiState.Loading) {
-        if (session != null && session.row.id != previousId) { focused = true; previousId = session.row.id }
-        if (session == null && workoutState !is WorkoutUiState.Loading) previousId = null
+        focus = focus.sessionLoaded(session?.row?.id, workoutState is WorkoutUiState.Loading)
     }
     var checkInDialog by rememberSaveable { mutableStateOf(false) }
     // Reminder tap: Progress → Body with the check-in dialog open; a running workout is kept (like Back).
     LaunchedEffect(checkInRequested) {
         if (checkInRequested) {
-            focused = false
+            focus = focus.reminderOpened(workoutState is WorkoutUiState.Loading)
             nav = nav.copy(selected = RootTab.PROGRESS, stacks = nav.stacks + (RootTab.PROGRESS to listOf("body")))
             checkInDialog = true
             checkInOpened()
         }
     }
-    val showingLogger = session != null && focused
+    val showingLogger = session != null && focus.focused
     val keyboardVisible = WindowInsets.ime.getBottom(LocalDensity.current) > 0
     val route = nav.details.lastOrNull()
     val back = { nav = nav.back() ?: nav }
     BackHandler(enabled = showingLogger || nav.back() != null) {
-        if (showingLogger) { focused = false; nav = nav.copy(selected = RootTab.HOME, stacks = nav.stacks + (RootTab.HOME to emptyList())) } else back()
+        if (showingLogger) { focus = focus.copy(focused = false); nav = nav.copy(selected = RootTab.HOME, stacks = nav.stacks + (RootTab.HOME to emptyList())) } else back()
     }
     Scaffold(bottomBar = {
         if (!showingLogger && !keyboardVisible) NavigationBar {
@@ -91,7 +93,7 @@ fun AppNavigation(workout: WorkoutViewModel, progress: ProgressViewModel,
                             Surface(shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp), color = MaterialTheme.colorScheme.surfaceContainer, modifier = Modifier.fillMaxWidth()) {
                                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                     Text(session.row.title, style = MaterialTheme.typography.titleMedium)
-                                    Button(onClick = { focused = true }, modifier = Modifier.fillMaxWidth()) {
+                                    Button(onClick = { focus = focus.copy(focused = true) }, modifier = Modifier.fillMaxWidth()) {
                                         Text(if (session.row.status == "in_progress") "Resume workout" else "View workout summary")
                                     }
                                 }
