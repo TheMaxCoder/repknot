@@ -1,6 +1,6 @@
 # 040 — Fixes from the 2026-11-18 weekly review
 
-Status: in progress
+Status: done (owner phone check pending)
 Starting commit: 3de2859
 Source: [weekly review 2026-11-18](../reviews/2026-11-18.md), findings 1–4 (each checked against
 the code by the lead before filing).
@@ -44,7 +44,10 @@ here with a reason after an owner decision.
   holds focus off for that load; the hold clears once loading ends.
 - [x] 3 — `dipStatuses`: the higher-load fallback only counts exposures in the same timed mode;
   037 notes the settled rule.
-- [ ] 4
+- [x] 4 — `sessionDips` compares each session within its own unit (per exercise and unit);
+  `dipStatuses` follows up in the dip session's unit, so another unit is a mismatch (not evaluated).
+- [ ] Owner: look at History dip tags and the Progress dip card on the phone once (item 4 can tag
+  older sessions in a unit that used to be ignored).
 
 ## Decisions / discoveries
 - Item 1 touches sync logic and item 3 changes a 037 rule: flag both under `Review:`.
@@ -63,6 +66,9 @@ here with a reason after an owner decision.
   force-stop + normal launch → workout logger.
 - Item 3: `ProgressTest` 13/13 with the new higher-load timed-mismatch case; it fails without the
   fix (28 domain tests, 1 failed).
+- Item 4: `ProgressTest` 14/14 with `aLaterUnitChangeKeepsEarlierDips`; on the previous
+  `Progress.kt` it fails (29 tests, 1 failed). `scripts/check` → BUILD SUCCESSFUL.
 
 ## Handoff
-Next action: item 4 (per-unit dip detection in `sessionDips`/`dipStatuses`).
+All four items done. Next action: owner checks History dip tags on the phone (item 4 may tag
+older sessions logged in a unit that the old rule ignored). Not checked against the real history here.

@@ -191,7 +191,8 @@ fun dipStatuses(history: List<PastSession>): List<DipStatus> {
         val index = sessions.indexOfFirst { it.id == dip.sessionId }
         var evaluated = 0
         val below = dip.below.filter { id ->
-            val unit = lineage(history, id).last().unit
+            // Follow-ups in another unit are a mismatch: not evaluated.
+            val unit = sessionUnit(sessions[index], id) ?: return@filter false
             // "Usual" = the last 3 pre-dip exposures; recovered when the latest follow-up matches or
             // beats any comparable one. A lower load is a programming choice: not evaluated (task 037).
             // A higher load counts as recovered, but only against exposures in the same mode: a
@@ -230,17 +231,22 @@ fun dipAlert(history: List<PastSession>, today: LocalDate, weightPctPerWeek: Dou
 }
 
 data class SessionDip(val sessionId: String, val date: LocalDate, val evaluable: Int, val below: List<String>)
+/** The unit of an exercise in one session: its first set's (as `lineage` picks the latest). */
+private fun sessionUnit(session: PastSession, id: String): LoadUnit? =
+    session.exercises.filter { it.exerciseId == id }.sortedBy { it.position }
+        .firstNotNullOfOrNull { it.sets.minByOrNull { set -> set.position }?.unit }
+
 fun sessionDips(history: List<PastSession>): List<SessionDip> {
     val sessions = ordered(history)
-    val ids = sessions.flatMap { it.exercises }.map { it.exerciseId }.distinct()
-    val units = ids.mapNotNull { id -> lineage(history, id).lastOrNull()?.let { id to it.unit } }.toMap()
-    val previous = mutableMapOf<String, MutableList<Exposure>>()
+    // Each session is compared within its own unit, so a later unit change leaves past dips alone.
+    val previous = mutableMapOf<Pair<String, LoadUnit>, MutableList<Exposure>>()
     return sessions.filterNot { it.light }.mapNotNull { session ->
         var evaluable = 0
         val below = mutableListOf<String>()
         session.exercises.map { it.exerciseId }.distinct().forEach { id ->
-            val e = units[id]?.let { exposure(session, id, it) } ?: return@forEach
-            val past = previous.getOrPut(id) { mutableListOf() }
+            val unit = sessionUnit(session, id) ?: return@forEach
+            val e = exposure(session, id, unit) ?: return@forEach
+            val past = previous.getOrPut(id to unit) { mutableListOf() }
             val prev = past.lastOrNull { compare(e, it) != Comparison.NOT_COMPARABLE }
             if (prev != null) { evaluable++; if (compare(e, prev) == Comparison.WORSE) below.add(id) }
             past.add(e)

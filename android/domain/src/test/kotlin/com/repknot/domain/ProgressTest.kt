@@ -232,6 +232,19 @@ class ProgressTest {
         assertEquals(DipState.PERSISTING, dipStatuses(olderThanUsual).single().state)
     }
 
+    @Test fun aLaterUnitChangeKeepsEarlierDips() {
+        val dip = listOf(broad(0), broad(1, 8.0))
+        val plates = session(2).copy(exercises = (0..2).map { PastExercise(it, "$it", listOf(set(10.0, 5.0, unit = LoadUnit.PLATES))) })
+        assertEquals(sessionDips(dip), sessionDips(dip + plates))
+        // A follow-up in the new unit is a mismatch: the dip stays unevaluated.
+        val status = dipStatuses(dip + plates).single()
+        assertEquals(0, status.evaluated)
+        assertEquals(DipState.PENDING, status.state)
+        // A dip in the new unit is still found, compared only within that unit.
+        val platesDip = listOf(plates, session(3).copy(exercises = (0..2).map { PastExercise(it, "$it", listOf(set(7.0, 5.0, unit = LoadUnit.PLATES))) }))
+        assertEquals(listOf("s1", "s3"), sessionDips(dip + platesDip).map { it.sessionId })
+    }
+
     @Test fun dipAlertPriorityAndBoundaries() {
         val h = listOf(broad(0), broad(1, 8.0))
         assertEquals(DipAlertKind.NOTICE, dipAlert(h, day.plusDays(11), null)?.kind)

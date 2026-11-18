@@ -89,7 +89,7 @@ card ▲/=/▼, Progress screen (statuses, broad dips, exercise history), body c
 
 Weekly review ([ADR 007](decisions/007-weekly-fresh-eyes-review.md)): run `scripts/weekly-review`
 once a week; reports and their triage live in [reviews/](reviews/). First review 2026-11-18 →
-[040 — review fixes](tasks/040-weekly-review-2026-11-18-fixes.md) (ready).
+[040 — review fixes](tasks/040-weekly-review-2026-11-18-fixes.md) (done; owner phone check pending).
 
 ## Next priorities
 
