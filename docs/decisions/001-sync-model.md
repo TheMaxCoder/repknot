@@ -1,6 +1,6 @@
 # 001 — Sync model: server cache, local drafts, push on finish
 
-Status: accepted  
+Status: accepted, partly superseded (see the notes in sections 4 and Consequences)  
 Date: 2026-10-31
 
 ## Context
@@ -62,6 +62,9 @@ at a time on the phone. We need:
 ### 4. Push
 
 - Finishing a session shows an overview. Confirming starts a push straight away.
+  *Superseded 2026-11-02 by [task 028](../tasks/028-explicit-upload.md): finishing keeps the
+  workout on the phone; only its Upload tap marks it for push, and retries then apply as below.
+  Check-ins upload on save (2026-11-18). Current behavior: [architecture](../architecture.md).*
 - Until a push is acknowledged, the app retries automatically: on app open, and when
   the network returns. The UI shows "saved on phone · will upload".
 - The push goes through one server function,
@@ -177,7 +180,9 @@ at a time on the phone. We need:
   changes made by ChatGPT or the web app.
 - **The date as session ID:** a second session on the same day would overwrite the first.
 - **Manual push only:** a session finished offline, or an app killed after finishing,
-  would leave data stranded on the phone.
+  would leave data stranded on the phone. *(Task 028 later chose an explicit Upload tap per
+  workout; a tapped upload still retries automatically, so this risk applies only to
+  workouts never tapped.)*
 
 ## Consequences
 
@@ -192,7 +197,9 @@ at a time on the phone. We need:
   history plus finished sessions that are not pushed yet, so an offline gym day doesn't
   repeat a workout.
 - **History, dashboard, and progress screens:** they query Supabase directly (online
-  only) to begin with. Only the data needed offline is cached.
+  only) to begin with. Only the data needed offline is cached. *Superseded: these screens
+  read the local Room copy of the full history ([ADR 003](003-single-canonical-project.md),
+  [ADR 004](004-app-navigation-and-history.md)).*
 - **In-progress sessions:** web and ChatGPT can't see them until they are pushed. That
   is acceptable for V0.
 - **Deletions:** a set removed locally drops out of the snapshot, and the server's

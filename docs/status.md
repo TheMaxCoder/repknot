@@ -87,6 +87,10 @@ Milestone [019 — Progress and regression](tasks/019-progress-milestone.md) is 
 card ▲/=/▼, Progress screen (statuses, broad dips, exercise history), body card
 (waist goal, trends, cut check, check-in entry), light-day flag (tasks 020–023).
 
+Weekly review ([ADR 007](decisions/007-weekly-fresh-eyes-review.md)): run `scripts/weekly-review`
+once a week; reports and their triage live in [reviews/](reviews/). First review 2026-11-18 →
+[040 — review fixes](tasks/040-weekly-review-2026-11-18-fixes.md) (ready).
+
 ## Next priorities
 
 1. Real logging on the phone from 2026-11-02 (each workout uploads only when Upload is
