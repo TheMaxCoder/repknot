@@ -1,0 +1,135 @@
+#!/usr/bin/env -S python3 -I
+"""Weekly fresh-eyes review of the repository (ADR 007).
+
+Usage: scripts/weekly-review [base-rev]
+
+A model that did not write the code reads the project docs and the commits since the last
+review in a clean, temporary checkout of HEAD (tracked files only, read-only tools: read,
+grep, find, ls; no shell, no writes), and reports what no longer hangs together. The report
+lands in docs/reviews/YYYY-MM-DD.md for the lead to triage; nothing is committed here.
+
+The range starts at the "Range:" end of the newest report, or at the last commit older than
+eight days on the first run, unless base-rev is given.
+Env: WEEKLY_REVIEW_MODEL (default openai-codex/gpt-6.1-sol), WEEKLY_REVIEW_THINKING (high).
+"""
+import datetime, glob, os, re, subprocess, sys, tempfile
+
+MODEL = os.environ.get("WEEKLY_REVIEW_MODEL", "openai-codex/gpt-6.1-sol")
+THINKING = os.environ.get("WEEKLY_REVIEW_THINKING", "high")
+TIMEOUT = 3600
+MAX_DIFF = 200_000
+ROOT = subprocess.run(["git", "rev-parse", "--show-toplevel"], capture_output=True, text=True, check=True).stdout.strip()
+REPORTS = os.path.join(ROOT, "docs", "reviews")
+
+SYSTEM = """You are a senior engineer giving a small project fresh eyes once a week. You did not
+write this code and have no history with it. The project is Repknot, a native Kotlin/Compose
+workout logger with a Supabase backend, built by one owner with AI coding agents.
+
+Your working directory is a clean checkout of the repository. You can read, grep, find and ls;
+you cannot run commands or change files. Start with AGENTS.md, docs/architecture.md,
+docs/status.md and the ADRs in docs/decisions/, then the attached commit range, then whatever
+code you need to check a suspicion. Look at the whole codebase where the recent changes touch
+it, not only the diff.
+
+Look for things that no longer hang together:
+- code that contradicts docs/architecture.md, an ADR or AGENTS.md, or docs that describe
+  behavior the code no longer has;
+- the same rule implemented in two places that can drift (e.g. a UI check mirroring a DAO query);
+- boundary leaks: domain depending on Android or data, UI doing persistence or sync work;
+- sync, revision, migration or upload logic that can lose, duplicate or strand data;
+- tests that no longer test what their name says, or risky logic with no test;
+- workarounds and TODOs that became permanent, dead code, leftover flags;
+- anything a newcomer would find confusing or surprising.
+
+Skip style, formatting, naming taste and anything a linter would catch. Do not praise.
+Only report what you checked in the files; say how sure you are. Fewer, real findings beat a
+long list: at most 10, most important first. If the previous report is attached, do not
+repeat its findings unless they are still unaddressed and matter; then say so.
+The repository is public: never quote personal data; describe instead.
+
+Answer in Markdown, exactly this shape:
+## Summary
+Two or three sentences on the state of the codebase.
+## Findings
+### 1. <short title>
+- Where: path:line (one or more)
+- What: the incoherence, concretely
+- Why it matters: the failure or confusion it can cause
+- Suggestion: the smallest change that fixes it
+- Confidence: high | medium | low
+(If nothing is worth reporting, write "None." under Findings.)
+"""
+
+
+def git(*args, cwd=ROOT):
+    return subprocess.run(["git", *args], cwd=cwd, capture_output=True, text=True, check=True).stdout
+
+
+def previous_report():
+    files = sorted(glob.glob(os.path.join(REPORTS, "[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]*.md")))
+    return files[-1] if files else None
+
+
+def base_rev(argv, previous):
+    if argv:
+        return git("rev-parse", "--verify", argv[0] + "^{commit}").strip()
+    if previous:
+        m = re.search(r"^Range: `?([0-9a-f]{7,40})\.\.([0-9a-f]{7,40})`?", open(previous, encoding="utf-8").read(), re.M)
+        if m:
+            return git("rev-parse", "--verify", m.group(2) + "^{commit}").strip()
+    old = git("rev-list", "-1", "--before=8 days ago", "HEAD").strip()
+    return old or git("rev-list", "--max-parents=0", "HEAD").split()[0]
+
+
+def main(argv):
+    if argv and argv[0] in ("-h", "--help"):
+        print(__doc__); return 0
+    previous = previous_report()
+    base, head = base_rev(argv, previous), git("rev-parse", "HEAD").strip()
+    commits = git("rev-list", "--count", f"{base}..{head}").strip()
+    if commits == "0":
+        print("weekly-review: no commits since the last review"); return 0
+    today = datetime.date.today().isoformat()
+    out = os.path.join(REPORTS, f"{today}.md")
+    if os.path.exists(out):
+        print(f"weekly-review: {os.path.relpath(out, ROOT)} already exists", file=sys.stderr); return 1
+
+    with tempfile.TemporaryDirectory() as tmp:
+        checkout = os.path.join(tmp, "repo")
+        git("worktree", "add", "--detach", "--quiet", checkout, head)
+        try:
+            context = os.path.join(tmp, "range.md")
+            log = git("log", "--reverse", "--format=### %h %s%n%n%b", "--stat", f"{base}..{head}")
+            diff = git("diff", "--no-color", f"{base}..{head}")
+            if len(diff) > MAX_DIFF:
+                diff = diff[:MAX_DIFF] + "\n[diff truncated; read the files in the checkout]\n"
+            with open(context, "w", encoding="utf-8") as f:
+                f.write(f"# Commits {base[:7]}..{head[:7]} ({commits})\n\n{log}\n# Combined diff\n\n```diff\n{diff}```\n")
+                if previous:
+                    f.write(f"\n# Previous report ({os.path.basename(previous)})\n\n" + open(previous, encoding="utf-8").read())
+            print(f"weekly-review: {commits} commit(s) {base[:7]}..{head[:7]}, reviewer {MODEL} ({THINKING})", file=sys.stderr)
+            cmd = ["pi", "-p", "--no-session", "--tools", "read,grep,find,ls", "--no-extensions", "--no-skills",
+                   "--no-context-files", "--no-mcp", "--no-prompt-templates", "-na",
+                   "--model", MODEL, "--thinking", THINKING, "--system-prompt", SYSTEM,
+                   f"@{context}", "Review the repository in your working directory, focusing on the attached range."]
+            try:
+                r = subprocess.run(cmd, cwd=checkout, stdin=subprocess.DEVNULL, capture_output=True, text=True, timeout=TIMEOUT)
+            except subprocess.TimeoutExpired:
+                print("weekly-review: reviewer timed out", file=sys.stderr); return 1
+        finally:
+            git("worktree", "remove", "--force", checkout)
+
+    answer = r.stdout.strip()
+    if r.returncode != 0 or "## Findings" not in answer:
+        print(f"weekly-review: no usable report (exit {r.returncode}): {(r.stderr.strip() or answer)[-500:]}", file=sys.stderr)
+        return 1
+    os.makedirs(REPORTS, exist_ok=True)
+    with open(out, "w", encoding="utf-8") as f:
+        f.write(f"# Weekly review {today}\n\nRange: `{base[:7]}..{head[:7]}` ({commits} commits) · Reviewer: {MODEL} ({THINKING})\n\n"
+                f"{answer}\n\n## Triage\n\nPending: the lead marks each finding fixed (commit), task (link) or dismissed (reason).\n")
+    print(f"weekly-review: wrote {os.path.relpath(out, ROOT)}")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))

@@ -118,6 +118,8 @@ loop, and the bounded rules for tuning `docs/delegation/worker-notes.md` live in
 - `scripts/privacy-check --staged|--revs <range>|--history` — the pattern check by hand.
 - `scripts/push-gate --revs <range>` — the full pre-push gate without pushing, e.g.
   `--revs HEAD --not --remotes` before a first publish.
+- `scripts/weekly-review` — weekly fresh-eyes review by another model into `docs/reviews/`;
+  the lead triages each finding there ([ADR 007](docs/decisions/007-weekly-fresh-eyes-review.md)).
 
 ## Boundaries
 - Dark-only UI, including launch background and system bars. Use wallpaper-derived dynamic
