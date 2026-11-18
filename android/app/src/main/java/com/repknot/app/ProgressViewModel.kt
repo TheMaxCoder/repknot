@@ -37,6 +37,8 @@ class ProgressViewModel(
     private val waistGoal: StateFlow<Double>,
     /** Asks the app to sync (pushes check-ins saved on this phone). */
     private val requestSync: () -> Unit,
+    /** Deletes a check-in not uploaded yet without racing its upload (SessionSync.deleteCheckIn). */
+    private val removeCheckIn: suspend (String) -> Boolean,
     private val today: () -> LocalDate = LocalDate::now,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow(ProgressUiState())
@@ -74,16 +76,16 @@ class ProgressViewModel(
         viewModelScope.launch { checkIns.add(row); requestSync() }
         return true
     }
-    fun deleteCheckIn(id: String) { viewModelScope.launch { checkIns.deleteLocal(id) } }
+    fun deleteCheckIn(id: String) { viewModelScope.launch { removeCheckIn(id) } }
 
     class Factory(
         private val sessions: SessionDao, private val reference: ReferenceDao,
         private val checkIns: CheckInDao, private val waistGoal: StateFlow<Double>,
-        private val requestSync: () -> Unit,
+        private val requestSync: () -> Unit, private val removeCheckIn: suspend (String) -> Boolean,
     ) : ViewModelProvider.Factory {
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
             require(modelClass.isAssignableFrom(ProgressViewModel::class.java))
-            @Suppress("UNCHECKED_CAST") return ProgressViewModel(sessions, reference, checkIns, waistGoal, requestSync) as T
+            @Suppress("UNCHECKED_CAST") return ProgressViewModel(sessions, reference, checkIns, waistGoal, requestSync, removeCheckIn) as T
         }
     }
 }

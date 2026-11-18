@@ -139,7 +139,7 @@ class SharedSessionIntegrationTest {
         withTimeout(30000) { cloud.state.first { it is CloudState.SignedIn } }
         val client = cloud.requireClient()
         val db = Room.inMemoryDatabaseBuilder(InstrumentationRegistry.getInstrumentation().targetContext, WorkoutDatabase::class.java).build()
-        val serverId = UUID.randomUUID().toString(); val phoneId = UUID.randomUUID().toString()
+        val serverId = UUID.randomUUID().toString(); val phoneId = UUID.randomUUID().toString(); val lostAckId = UUID.randomUUID().toString()
         try {
             client.from("checkins").insert(buildJsonObject { put("id", serverId); put("checked_on", "2026-10-30"); put("waist_cm", 90.5); put("source", "cli") })
             db.checkIns().add(CheckInRow(phoneId, "2026-10-31", weightKg = 70.25, waistCm = 90.0))
@@ -150,12 +150,18 @@ class SharedSessionIntegrationTest {
             assertEquals(listOf(false), db.checkIns().all().filter { it.id == phoneId }.map { it.pending })
             val remote = client.from("checkins").select { filter { eq("id", phoneId) } }.decodeList<ServerCheckIn>()
             assertEquals(70.25, remote.single().weightKg!!, 0.0)
+            // An upload that reached the server without being acknowledged: Delete removes both copies.
+            db.checkIns().add(CheckInRow(lostAckId, "2026-11-01", waistCm = 89.75))
+            client.from("checkins").insert(db.checkIns().get(lostAckId)!!.toServer())
+            assertTrue(sync.deleteCheckIn(lostAckId))
+            assertNull(db.checkIns().get(lostAckId))
+            assertEquals(0, client.from("checkins").select { filter { eq("id", lostAckId) } }.decodeList<ServerCheckIn>().size)
             // A server deletion removes the cached row on the next refresh.
             client.from("checkins").delete { filter { eq("id", serverId) } }
             sync.refreshAndPush()
             assertNull(db.checkIns().all().firstOrNull { it.id == serverId })
         } finally {
-            for (id in listOf(serverId, phoneId)) client.from("checkins").delete { filter { eq("id", id) } }
+            for (id in listOf(serverId, phoneId, lostAckId)) client.from("checkins").delete { filter { eq("id", id) } }
             db.close()
             cloud.signOut()
         }

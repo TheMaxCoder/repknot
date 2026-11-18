@@ -66,7 +66,7 @@ class MainActivity : ComponentActivity() {
                 ))
                 val progress: ProgressViewModel = viewModel(factory = ProgressViewModel.Factory(
                     app.database.sessions(), app.database.reference(), app.database.checkIns(),
-                    app.settings.waistGoalCm, app::requestRefresh,
+                    app.settings.waistGoalCm, app::requestRefresh, app.sync::deleteCheckIn,
                 ))
                 val history: HistoryViewModel = viewModel(factory = HistoryViewModel.Factory(app.database.sessions()))
                 val coachNotes: CoachNotesViewModel = viewModel(factory = CoachNotesViewModel.Factory(

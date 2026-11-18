@@ -26,6 +26,7 @@ class SessionSync(
     private val checkOwner: (String) -> Boolean = { true },
 ) {
     private val mutex = Mutex()
+    private val checkInUploads = checkIns?.let(::CheckInUploads)
 
     suspend fun refreshAndPush() = mutex.withLock {
         val account = cloud.state.first() as? CloudState.SignedIn ?: error("Sign in to sync")
@@ -48,14 +49,9 @@ class SessionSync(
         catch (e: CancellationException) { throw e }
         catch (e: Exception) { if (firstFailure == null) firstFailure = e }
         // Every phone check-in is pushed; sessions only once Upload was tapped (task 028). Check-ins carry the phone's id, so a retried upload is a no-op on the server.
-        for (row in checkIns?.pending().orEmpty()) {
-            try {
-                client.from("checkins").upsert(row.toServer()) { onConflict = "id"; ignoreDuplicates = true }
-                checkIns?.uploaded(row.id)
-            }
-            catch (e: CancellationException) { throw e }
-            catch (e: Exception) { if (firstFailure == null) firstFailure = e }
-        }
+        checkInUploads?.push { row ->
+            client.from("checkins").upsert(row.toServer()) { onConflict = "id"; ignoreDuplicates = true }
+        }?.let { if (firstFailure == null) firstFailure = it }
         for (row in dao.pending()) {
             try { push(row) }
             catch (e: CancellationException) { throw e }
@@ -63,6 +59,12 @@ class SessionSync(
         }
         firstFailure?.let { throw it }
     }
+
+    /** Deletes a check-in not uploaded yet, never racing its upload; returns whether it did. */
+    suspend fun deleteCheckIn(id: String): Boolean = checkInUploads?.delete(id) { rowId ->
+        if (cloud.state.first() is CloudState.SignedIn)
+            cloud.requireClient().from("checkins").delete { filter { eq("id", rowId) } }
+    } ?: false
 
     private suspend fun push(row: SessionRow) {
         val snapshot = dao.snapshot(row.id) ?: return

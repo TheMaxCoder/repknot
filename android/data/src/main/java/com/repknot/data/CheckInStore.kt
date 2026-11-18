@@ -60,6 +60,8 @@ interface CheckInDao {
     fun observeAll(): Flow<List<CheckInRow>>
     @Query("SELECT * FROM checkins ORDER BY checkedOn, id")
     suspend fun all(): List<CheckInRow>
+    @Query("SELECT * FROM checkins WHERE id = :id")
+    suspend fun get(id: String): CheckInRow?
     @Query("SELECT * FROM checkins WHERE pending = 1 ORDER BY checkedOn, id")
     suspend fun pending(): List<CheckInRow>
     @Insert(onConflict = OnConflictStrategy.REPLACE)

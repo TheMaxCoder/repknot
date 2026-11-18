@@ -1,7 +1,7 @@
 # 040 — Fixes from the 2026-11-18 weekly review
 
-Status: ready
-Starting commit: (set when work starts)
+Status: in progress
+Starting commit: 3de2859
 Source: [weekly review 2026-11-18](../reviews/2026-11-18.md), findings 1–4 (each checked against
 the code by the lead before filing).
 
@@ -38,13 +38,22 @@ here with a reason after an owner decision.
 3–4) with tests. No schema change expected. Items are independent; commit each separately.
 
 ## Plan / progress
-- [ ] 1 · [ ] 2 · [ ] 3 · [ ] 4
+- [x] 1 — `CheckInUploads` serializes each row's upload with Delete (per-row lock, re-read before
+  upsert); Delete also removes a server copy left by an unacknowledged upload.
+- [ ] 2 · [ ] 3 · [ ] 4
 
 ## Decisions / discoveries
 - Item 1 touches sync logic and item 3 changes a 037 rule: flag both under `Review:`.
+- Item 1: when Delete loses the race (the row finished uploading first) nothing is deleted and the
+  row shows as uploaded; deleting uploaded check-ins stays out of scope (they are add-only).
+- Item 3 rule confirmed by the owner (2026-11-18): a mismatch (unit or timed mode) is never
+  evaluated, at any load.
 
 ## Verification
-(pending)
+- Item 1: `CheckInUploadsTest` (3 tests) fails on the old upload loop (deleted row still sent;
+  delete not serialized) and passes with the fix. `:data:connectedDebugAndroidTest` on the emulator
+  → 26 tests, BUILD SUCCESSFUL. `scripts/test-sync-integration` (test2, dev) → OK (2 tests),
+  including the new lost-acknowledgement Delete case. `scripts/check` → BUILD SUCCESSFUL.
 
 ## Handoff
-Next action: start with item 1 (most likely to bite in normal use).
+Next action: item 2 (reminder tap vs. workout focus in `AppNavigation`).
