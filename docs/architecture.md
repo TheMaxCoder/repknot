@@ -105,8 +105,9 @@ and the signed-in user's session; RLS restricts every table to its owner. Schema
   finishing keeps it local; only an Upload tap marks it for push/retry. History includes
   those local completed records. Refresh still downloads independently.
 - Check-ins: the phone caches the server's check-ins (replaced on refresh) and keeps
-  phone-added ones `pending`; an explicit check-in Upload tap marks one for upsert by
-  its phone id, then it is marked uploaded. Unmarked local check-ins can be deleted.
+  phone-added ones `pending`; saving one requests a sync, which upserts every pending row by
+  its phone id and then marks it uploaded (failed pushes retry on later syncs). A check-in
+  can be deleted until it reaches the server.
   Sessions carry a `light` flag excluded from
   progress statuses.
 - Progress (domain `Progress.kt`, `Body.kt`) is computed on the phone from the local cache,

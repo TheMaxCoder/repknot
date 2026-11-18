@@ -119,15 +119,17 @@ class WorkoutDatabaseTest {
         assertEquals(listOf("s1"), dao.pending().map { it.id })
     }
 
-        @Test fun checkInsUploadOnlyWhenMarkedAndUnmarkedOnesCanBeDeleted() = runBlocking {
+        @Test fun checkInsUploadOnSaveAndCanBeDeletedUntilUploaded() = runBlocking {
         val dao = db.checkIns()
         dao.add(CheckInRow("c1", "2026-11-02", waistCm = 91.0)); dao.add(CheckInRow("c2", "2026-11-02", weightKg = 75.0))
-        assertTrue(dao.pending().isEmpty())
-        assertEquals(1, dao.requestUpload("c1"))
-        assertEquals(listOf("c1"), dao.pending().map { it.id })
-        assertEquals(0, dao.deleteLocal("c1"))  // marked: kept
+        // A row saved under task 028 without an Upload tap is pending too.
+        dao.put(listOf(CheckInRow("c0", "2026-11-01", waistCm = 92.0, pending = true, uploadRequested = false)))
+        assertEquals(listOf("c0", "c1", "c2"), dao.pending().map { it.id })
         assertEquals(1, dao.deleteLocal("c2"))
-        assertEquals(listOf("c1"), dao.all().map { it.id })
+        dao.uploaded("c1")
+        assertEquals(listOf("c0"), dao.pending().map { it.id })
+        assertEquals(0, dao.deleteLocal("c1"))  // on the server: kept
+        assertEquals(listOf("c0", "c1"), dao.all().map { it.id })
     }
 
         @Test fun recordedValuesSurviveDatabaseReopen() = runBlocking {

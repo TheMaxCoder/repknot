@@ -48,6 +48,11 @@ While the owner is still testing on the phone, nothing reaches Supabase without 
 - `scripts/test-sync-integration` required exactly `OK (1 test)` although the class has had two
   tests since check-ins; fixed to accept any all-pass count (still fails on failure/skip).
 - Check-in Delete has no confirmation (a phone-only entry is quick to re-add).
+- Superseded for check-ins (owner decision, 2026-11-18): check-ins upload on save. The Upload tap
+  made them easy to forget, and unlike workouts there are no
+  test check-ins to hold back. Every phone row that is not on the server yet (`pending`) syncs,
+  including ones saved under this task without a tap; Delete stays until the row reaches the
+  server. Workouts keep the explicit Upload.
 
 ## Verification
 - `scripts/check` → BUILD SUCCESSFUL.

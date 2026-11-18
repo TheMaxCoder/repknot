@@ -47,7 +47,7 @@ class SessionSync(
         }
         catch (e: CancellationException) { throw e }
         catch (e: Exception) { if (firstFailure == null) firstFailure = e }
-        // Only rows marked for upload are pushed (task 028). Check-ins carry the phone's id, so a retried upload is a no-op on the server.
+        // Every phone check-in is pushed; sessions only once Upload was tapped (task 028). Check-ins carry the phone's id, so a retried upload is a no-op on the server.
         for (row in checkIns?.pending().orEmpty()) {
             try {
                 client.from("checkins").upsert(row.toServer()) { onConflict = "id"; ignoreDuplicates = true }

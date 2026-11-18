@@ -13,8 +13,10 @@ import kotlinx.serialization.Serializable
 
 /**
  * Body check-in. Server rows are a cache; `pending` rows were added on this phone and are not
- * uploaded yet; they upload only once `uploadRequested` (the explicit Upload tap, task 028). A
- * local check-in that was never marked can be deleted; otherwise check-ins are add-only.
+ * on the server yet. Every pending row uploads with the next sync (check-ins upload on save since
+ * 2026-11-18; task 028 had required an Upload tap, and rows saved then are uploaded too).
+ * `uploadRequested` is kept for those older rows and set on new ones. A check-in can be deleted
+ * until it reaches the server; afterwards check-ins are add-only on the phone.
  */
 @Entity(tableName = "checkins")
 data class CheckInRow(
@@ -58,16 +60,14 @@ interface CheckInDao {
     fun observeAll(): Flow<List<CheckInRow>>
     @Query("SELECT * FROM checkins ORDER BY checkedOn, id")
     suspend fun all(): List<CheckInRow>
-    @Query("SELECT * FROM checkins WHERE pending = 1 AND uploadRequested = 1 ORDER BY checkedOn, id")
+    @Query("SELECT * FROM checkins WHERE pending = 1 ORDER BY checkedOn, id")
     suspend fun pending(): List<CheckInRow>
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun put(rows: List<CheckInRow>)
-    /** A check-in added on this phone; kept local until Upload is tapped. */
-    suspend fun add(row: CheckInRow) = put(listOf(row.copy(pending = true, uploadRequested = false)))
-    @Query("UPDATE checkins SET uploadRequested = 1 WHERE id = :id AND pending = 1")
-    suspend fun requestUpload(id: String): Int
-    /** Deletes a phone-only check-in that was never marked for upload; returns whether it did. */
-    @Query("DELETE FROM checkins WHERE id = :id AND pending = 1 AND uploadRequested = 0")
+    /** A check-in added on this phone; it uploads with the next sync. */
+    suspend fun add(row: CheckInRow) = put(listOf(row.copy(pending = true, uploadRequested = true)))
+    /** Deletes a check-in that has not reached the server yet; returns whether it did. */
+    @Query("DELETE FROM checkins WHERE id = :id AND pending = 1")
     suspend fun deleteLocal(id: String): Int
     @Query("UPDATE checkins SET pending = 0 WHERE id = :id")
     suspend fun uploaded(id: String)

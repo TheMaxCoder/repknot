@@ -1,6 +1,6 @@
 # Project status
 
-Updated: 2026-11-16
+Updated: 2026-11-18
 
 ## Current state
 
@@ -63,7 +63,7 @@ reviewed, checked and installed. Owner visual review is next.
 and live Progress summary implemented through the worker, reviewed, checked and installed.
 Phone navigation/selection and large/narrow layouts verified; owner visual review is next.
 
-[028 — Explicit per-workout upload](tasks/028-explicit-upload.md) is done: nothing uploads without an Upload tap (workouts and check-ins); finished never-uploaded workouts can be discarded; Settings switch removed; Room v8. Owner phone check of the new buttons pending.
+[028 — Explicit per-workout upload](tasks/028-explicit-upload.md) is done: workouts upload only when Upload is tapped (check-ins upload on save since 2026-11-18); finished never-uploaded workouts can be discarded; Settings switch removed; Room v8. Owner phone check of the new buttons pending.
 
 [027 — Workout timing and rest timer](tasks/027-workout-timing.md): timestamps (server + phone v7), rest timer with program-based 2:00/3:00 targets and vibration are implemented and phone-checked. Rest alert: phone notification (vibration, no sound) works; the paired smartwatch does not buzz for it yet — investigation paused, next experiments in the task.
 

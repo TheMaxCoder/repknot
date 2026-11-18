@@ -79,7 +79,7 @@ fun AppNavigation(workout: WorkoutViewModel, progress: ProgressViewModel,
                     WorkoutScreen(workout, progressState, coachNotesState, coachNotes::markSeen, coachNotes::toggleDone, { nav = nav.select(RootTab.PROGRESS) }, signedOut) { nav = nav.push("settings") }
                 } else if (route == "settings") holder.SaveableStateProvider("settings-${nav.selected}") { settings() }
                 else if (route == "body") holder.SaveableStateProvider("body") {
-                    BodyScreen(progressState, checkInDialog, { checkInDialog = it }, progress::addCheckIn, progress::uploadCheckIn, progress::deleteCheckIn)
+                    BodyScreen(progressState, checkInDialog, { checkInDialog = it }, progress::addCheckIn, progress::deleteCheckIn)
                 } else if (route?.startsWith("exercise:") == true) holder.SaveableStateProvider("${nav.selected}-${nav.details.lastIndex}-$route") {
                     ExerciseHistoryScreen(historyState, progressState, route.removePrefix("exercise:")) { nav = nav.push("workout:$it") }
                 } else if (route?.startsWith("workout:") == true) holder.SaveableStateProvider("${nav.selected}-${nav.details.lastIndex}-$route") {

@@ -143,15 +143,10 @@ class SharedSessionIntegrationTest {
         try {
             client.from("checkins").insert(buildJsonObject { put("id", serverId); put("checked_on", "2026-10-30"); put("waist_cm", 90.5); put("source", "cli") })
             db.checkIns().add(CheckInRow(phoneId, "2026-10-31", weightKg = 70.25, waistCm = 90.0))
-            // Not marked: the server row is downloaded, the phone row stays pending and local.
+            // The server row is downloaded; the phone row reaches the server once, even when refreshed again.
             val sync = SessionSync(cloud, db.sessions(), db.reference(), db.checkIns())
-            sync.refreshAndPush()
-            assertEquals(90.5, db.checkIns().all().single { it.id == serverId }.waistCm!!, 0.0)
-            assertTrue(db.checkIns().all().single { it.id == phoneId }.pending)
-            assertEquals(0, client.from("checkins").select { filter { eq("id", phoneId) } }.decodeList<ServerCheckIn>().size)
-            // Upload tapped: the phone row reaches the server once, even when refreshed again.
-            assertEquals(1, db.checkIns().requestUpload(phoneId))
             sync.refreshAndPush(); sync.refreshAndPush()
+            assertEquals(90.5, db.checkIns().all().single { it.id == serverId }.waistCm!!, 0.0)
             assertEquals(listOf(false), db.checkIns().all().filter { it.id == phoneId }.map { it.pending })
             val remote = client.from("checkins").select { filter { eq("id", phoneId) } }.decodeList<ServerCheckIn>()
             assertEquals(70.25, remote.single().weightKg!!, 0.0)
