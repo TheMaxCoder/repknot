@@ -219,6 +219,11 @@ class ProgressTest {
         assertEquals(DipState.PERSISTING, dipStatuses(dip + mixed).single().state)
         val timed = broad(2).copy(exercises = (0..2).map { PastExercise(it, "$it", listOf(set(null, 15.0, duration = 30))) })
         assertEquals(0, dipStatuses(dip + timed).single().evaluated)
+        // A timed follow-up at a higher load is still a mismatch: not evaluated, not recovered.
+        val timedHeavier = broad(2).copy(exercises = (0..2).map { PastExercise(it, "$it", listOf(set(null, 25.0, duration = 30))) })
+        val mismatch = dipStatuses(dip + timedHeavier).single()
+        assertEquals(0, mismatch.evaluated)
+        assertEquals(DipState.PENDING, mismatch.state)
         // Usual is the last 3 pre-dip sessions: matching an ordinary one counts as recovered even
         // when the session right before the dip was a peak.
         val peak = listOf(broad(0, 10.0), broad(1, 10.0), broad(2, 13.0), broad(3, 8.0), broad(4, 10.0))

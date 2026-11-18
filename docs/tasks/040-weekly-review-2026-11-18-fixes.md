@@ -42,7 +42,9 @@ here with a reason after an owner decision.
   upsert); Delete also removes a server copy left by an unacknowledged upload.
 - [x] 2 — `LoggerFocus` (NavigationState.kt): a reminder tap while the workout is still loading
   holds focus off for that load; the hold clears once loading ends.
-- [ ] 3 · [ ] 4
+- [x] 3 — `dipStatuses`: the higher-load fallback only counts exposures in the same timed mode;
+  037 notes the settled rule.
+- [ ] 4
 
 ## Decisions / discoveries
 - Item 1 touches sync logic and item 3 changes a 037 rule: flag both under `Review:`.
@@ -59,6 +61,8 @@ here with a reason after an owner decision.
 - Item 2: `NavigationStateTest` (4 tests) passes; with the hold disabled the cold-start test fails.
   Emulator (test2, open workout): force-stop + reminder intent ×3 → check-in dialog each time;
   force-stop + normal launch → workout logger.
+- Item 3: `ProgressTest` 13/13 with the new higher-load timed-mismatch case; it fails without the
+  fix (28 domain tests, 1 failed).
 
 ## Handoff
-Next action: item 3 (dip recovery mismatch rule in `dipStatuses`, plus task 037 wording).
+Next action: item 4 (per-unit dip detection in `sessionDips`/`dipStatuses`).

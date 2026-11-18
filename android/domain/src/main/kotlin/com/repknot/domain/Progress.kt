@@ -194,12 +194,14 @@ fun dipStatuses(history: List<PastSession>): List<DipStatus> {
             val unit = lineage(history, id).last().unit
             // "Usual" = the last 3 pre-dip exposures; recovered when the latest follow-up matches or
             // beats any comparable one. A lower load is a programming choice: not evaluated (task 037).
+            // A higher load counts as recovered, but only against exposures in the same mode: a
+            // timed/reps mismatch is never evaluated, at any load (task 040, owner 2026-11-18).
             val usual = sessions.take(index).mapNotNull { exposure(it, id, unit) }.takeLast(3)
             val latest = sessions.drop(index + 1).asReversed().firstNotNullOfOrNull { exposure(it, id, unit) }
                 ?: return@filter false
             val comparable = usual.filter { compare(latest, it) != Comparison.NOT_COMPARABLE }
             if (comparable.isEmpty()) {
-                val top = usual.mapNotNull { it.topLoad }.maxOrNull()
+                val top = usual.filter { it.timed == latest.timed }.mapNotNull { it.topLoad }.maxOrNull()
                 if (latest.topLoad != null && top != null && latest.topLoad!! > top) evaluated++
                 return@filter false
             }

@@ -104,6 +104,9 @@ Lead: diff review; independent checks; visual check on synthetic data.
 ## Decisions / discoveries
 
 - Clarification: unit or timed mismatch is evaluated and never still below; the load-down fallback requires matching unit and timed mode. Follow-ups use the same unit chosen by `sessionDips`.
+- Settled 2026-11-18 (owner, [task 040](040-weekly-review-2026-11-18-fixes.md) item 3): the two
+  statements above disagree on mismatches; the later "not evaluated" one applies. A unit or timed
+  mismatch is never evaluated, at any load; the higher-load recovery requires the same mode.
 - The old 28-day list and red-for-every-dip behavior is replaced (owner, 2026-11-12).
 - Rule 3 uses the raw weight rate, not `BodyVerdict.TOO_FAST`, because that verdict already
   depends on `recentDip` (would be circular).
