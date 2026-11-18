@@ -38,9 +38,16 @@ fun waistLine(s: BodySummary): String {
 }
 fun rateLine(s: BodySummary): String {
     val waist = s.waist ?: return ""
-    val rate = waist.perWeek ?: return "Not enough check-ins for a trend (needs 4 over 2+ weeks)"
-    return "${signed(rate)} cm/week over 4 weeks" + (s.goalDate?.let { " · ${number(s.goalCm)} cm around ${date(it)}" } ?: "")
+    val rate = waist.perWeek ?: return "Not enough check-ins for a trend (needs 3 different weeks)"
+    return "${signed(rate)} cm/week over ${waist.weeks} weeks" + (s.goalDate?.let { " · ${number(s.goalCm)} cm around ${date(it)}" } ?: "")
 }
+/** The fast-reacting 4-week rate, shown beside the longer trend so a recent stall stays visible. */
+fun recentRateLine(s: BodySummary): String {
+    val waist = s.waist ?: return ""
+    if (waist.perWeek == null) return ""
+    return waist.recentPerWeek?.let { "Last 4 weeks: ${signed(it)} cm/week" } ?: ""
+}
+fun trendLabel(weeks: Int): String = if (weeks > 0) "Last $weeks weeks" else "Trend"
 fun weightTrendLine(s: BodySummary): String = s.weight?.perWeek?.let { rate ->
     "${signed(rate)} kg/week" + (s.weightPctPerWeek?.let { " (${signed(it)} %/week)" } ?: "")
 } ?: ""
@@ -56,7 +63,7 @@ fun lastCheckInLine(latest: LocalDate, today: LocalDate): String {
 fun verdictLine(s: BodySummary, declines: Int, recentDip: Boolean): String = when (s.verdict) {
     BodyVerdict.ON_TRACK -> if (declines == 0 && !recentDip) "On track — waist down, strength holding."
         else "On track — waist down; keep an eye on the exercises below."
-    BodyVerdict.STALLED -> "Waist hasn't moved in 4 weeks — consider tightening the deficit."
+    BodyVerdict.STALLED -> "Waist hasn't moved in ${s.waist?.weeks ?: 0} weeks — consider tightening the deficit."
     BodyVerdict.TOO_FAST -> "Losing over 1 % of bodyweight a week while strength slips — consider eating a bit more."
     BodyVerdict.GOAL_REACHED -> "Goal reached — time to set the next phase."
     BodyVerdict.NOT_ENOUGH_DATA -> ""

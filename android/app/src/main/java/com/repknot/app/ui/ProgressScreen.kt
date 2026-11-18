@@ -148,6 +148,9 @@ private fun BodyLines(state: ProgressUiState) {
     }
     Text(waistLine(body), style = MaterialTheme.typography.titleLarge)
     rateLine(body).takeIf { it.isNotEmpty() }?.let { Text(it) }
+    recentRateLine(body).takeIf { it.isNotEmpty() }?.let {
+        Text(it, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+    }
     weightLine(body).takeIf { it.isNotEmpty() }?.let { Text(it) }
     BodyDetails(state)
 }
@@ -181,7 +184,7 @@ private fun BodySummaryCardLines(state: ProgressUiState) {
     val waistRate: @Composable () -> Unit = {
         body.waist?.let {
             Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text("Last 4 weeks", style = MaterialTheme.typography.labelSmall)
+                Text(trendLabel(it.weeks), style = MaterialTheme.typography.labelSmall)
                 Text(summaryRate(it.perWeek, "cm"), style = MaterialTheme.typography.bodySmall)
             }
         }
@@ -189,7 +192,7 @@ private fun BodySummaryCardLines(state: ProgressUiState) {
     val weightRate: @Composable () -> Unit = {
         body.weight?.let {
             Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text("Last 4 weeks", style = MaterialTheme.typography.labelSmall)
+                Text(trendLabel(it.weeks), style = MaterialTheme.typography.labelSmall)
                 Text(summaryRate(it.perWeek, "kg"), style = MaterialTheme.typography.bodySmall)
             }
         }

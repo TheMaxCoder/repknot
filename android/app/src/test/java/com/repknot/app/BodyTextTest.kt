@@ -10,7 +10,7 @@ import org.junit.Test
 
 class BodyTextTest {
     private val today = LocalDate.parse("2026-11-09")
-    private val waist = BodyTrend(91.5, today, -0.6)
+    private val waist = BodyTrend(91.5, today, -0.6, weeks = 12, recentPerWeek = -0.1)
     private val weight = BodyTrend(74.6, today, -0.1)
     private val s = BodySummary(waist, weight, 80.0, 11.5, LocalDate.parse("2026-12-20"), -0.2, BodyVerdict.ON_TRACK)
 
@@ -19,10 +19,15 @@ class BodyTextTest {
         assertEquals("Waist 79.5 cm · goal reached (80 cm)", waistLine(s.copy(waist = waist.copy(latest = 79.5), toGoalCm = -0.5)))
         assertEquals("No waist measurement yet", waistLine(s.copy(waist = null)))
         assertEquals("Waist 91.5 cm", waistLine(s.copy(toGoalCm = null)))
-        assertEquals("−0.6 cm/week over 4 weeks · 80 cm around Dec 20", rateLine(s))
-        assertEquals("+0.6 cm/week over 4 weeks", rateLine(s.copy(waist = waist.copy(perWeek = 0.6), goalDate = null)))
-        assertEquals("Not enough check-ins for a trend (needs 4 over 2+ weeks)", rateLine(s.copy(waist = waist.copy(perWeek = null))))
+        assertEquals("−0.6 cm/week over 12 weeks · 80 cm around Dec 20", rateLine(s))
+        assertEquals("+0.6 cm/week over 5 weeks", rateLine(s.copy(waist = waist.copy(perWeek = 0.6, weeks = 5), goalDate = null)))
+        assertEquals("Not enough check-ins for a trend (needs 3 different weeks)", rateLine(s.copy(waist = waist.copy(perWeek = null))))
         assertEquals("", rateLine(s.copy(waist = null)))
+        assertEquals("Last 4 weeks: −0.1 cm/week", recentRateLine(s))
+        assertEquals("", recentRateLine(s.copy(waist = waist.copy(recentPerWeek = null))))
+        assertEquals("", recentRateLine(s.copy(waist = waist.copy(perWeek = null))))
+        assertEquals("Last 12 weeks", trendLabel(12))
+        assertEquals("Trend", trendLabel(0))
     }
     @Test fun summaryMetrics() {
         assertEquals("91.75 cm", bodyMeasurement(91.75, "cm"))
@@ -54,7 +59,7 @@ class BodyTextTest {
         assertEquals("On track — waist down, strength holding.", verdictLine(s, 0, false))
         assertEquals("On track — waist down; keep an eye on the exercises below.", verdictLine(s, 1, false))
         assertEquals("On track — waist down; keep an eye on the exercises below.", verdictLine(s, 0, true))
-        assertEquals("Waist hasn't moved in 4 weeks — consider tightening the deficit.", verdictLine(s.copy(verdict = BodyVerdict.STALLED), 0, false))
+        assertEquals("Waist hasn't moved in 12 weeks — consider tightening the deficit.", verdictLine(s.copy(verdict = BodyVerdict.STALLED), 0, false))
         assertEquals("Losing over 1 % of bodyweight a week while strength slips — consider eating a bit more.", verdictLine(s.copy(verdict = BodyVerdict.TOO_FAST), 0, false))
         assertEquals("Goal reached — time to set the next phase.", verdictLine(s.copy(verdict = BodyVerdict.GOAL_REACHED), 0, false))
         assertEquals("", verdictLine(s.copy(verdict = BodyVerdict.NOT_ENOUGH_DATA), 0, false))

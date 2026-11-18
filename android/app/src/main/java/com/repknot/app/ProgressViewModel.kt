@@ -53,7 +53,7 @@ class ProgressViewModel(
                         val items = attentionOrder(progress(history, prescriptions, now))
                         val declines = items.count { it.status == ProgressStatus.POSSIBLE_DECLINE && it.daysSinceLast <= 14 }
                         val checks = rows.map { CheckIn(LocalDate.parse(it.checkedOn), it.weightKg, it.waistCm) }
-                        val weightRate = if (rows.isEmpty()) null else bodySummary(checks, now, goal, declines, false).weightPctPerWeek
+                        val weightRate = if (rows.isEmpty()) null else bodySummary(checks, now, goal, declines, false).recentWeightPctPerWeek
                         val alert = dipAlert(history, now, weightRate)
                         val recentDip = alert != null
                         ProgressUiState(

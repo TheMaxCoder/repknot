@@ -115,6 +115,10 @@ and the signed-in user's session; RLS restricts every table to its owner. Schema
   (task 037) resolve when their exercises recover; Progress shows at most one dip card: neutral
   for a lone recent dip (≤ 10 days), red for a persisting dip, 2 dips in the last 8 sessions, or a
   dip while losing > 1 %/week; nothing older than 21 days. History tags every dip session.
+  Body trends (2026-11-18): the shown rate and goal estimate use up to 12 weeks of check-ins,
+  averaged per calendar week, with a Theil–Sen slope (needs 3 different weeks over 2+ weeks), so
+  a busy or bloated week cannot swing it. The 4-week least-squares rate is kept for the
+  "last 4 weeks" line and for the too-fast checks (verdict and dip alert), which should react quickly.
 - Persist edits and pending sync together, retain stable IDs, and handle retries without duplicates.
 - Upload acknowledgements must not discard newer local edits, and no writer (Android,
   web, ChatGPT, CLI) may silently overwrite another's change. Revision rules are in
