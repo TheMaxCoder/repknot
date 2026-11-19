@@ -9,6 +9,7 @@
 //   scripts/repknot log-test            # synthetic session: one exercise, one set (save_session)
 //   scripts/repknot delete <#number|uuid>
 //   scripts/repknot seed-exercises <exercises.csv>
+//   scripts/repknot rename-exercise <slug|uuid> <new name>  # catalog name; past sessions keep theirs
 //   scripts/repknot publish-program <program.json> [--inactive]
 //   scripts/repknot publish-notes <notes.json>   # coach brief shown on the phone's Home (task 034)
 //   scripts/repknot notes                         # latest published brief
@@ -146,6 +147,20 @@ switch (command) {
     break;
   }
 
+  case "rename-exercise": {
+    const name = (args[2] ?? "").trim();
+    if (!arg || !name) fail("give an exercise slug or uuid and the new name");
+    const column = /^[0-9a-f-]{36}$/.test(arg) ? "id" : "slug";
+    const { data: before, error: readError } = await supabase.from("exercises")
+      .select("id, slug, name").eq(column, arg).maybeSingle();
+    if (readError) fail(readError);
+    if (!before) fail(`no exercise ${arg} visible to this account`);
+    const { error } = await supabase.from("exercises").update({ name }).eq("id", before.id);
+    if (error) fail(error);
+    console.log(`renamed ${before.slug}: "${before.name}" → "${name}" (sessions keep the name they were logged with)`);
+    break;
+  }
+
   case "publish-program": {
     if (!arg) fail("give a program JSON file");
     const payload = JSON.parse(await Deno.readTextFile(arg));
@@ -227,6 +242,6 @@ switch (command) {
   }
 
   default:
-    console.log("usage: scripts/repknot [--as test2] whoami | list [n] | show <#n|uuid> | set-notes <#n|uuid> <notes> | log-test | delete <#n|uuid> | seed-exercises <exercises.csv> | publish-program <program.json> [--inactive] | publish-notes <notes.json> | notes");
+    console.log("usage: scripts/repknot [--as test2] whoami | list [n] | show <#n|uuid> | set-notes <#n|uuid> <notes> | log-test | delete <#n|uuid> | seed-exercises <exercises.csv> | rename-exercise <slug|uuid> <name> | publish-program <program.json> [--inactive] | publish-notes <notes.json> | notes");
     Deno.exit(command ? 1 : 0);
 }
