@@ -37,6 +37,17 @@ class WorkoutStateTest {
         assertTrue(previewState(program, null, "b", listOf(past))!!.suggested)
         assertNull(previewState(program, null, "missing", emptyList()))
     }
+    @Test fun draftPreviewUsesReplacementUnitWithoutPlanLoadOrTarget() {
+        val draft = listOf(exercise.copy(exerciseId = "y", exerciseName = "Other", substitutedFor = "x", plannedUnit = "kg"))
+        val choices = listOf(ExerciseRow("y", "y", "Other", "plates", false))
+        val state = previewState(Program("p", listOf(first)), null, "a", emptyList(), draft, choices)!!
+        assertEquals(draft, state.rows)
+        val item = state.exercises.single()
+        assertEquals("Other", item.prescription.exerciseName)
+        assertEquals(LoadUnit.PLATES, item.prescription.unit)
+        assertNull(item.prescription.load)
+        assertNull(item.target)
+    }
     @Test fun prescriptionAndSuggestions() {
         val p = prescriptionFor(exercise, LoadUnit.LB)
         assertEquals(3, p.sets); assertEquals(LoadUnit.LB, p.unit); assertEquals(10, p.repMax)

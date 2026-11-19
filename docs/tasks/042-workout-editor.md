@@ -65,7 +65,7 @@ preview before Start. Background: task 041, task 039 (one ⋯ per screen).
       Device tests in `SessionStoreTest`: move-to keeps set rows attached to the moved exercise id;
       insert in the middle renumbers; remove deletes only that exercise's sets; any of them on a
       `finished` session changes nothing (positions and localRevision unchanged).
-- [ ] 3. **ViewModel**: `moveExerciseTo`, `insertExercise(exerciseId, afterIndex)`, `removeExercise`
+- [x] 3. **ViewModel**: `moveExerciseTo`, `insertExercise(exerciseId, afterIndex)`, `removeExercise`
       returning/holding an undo token for unlogged rows (`undoRemove()` re-inserts the same row at
       its index), `replace`. Preview draft: `MutableStateFlow<List<SessionExerciseRow>?>` built from
       `startRows` for the previewed key; edits apply the step-1 functions to it; `closePreview` and a
@@ -80,7 +80,7 @@ preview before Start. Background: task 041, task 039 (one ⋯ per screen).
       (workout editing paragraph) and this file.
 
 ## Verification (commands)
-- Steps 1 and 2: `scripts/check --offline` passed (build, lint, JVM tests).
+- Steps 1, 2 and 3: `scripts/check --offline` passed (build, lint, JVM tests).
 - Step 2: `cd android && ANDROID_SERIAL=emulator-5554 ./gradlew :data:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.repknot.data.SessionStoreTest` passed (7 tests).
 - `scripts/check --offline` (build, lint, all JVM tests) after each step.
 - `cd android && ANDROID_SERIAL=emulator-5554 ./gradlew :data:connectedDebugAndroidTest
@@ -97,5 +97,5 @@ preview before Start. Background: task 041, task 039 (one ⋯ per screen).
   transaction and revision changes, including the retained append and relative-move entry points.
 
 ## Handoff
-- Steps 1–2 complete. Next: implement step 3 ViewModel draft and editing operations, then run
-  the specified checks. Steps 3–5 and the lead's emulator walk-through remain pending.
+- Steps 1–3 complete. Next: implement the editor UI and run `scripts/check --offline`.
+  Step 5 device tests and the lead's emulator walk-through remain pending.

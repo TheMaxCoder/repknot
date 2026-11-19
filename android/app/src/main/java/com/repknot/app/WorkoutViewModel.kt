@@ -26,7 +26,8 @@ sealed interface WorkoutUiState {
     data class Session(val row: SessionRow, val exercises: List<ExerciseUi>, val choices: List<ExerciseRow>) : WorkoutUiState
     /** A workout looked at before starting it; nothing is stored until `start`. */
     data class Preview(val programName: String, val workout: ProgramWorkout, val suggested: Boolean,
-                       val exercises: List<PreviewExerciseUi>) : WorkoutUiState
+                       val exercises: List<PreviewExerciseUi>, val rows: List<SessionExerciseRow> = emptyList(),
+                       val choices: List<ExerciseRow> = emptyList()) : WorkoutUiState
 }
 data class ExerciseUi(val row: SessionExerciseRow, val sets: List<SetRow>, val previous: Prefill, val suggestion: SetSuggestion, val previousOn: LocalDate?, val target: TodayTarget?, val deltas: List<SetDelta>, val programRestS: Int?)
 data class SetSuggestion(val load: Double?, val unit: LoadUnit, val reps: Double?)
@@ -37,13 +38,19 @@ private fun previousDate(previous: Prefill, history: List<PastSession>): LocalDa
         ?.let { Instant.ofEpochMilli(it).atZone(ZoneOffset.UTC).toLocalDate() }
 
 /** Preview of one program workout with previous values; null if the key is not in the program. */
-fun previewState(program: Program, programName: String?, workoutKey: String, history: List<PastSession>): WorkoutUiState.Preview? {
+fun previewState(program: Program, programName: String?, workoutKey: String, history: List<PastSession>,
+                 draft: List<SessionExerciseRow>? = null, choices: List<ExerciseRow> = emptyList()): WorkoutUiState.Preview? {
     val workout = program.workouts.firstOrNull { it.key == workoutKey } ?: return null
     return WorkoutUiState.Preview(programName ?: "Program", workout, todaysWorkout(program, history).key == workoutKey,
-        workout.exercises.sortedBy { it.position }.map {
+        if (draft == null) workout.exercises.sortedBy { it.position }.map {
             val previous = prefill(it, history)
             PreviewExerciseUi(it, previous, previousDate(previous, history), todayTarget(it, history))
-        })
+        } else draft.map { row ->
+            val prescription = inputPrescription(row, choices.associateBy { it.id })
+            val previous = prefill(prescription, history)
+            PreviewExerciseUi(prescription, previous, previousDate(previous, history),
+                if (row.substitutedFor != null) null else todayTarget(prescription, history))
+        }, draft.orEmpty(), choices)
 }
 
 fun todayState(program: Program?, programName: String?, history: List<PastSession>): WorkoutUiState =
@@ -53,6 +60,14 @@ fun todayState(program: Program?, programName: String?, history: List<PastSessio
 fun prescriptionFor(row: SessionExerciseRow, defaultUnit: LoadUnit): Prescription = Prescription(
     row.position, row.exerciseId, row.exerciseName, row.plannedSets ?: 0, row.plannedRepMin, row.plannedRepMax,
     row.plannedRirMin, row.plannedRirMax, row.plannedLoad, row.plannedUnit?.let(::parseUnit) ?: defaultUnit)
+
+private fun inputPrescription(row: SessionExerciseRow, byId: Map<String, ExerciseRow>): Prescription {
+    val configuredUnit = byId[row.exerciseId]?.defaultUnit?.let(::parseUnit)
+    val unit = if (row.substitutedFor != null) configuredUnit ?: LoadUnit.KG
+        else row.plannedUnit?.let(::parseUnit) ?: configuredUnit ?: LoadUnit.KG
+    val input = if (row.substitutedFor != null) row.copy(plannedUnit = unit.name.lowercase(), plannedLoad = null) else row
+    return prescriptionFor(input, unit)
+}
 
 fun suggestionFor(prefill: Prefill, setIndex: Int, row: SessionExerciseRow, defaultUnit: LoadUnit): SetSuggestion {
     val suggestion = when (prefill) {
@@ -72,20 +87,16 @@ fun sessionState(snapshot: SessionSnapshot, history: List<PastSession>, exercise
     val sets = snapshot.sets.groupBy { it.sessionExerciseId }
     val previousHistory = history.filterNot { it.id == snapshot.row.id }
     return WorkoutUiState.Session(snapshot.row, snapshot.exercises.sortedBy { it.position }.map { row ->
-        val configuredUnit = byId[row.exerciseId]?.defaultUnit?.let(::parseUnit)
-        val unit = if (row.substitutedFor != null) configuredUnit ?: LoadUnit.KG
-            else row.plannedUnit?.let(::parseUnit) ?: configuredUnit ?: LoadUnit.KG
-        // A substitution keeps the original prescription snapshot, but its start load
-        // is not a suggestion for a different exercise or unit.
-        val inputRow = if (row.substitutedFor != null) row.copy(plannedUnit = unit.name.lowercase(), plannedLoad = null) else row
+        val prescription = inputPrescription(row, byId)
+        val inputRow = row.copy(plannedLoad = prescription.load)
         val logged = sets[row.id].orEmpty().sortedBy { it.position }
-        val previous = prefill(prescriptionFor(inputRow, unit), previousHistory)
-        val target = if (row.substitutedFor != null) null else todayTarget(prescriptionFor(inputRow, unit), previousHistory)
+        val previous = prefill(prescription, previousHistory)
+        val target = if (row.substitutedFor != null) null else todayTarget(prescription, previousHistory)
         val deltas = logged.mapIndexed { index, set ->
             set.unit?.let { setDelta(PastSet(set.position, set.load, parseUnit(it), set.reps, set.durationS, set.rir), index, row.exerciseId, previousHistory) }
                 ?: SetDelta.NONE
         }
-        ExerciseUi(row, logged, previous, suggestionFor(previous, logged.size, inputRow, unit), previousDate(previous, previousHistory), target, deltas,
+        ExerciseUi(row, logged, previous, suggestionFor(previous, logged.size, inputRow, prescription.unit), previousDate(previous, previousHistory), target, deltas,
             programRestS(snapshot.row.programWorkoutKey, snapshot.row.programId, workouts, prescriptions, row.substitutedFor ?: row.exerciseId))
     }, exercises)
 }
@@ -100,6 +111,8 @@ class WorkoutViewModel(
 ) : ViewModel() {
     private val currentId = MutableStateFlow(current.get())
     private val previewKey = MutableStateFlow<String?>(null)
+    private val previewDraft = MutableStateFlow<List<SessionExerciseRow>?>(null)
+    private var undoToken: Pair<SessionExerciseRow, Int>? = null
     private val mutableState = MutableStateFlow<WorkoutUiState>(WorkoutUiState.Loading)
     val state: StateFlow<WorkoutUiState> = mutableState.asStateFlow()
     private val mutableError = MutableStateFlow<Int?>(null)
@@ -116,10 +129,10 @@ class WorkoutViewModel(
                 val snapshot = if (id == null) flowOf(null) else sessions.observeSession(id)
                 // Session history (e.g. a refresh bringing in another client's session) also
                 // changes today's suggestion, so any session change reloads the state.
-                combine(snapshot, reference.observeActiveProgramRow(), sessions.observeAllSessions(), previewKey) { session, program, _, key ->
-                    Pair(Triple(id, session, program), key)
+                combine(snapshot, reference.observeActiveProgramRow(), sessions.observeAllSessions(), previewKey, previewDraft) { session, program, _, key, draft ->
+                    Triple(Triple(id, session, program), key, draft)
                 }
-            }.collect { (loaded, key) ->
+            }.collect { (loaded, key, draft) ->
                 val (id, snapshot, programRow) = loaded
                 if (id != null && snapshot == null) {
                     current.set(null)
@@ -130,7 +143,7 @@ class WorkoutViewModel(
                 mutableState.value = when {
                     snapshot != null -> sessionState(snapshot, history, reference.activeExercises(),
                         snapshot.row.programId?.let { reference.getWorkouts(it) }.orEmpty(), reference.getPrescriptions())
-                    program != null && key != null -> previewState(program, programRow?.name, key, history)
+                    program != null && key != null -> previewState(program, programRow?.name, key, history, draft, reference.activeExercises())
                         ?: todayState(program, programRow?.name, history)
                     else -> todayState(program, programRow?.name, history)
                 }
@@ -139,8 +152,15 @@ class WorkoutViewModel(
     }
 
     fun toggleRestTarget(exerciseId: String, current: Int) { setRestOverride(exerciseId, toggledRestTarget(current)) }
-    fun preview(workoutKey: String) { previewKey.value = workoutKey }
-    fun closePreview() { previewKey.value = null }
+    fun preview(workoutKey: String) = action {
+        if (previewKey.value == workoutKey && previewDraft.value != null) return@action
+        val program = reference.activeProgram() ?: return@action
+        val workout = program.workouts.firstOrNull { it.key == workoutKey } ?: return@action
+        previewDraft.value = startRows(uuid(), today(), program, workout, ::uuid).second
+        previewKey.value = workoutKey
+        undoToken = null
+    }
+    fun closePreview() { previewKey.value = null; previewDraft.value = null; undoToken = null }
     /** Abandons the current workout if it never left the phone (see SessionDao.discard); back to today's workout. */
     fun discard() = action {
         val id = current.get() ?: return@action
@@ -152,7 +172,8 @@ class WorkoutViewModel(
         val workout = program.workouts.firstOrNull { it.key == workoutKey } ?: return@action
         val id = uuid()
         val (row, exercises) = startRows(id, today(), program, workout, ::uuid)
-        if (sessions.start(row.copy(startedAt = now()), exercises)) { current.set(id); currentId.value = id; previewKey.value = null }
+        val rows = if (previewKey.value == workoutKey) previewDraft.value?.map { it.copy(sessionId = id) } ?: exercises else exercises
+        if (sessions.start(row.copy(startedAt = now()), rows)) { current.set(id); currentId.value = id; closePreview() }
     }
     fun logSet(exerciseId: String, setId: String?, load: String, unit: LoadUnit, reps: String, rir: String) {
         val input = parseSetInput(load, unit, reps, rir)
@@ -177,7 +198,49 @@ class WorkoutViewModel(
         val exercise = reference.activeExercises().firstOrNull { it.id == exerciseId } ?: return@action
         sessions.addExercise(SessionExerciseRow(uuid(), id, 0, exercise.id, exercise.name))
     }
-    fun removeExercise(id: String) = exerciseAction(id) { sessions.removeExercise(id) }
+    fun insertExercise(exerciseId: String, afterIndex: Int) = action {
+        val exercise = reference.activeExercises().firstOrNull { it.id == exerciseId } ?: return@action
+        val draft = previewDraft.value
+        if (previewKey.value != null && draft != null) {
+            val sessionId = draft.firstOrNull()?.sessionId ?: uuid()
+            previewDraft.value = insertAt(draft, SessionExerciseRow(uuid(), sessionId, 0, exercise.id, exercise.name), afterIndex + 1)
+        } else {
+            val id = current.get() ?: return@action
+            sessions.insertExercise(SessionExerciseRow(uuid(), id, 0, exercise.id, exercise.name), afterIndex + 1)
+        }
+    }
+    fun removeExercise(id: String) = action {
+        val draft = previewDraft.value
+        if (previewKey.value != null && draft != null) {
+            val index = draft.indexOfFirst { it.id == id }
+            if (index >= 0) { undoToken = draft[index] to index; previewDraft.value = remove(draft, id) }
+        } else {
+            val sessionId = current.get() ?: return@action
+            val row = sessions.getExercise(id)?.takeIf { it.sessionId == sessionId } ?: return@action
+            if (sessions.get(sessionId)?.status != "in_progress") return@action
+            val index = sessions.exercises(sessionId).indexOfFirst { it.id == id }
+            undoToken = if (sessions.sets(sessionId).none { it.sessionExerciseId == id }) row to index else null
+            sessions.removeExercise(id)
+        }
+    }
+    fun undoRemove() = action {
+        val (row, index) = undoToken ?: return@action
+        undoToken = null
+        val draft = previewDraft.value
+        if (previewKey.value != null && draft != null) previewDraft.value = insertAt(draft, row, index)
+        else if (current.get() == row.sessionId) sessions.insertExercise(row, index)
+    }
+    fun moveExerciseTo(id: String, index: Int) = action {
+        val draft = previewDraft.value
+        if (previewKey.value != null && draft != null) previewDraft.value = moveTo(draft, id, index)
+        else if (sessions.getExercise(id)?.sessionId == current.get()) sessions.moveExerciseTo(id, index)
+    }
+    fun replace(id: String, exerciseId: String) = action {
+        val exercise = reference.activeExercises().firstOrNull { it.id == exerciseId } ?: return@action
+        val draft = previewDraft.value
+        if (previewKey.value != null && draft != null) previewDraft.value = replace(draft, id, exercise.id, exercise.name)
+        else if (sessions.getExercise(id)?.sessionId == current.get()) sessions.substituteExercise(id, exercise.id, exercise.name)
+    }
     fun moveExercise(id: String, delta: Int) = exerciseAction(id) { sessions.moveExercise(id, delta) }
     fun substitute(id: String, exerciseId: String) = exerciseAction(id) {
         val exercise = reference.activeExercises().firstOrNull { it.id == exerciseId } ?: return@exerciseAction
