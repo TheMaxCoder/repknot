@@ -10,6 +10,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -18,12 +20,40 @@ import com.repknot.app.CoachNotesUiState
 import com.repknot.app.ProgressUiState
 import com.repknot.app.R
 import com.repknot.app.WorkoutUiState
+import com.repknot.app.checkInDue
+import com.repknot.app.dipAlertText
+import java.time.LocalDate
+import java.time.LocalDateTime
+import kotlinx.coroutines.delay
 import com.repknot.domain.ProgramWorkout
+
+@Composable
+fun AttentionRows(progress: ProgressUiState, openProgress: () -> Unit, openCheckIn: () -> Unit) {
+    var now by remember { mutableStateOf(LocalDateTime.now()) }
+    LaunchedEffect(Unit) { while (true) { now = LocalDateTime.now(); delay(60_000) } }
+    if (!progress.loading && checkInDue(now, progress.checkIns.mapNotNull { runCatching { LocalDate.parse(it.checkedOn) }.getOrNull() }))
+        AttentionRow("Weight & waist check-in due", R.drawable.ic_nav_progress, openCheckIn)
+    val alert = progress.dipAlert?.let { dipAlertText(it, progress.names) }
+        ?: if (progress.declines > 0) pluralStringResource(R.plurals.home_declines, progress.declines, progress.declines) else null
+    if (alert != null) AttentionRow(alert, R.drawable.ic_note_focus, openProgress)
+}
+
+@Composable
+private fun AttentionRow(title: String, icon: Int, onClick: () -> Unit) {
+    Surface(onClick = onClick, shape = RoundedCornerShape(8.dp), color = MaterialTheme.colorScheme.surfaceContainer,
+        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
+        Row(Modifier.padding(16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+            Icon(painterResource(icon), null)
+            Text(title, Modifier.weight(1f), style = MaterialTheme.typography.titleSmall)
+            Icon(painterResource(R.drawable.ic_expand_more), null, Modifier.rotate(-90f))
+        }
+    }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(today: WorkoutUiState.Today, selected: ProgramWorkout, progress: ProgressUiState,
-               coachNotes: CoachNotesUiState, markSeen: () -> Unit, toggleDone: (Int) -> Unit, onSelect: (String) -> Unit, onPreview: (String) -> Unit, openProgress: () -> Unit) {
+               coachNotes: CoachNotesUiState, markSeen: () -> Unit, toggleDone: (Int) -> Unit, onSelect: (String) -> Unit, onPreview: (String) -> Unit, openProgress: () -> Unit, openCheckIn: () -> Unit) {
     var choosing by remember { mutableStateOf(false) }
     var pending by remember { mutableStateOf(selected.key) }
     val exercises = selected.exercises.sortedBy { it.position }
@@ -58,17 +88,7 @@ fun HomeScreen(today: WorkoutUiState.Today, selected: ProgramWorkout, progress: 
         Text(stringResource(R.string.home_choose))
     }
     CoachNotesCard(coachNotes, selected, markSeen, toggleDone)
-    Text(stringResource(R.string.home_from_progress), style = MaterialTheme.typography.titleSmall)
-    Surface(onClick = openProgress, shape = RoundedCornerShape(8.dp), color = MaterialTheme.colorScheme.surfaceContainer,
-        modifier = Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            val needsLook = !progress.loading && progress.declines > 0
-            Text(if (needsLook) pluralStringResource(R.plurals.home_declines, progress.declines, progress.declines)
-                else stringResource(R.string.home_training_body), style = MaterialTheme.typography.titleSmall)
-            Text(stringResource(if (needsLook) R.string.home_review_history else R.string.home_progress_neutral),
-                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-    }
+    AttentionRows(progress, openProgress, openCheckIn)
     if (choosing) {
         ModalBottomSheet(onDismissRequest = { choosing = false },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {

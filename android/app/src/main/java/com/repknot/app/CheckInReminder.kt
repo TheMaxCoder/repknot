@@ -22,6 +22,9 @@ import java.time.ZoneId
 internal val CHECK_IN_DAYS = setOf(DayOfWeek.MONDAY, DayOfWeek.WEDNESDAY, DayOfWeek.FRIDAY)
 internal val CHECK_IN_TIME: LocalTime = LocalTime.of(8, 0)
 
+internal fun checkInDue(now: LocalDateTime, checkedDates: Collection<LocalDate>): Boolean =
+    now.dayOfWeek in CHECK_IN_DAYS && !now.toLocalTime().isBefore(CHECK_IN_TIME) && now.toLocalDate() !in checkedDates
+
 /** The first reminder day at [CHECK_IN_TIME] strictly after [now]. */
 internal fun nextCheckInReminder(now: LocalDateTime): LocalDateTime {
     var day = now.toLocalDate()

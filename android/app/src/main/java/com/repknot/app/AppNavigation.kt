@@ -47,6 +47,11 @@ fun AppNavigation(workout: WorkoutViewModel, progress: ProgressViewModel,
             checkInOpened()
         }
     }
+    val openCheckIn = {
+        focus = focus.reminderOpened(workoutState is WorkoutUiState.Loading)
+        nav = nav.copy(selected = RootTab.PROGRESS, stacks = nav.stacks + (RootTab.PROGRESS to listOf("body")))
+        checkInDialog = true
+    }
     val showingLogger = session != null && focus.focused
     val keyboardVisible = WindowInsets.ime.getBottom(LocalDensity.current) > 0
     val route = nav.details.lastOrNull()
@@ -78,7 +83,7 @@ fun AppNavigation(workout: WorkoutViewModel, progress: ProgressViewModel,
             }
             Box(Modifier.weight(1f)) {
                 if (showingLogger) holder.SaveableStateProvider("workout") {
-                    WorkoutScreen(workout, progressState, coachNotesState, coachNotes::markSeen, coachNotes::toggleDone, { nav = nav.select(RootTab.PROGRESS) }, signedOut) { nav = nav.push("settings") }
+                    WorkoutScreen(workout, progressState, coachNotesState, coachNotes::markSeen, coachNotes::toggleDone, { nav = nav.select(RootTab.PROGRESS) }, openCheckIn, signedOut) { nav = nav.push("settings") }
                 } else if (route == "settings") holder.SaveableStateProvider("settings-${nav.selected}") { settings() }
                 else if (route == "body") holder.SaveableStateProvider("body") {
                     BodyScreen(progressState, checkInDialog, { checkInDialog = it }, progress::addCheckIn, progress::deleteCheckIn)
@@ -98,10 +103,10 @@ fun AppNavigation(workout: WorkoutViewModel, progress: ProgressViewModel,
                                     }
                                 }
                             }
-                            TextButton(onClick = { nav = nav.select(RootTab.PROGRESS) }) { Text("From Progress") }
+                            AttentionRows(progressState, { nav = nav.select(RootTab.PROGRESS) }, openCheckIn)
                         }
                     } else holder.SaveableStateProvider("workout") {
-                        WorkoutScreen(workout, progressState, coachNotesState, coachNotes::markSeen, coachNotes::toggleDone, { nav = nav.select(RootTab.PROGRESS) }, signedOut) { nav = nav.push("settings") }
+                        WorkoutScreen(workout, progressState, coachNotesState, coachNotes::markSeen, coachNotes::toggleDone, { nav = nav.select(RootTab.PROGRESS) }, openCheckIn, signedOut) { nav = nav.push("settings") }
                     }
                     RootTab.HISTORY -> holder.SaveableStateProvider("history") {
                         HistoryScreen(historyState, { nav = nav.push("workout:$it") }, { nav = nav.push("exercise:$it") })
