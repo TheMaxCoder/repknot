@@ -83,3 +83,5 @@ One line each: date · task · category (1–4) · what happened · action.
   omitted; worker stopped after committing data/domain (correct) · scope extended for wiring only.
 - 2026-11-12 · 037 · 1 · load-down fallback vs unit/timed mismatch precedence unstated; worker
   stopped (affects statuses, correct stop) · spec: mismatch wins.
+- 2026-11-19 · 043 · 1 · coach-brief grouping with a current session named a source the state lacks;
+  worker stopped (correct: user-visible) · answered: group by the session's title and exercise ids.
