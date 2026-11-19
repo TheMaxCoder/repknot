@@ -95,6 +95,14 @@ preview before Start. Background: task 041, task 039 (one ⋯ per screen).
   in the preview → Start creates the session in the edited order with the clock at 0. In-session ⋯:
   Edit workout, Replace <current>, Session notes, Light day, Discard. Lead polish: 2×2 row actions,
   Move sheet title, snackbar names the exercise, added rows read "Added · no plan".
+- Owner follow-up (2026-11-19): drag handle on each row (playlist style) and swipe left to
+  remove; Replace stays a button (lead recommendation: a swipe should not open a picker, and two
+  swipe directions raise accidental triggers). Built with `sh.calvin.reorderable` 3.1.0
+  (`ReorderableColumn`, pinned). Emulator (test2): dragging the last row to the top lifts it and
+  reorders on drop (saved: logger shows the new order); swipe left on an unlogged row removes it
+  with "<name> removed · Undo"; on a logged row it asks "Remove <name> and its 1 logged set?" and
+  Cancel slides it back with the set kept; rest strip stays visible while editing. TalkBack gets
+  Move up / Move down actions per row; Move to… stays in the tap menu.
 
 ## Decisions / discoveries
 - Owner (2026-11-19): keep "Replace current" in ⋯; build preview editing now (customizing should

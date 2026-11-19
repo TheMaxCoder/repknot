@@ -82,6 +82,10 @@
     <string name="at_end">At the end</string>
     <string name="exercise_removed">%1$s removed</string>
     <string name="move_title">Move %1$s to…</string>
+    <string name="editor_hint">Drag ≡ to reorder · swipe left to remove · tap for more</string>
+    <string name="reorder_exercise">Reorder %1$s</string>
+    <string name="move_up">Move up</string>
+    <string name="move_down">Move down</string>
     <string name="added_no_plan">Added · no plan</string>
     <string name="undo">Undo</string>
     <string name="editor_row_description">%1$d. %2$s, %3$s</string>
