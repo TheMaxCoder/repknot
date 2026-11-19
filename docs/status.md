@@ -1,6 +1,6 @@
 # Project status
 
-Updated: 2026-11-18
+Updated: 2026-11-19
 
 ## Current state
 
@@ -23,6 +23,10 @@ Updated: 2026-11-18
 - Shared startup, task-sizing, and handoff instructions now live in `AGENTS.md`.
 
 ## Current task
+
+[041 — Gym feedback 2026-11-19](tasks/041-gym-feedback-2026-11-19.md) is done: substitutes no
+longer show the replaced exercise's plan load, Upload shows live steps, finish footer full width.
+Pending: owner phone check. Next: workout customization redesign (owner item 4, to be agreed).
 
 [039 — Check-in reminder and workout menu](tasks/039-checkin-reminder-and-workout-menu.md): code
 done and checked; Mon/Wed/Fri 08:00 check-in reminder, Add exercise/Session notes in the header ⋯.
