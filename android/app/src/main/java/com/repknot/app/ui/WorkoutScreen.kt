@@ -232,7 +232,7 @@ private fun SessionScreen(session: WorkoutUiState.Session, vm: WorkoutViewModel,
                 Text(next.row.exerciseName, style = MaterialTheme.typography.titleMedium)
                 notes.activeItemsFor(next.row.exerciseId).firstOrNull()?.let { CoachNoteMarker(it) }
                 Prescription(next.row)
-                PreviousHint(next.previous, next.previousOn)
+                PreviousHint(next.previous)
             }
         }
     }
@@ -487,9 +487,9 @@ private fun PrescriptionLine(sets: Int?, repMin: Int?, repMax: Int?, rirMin: Int
 }
 
 @Composable
-private fun PreviousHint(previous: Prefill, previousOn: LocalDate?) {
-    if (previous is Prefill.Previous && previousOn != null) {
-        Text(lastLabel(previousOn, LocalDate.now()), color = MaterialTheme.colorScheme.onSurfaceVariant)
+private fun PreviousHint(previous: Prefill) {
+    // Up next shows last time's sets only; the date is on the exercise card (owner, 2026-11-19).
+    if (previous is Prefill.Previous && previous.sets.isNotEmpty()) {
         Text(previousSummary(previous.sets), color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }

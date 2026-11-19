@@ -2,19 +2,11 @@ package com.repknot.app
 
 import com.repknot.domain.LoadUnit
 import com.repknot.domain.PastSet
-import java.time.LocalDate
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class PreviousSummaryTest {
-    private val today = LocalDate.of(2026, 11, 1)
     private val set = PastSet(0, 25.0, LoadUnit.KG, 10.0, null, null)
-
-    @Test fun labels() {
-        listOf(0L to "today", 1L to "yesterday", 2L to "2 days ago", 6L to "6 days ago", 7L to "Oct 25", 20L to "Oct 12").forEach { (days, label) ->
-            assertEquals("Last · $label", lastLabel(today.minusDays(days), today))
-        }
-    }
 
     @Test fun summaries() {
         assertEquals("3 sets · 25 kg × 10, 10, 9", previousSummary(listOf(set, set, set.copy(reps = 9.0))))

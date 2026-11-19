@@ -104,6 +104,9 @@ fill about half of Home today; the coach brief starts near the middle.
   mid-rest, flat tertiary at target; animator scale 0 keeps the wave still; font scale 1.3 Home and
   sheet fit. Check-in-due row not seen (test day is not a reminder day; JVM-tested).
 
+- Owner follow-up (2026-11-19): the wave was too lively; now wavelength 40 dp, amplitude 2 dp,
+  one wavelength per 3 s. Up next drops the "Last · <date>" line and keeps last time's sets.
+
 ## Handoff
 - Done. Owner checks on the phone: Home with the coach brief expanded, Preview | Start, Other
   workouts, the check-in row on a Mon/Wed/Fri morning, wavy rest and upload bars.

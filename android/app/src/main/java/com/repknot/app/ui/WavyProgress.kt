@@ -35,10 +35,10 @@ fun WavyLinearProgress(progress: () -> Float, modifier: Modifier = Modifier,
     // Compose's infinite animation clock stops when the system duration scale is zero.
     val phase by rememberInfiniteTransition(label = "wave").animateFloat(
         initialValue = 0f, targetValue = 1f,
-        animationSpec = infiniteRepeatable(tween(1000, easing = LinearEasing), RepeatMode.Restart), label = "phase")
+        animationSpec = infiniteRepeatable(tween(3000, easing = LinearEasing), RepeatMode.Restart), label = "phase")
     Canvas(modifier.height(10.dp).semantics { progressBarRangeInfo = ProgressBarRangeInfo(target, 0f..1f) }) {
         val stroke = 4.dp.toPx()
-        val wavelength = 32.dp.toPx()
+        val wavelength = 40.dp.toPx()
         val radius = stroke / 2f
         val start = radius
         val end = (size.width - radius).coerceAtLeast(start)
@@ -46,13 +46,13 @@ fun WavyLinearProgress(progress: () -> Float, modifier: Modifier = Modifier,
         val center = size.height / 2f
         if (value > 0f && split > start) {
             val path = Path().apply {
-                moveTo(start, center + 3.dp.toPx() * amplitude * sin((-phase * 2f * PI).toFloat()))
+                moveTo(start, center + 2.dp.toPx() * amplitude * sin((-phase * 2f * PI).toFloat()))
                 var x = start + 1.dp.toPx()
                 while (x < split) {
-                    lineTo(x, center + 3.dp.toPx() * amplitude * sin(((x - start) / wavelength - phase) * 2f * PI.toFloat()))
+                    lineTo(x, center + 2.dp.toPx() * amplitude * sin(((x - start) / wavelength - phase) * 2f * PI.toFloat()))
                     x += 1.dp.toPx()
                 }
-                lineTo(split, center + 3.dp.toPx() * amplitude * sin(((split - start) / wavelength - phase) * 2f * PI.toFloat()))
+                lineTo(split, center + 2.dp.toPx() * amplitude * sin(((split - start) / wavelength - phase) * 2f * PI.toFloat()))
             }
             drawPath(path, color, style = Stroke(width = stroke, cap = StrokeCap.Round))
         }
