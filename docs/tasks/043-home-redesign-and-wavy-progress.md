@@ -74,12 +74,12 @@ fill about half of Home today; the coach brief starts near the middle.
 - [x] 2. Workout card (Preview | Start, Other workouts), sheet with per-row Preview/Start, selection
       state removed; coach brief moved under the card and expanded by default.
 - [x] 3. Current-workout card states (acceptance 3).
-- [ ] 4. `WavyLinearProgress` + use in rest and upload bars.
+- [x] 4. `WavyLinearProgress` + use in rest and upload bars.
 - [ ] 5. `scripts/check --offline` after each step; commit per step; architecture note; this file.
 
 ## Verification
 - Before implementation: `scripts/check --offline` passed (build, lint, JVM tests; most tasks up-to-date).
-- Steps 1–3: `scripts/check --offline` passed after each (build, lint, JVM tests).
+- Steps 1–4: `scripts/check --offline` passed after each (build, lint, JVM tests).
 - `scripts/check --offline` (build, lint, JVM tests) required after each step.
 - Lead: emulator (test2) screenshots of Home without and with a current workout, the Other workouts
   sheet, a rest bar mid-rest and at target, an upload; then install on the owner's phone.
@@ -94,5 +94,5 @@ fill about half of Home today; the coach brief starts near the middle.
   exercise row IDs with a current workout.
 
 ## Handoff
-- Next action: implement step 4. Steps 4–5 remain unfinished.
+- Next action: complete step 5: architecture note, final checks and handoff.
   Lead emulator screenshots and owner phone verification remain pending.

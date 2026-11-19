@@ -45,6 +45,7 @@ import androidx.lifecycle.repeatOnLifecycle
 import kotlinx.coroutines.delay
 import com.repknot.app.ui.HomeScreen
 import com.repknot.app.ui.SettingsButton
+import com.repknot.app.ui.WavyLinearProgress
 import com.repknot.app.ui.coachNoteStyle
 import com.repknot.domain.CoachNoteItem
 import com.repknot.data.ExerciseRow
@@ -275,11 +276,10 @@ private fun RestLine(session: WorkoutUiState.Session, vm: WorkoutViewModel, now:
                 modifier = Modifier.semantics { contentDescription = description },
                 contentPadding = PaddingValues(horizontal = 8.dp)) { Text(restText(target.toLong())) }
         }
-        LinearProgressIndicator(progress = { restProgress(rest.elapsedS, target) },
-            modifier = Modifier.fillMaxWidth().height(4.dp),
+        WavyLinearProgress(progress = { restProgress(rest.elapsedS, target) },
+            modifier = Modifier.fillMaxWidth(),
             color = if (rest.elapsedS >= target) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.primary,
-            trackColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-            strokeCap = androidx.compose.ui.graphics.StrokeCap.Round)
+            trackColor = MaterialTheme.colorScheme.surfaceContainerHighest)
     }
 }
 
@@ -626,16 +626,14 @@ private fun UploadProgress(step: SyncStep) {
         SyncStep.CHECK_INS -> R.string.upload_step_check_ins
         SyncStep.WORKOUTS -> R.string.upload_step_workout
     })
-    val progress by androidx.compose.animation.core.animateFloatAsState(uploadFraction(step), label = "upload")
     Column(Modifier.fillMaxWidth().semantics(mergeDescendants = true) {}, verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             Text(stringResource(R.string.uploading), style = MaterialTheme.typography.titleSmall)
             Text(stringResource(R.string.upload_step_count, step.ordinal + 1, SyncStep.entries.size),
                 style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
-        LinearProgressIndicator(progress = { progress }, modifier = Modifier.fillMaxWidth().height(6.dp),
-            trackColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-            strokeCap = androidx.compose.ui.graphics.StrokeCap.Round)
+        WavyLinearProgress(progress = { uploadFraction(step) }, modifier = Modifier.fillMaxWidth(),
+            trackColor = MaterialTheme.colorScheme.surfaceContainerHighest)
         Text(label, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
