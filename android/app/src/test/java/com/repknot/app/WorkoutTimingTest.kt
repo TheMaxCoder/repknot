@@ -96,4 +96,11 @@ class WorkoutTimingTest {
         assertNull(plan(exercise("e", "press", "Press", 180, listOf(set.copy(loggedAt = null)))))
         assertNull(plan())
     }
+
+    @Test fun uploadBarAdvancesEveryStepAndNeverReachesFull() {
+        val fractions = com.repknot.data.SyncStep.entries.map(::uploadFraction)
+        assertEquals(fractions.sorted(), fractions)
+        assertEquals(fractions.size, fractions.toSet().size)
+        assertTrue(fractions.first() > 0f && fractions.last() < 1f)
+    }
 }

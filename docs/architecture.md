@@ -102,7 +102,9 @@ and the signed-in user's session; RLS restricts every table to its owner. Schema
   retained. Server and phone share the ADR 002 shape (sessions → session exercises →
   sets, exercises referenced by uuid on push). Programs and exercises are read-only on
   the phone and refreshed before sessions. Upload is explicit per workout (task 028):
-  finishing keeps it local; only an Upload tap marks it for push/retry. History includes
+  finishing keeps it local; only an Upload tap marks it for push/retry. While it runs, the
+  footer shows `SessionSync.step` (account, reference, history, check-ins, workouts) with a
+  step bar (task 041). History includes
   those local completed records. Refresh still downloads independently.
 - Check-ins: the phone caches the server's check-ins (replaced on refresh) and keeps
   phone-added ones `pending`; saving one requests a sync, which upserts every pending row by

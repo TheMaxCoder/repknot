@@ -105,6 +105,10 @@ class WorkoutViewModel(
     private val mutableError = MutableStateFlow<Int?>(null)
     val error: StateFlow<Int?> = mutableError.asStateFlow()
     private val actionMutex = Mutex()
+    private val uploading = MutableStateFlow(false)
+    /** Non-null from the Upload tap until it ends: the sync step, or [SyncStep.ACCOUNT] while waiting to start. */
+    val uploadStep: StateFlow<SyncStep?> = combine(uploading, sync.step) { running, step -> if (running) step ?: SyncStep.ACCOUNT else null }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
     init {
         viewModelScope.launch {
@@ -190,7 +194,10 @@ class WorkoutViewModel(
     /** Marks the workout finished. It stays on the phone until Upload is tapped (task 028). */
     fun finish() = action { current.get()?.let { sessions.finishAt(it, now()) } }
     /** Marks the finished workout for upload and pushes it; later syncs retry if this fails. */
-    fun upload() = action { current.get()?.let { if (sessions.requestUpload(it) > 0) sync.refreshAndPush() } }
+    fun upload() {
+        if (!uploading.compareAndSet(false, true)) return
+        action(onEnd = { uploading.value = false }) { current.get()?.let { if (sessions.requestUpload(it) > 0) sync.refreshAndPush() } }
+    }
     /** Back to in progress if the workout was never uploaded. */
     fun resume() = action { current.get()?.let { sessions.resume(it) } }
     fun keepMine() = action { current.get()?.let { sync.keepMine(it) } }
@@ -207,13 +214,15 @@ class WorkoutViewModel(
     private fun exerciseAction(id: String, block: suspend () -> Unit) = action {
         if (sessions.getExercise(id)?.sessionId == current.get()) block()
     }
-    private fun action(block: suspend () -> Unit) {
+    private fun action(onEnd: () -> Unit = {}, block: suspend () -> Unit) {
         viewModelScope.launch {
-            actionMutex.withLock {
-                mutableError.value = null
-                try { block() } catch (e: CancellationException) { throw e }
-                catch (e: Exception) { Log.w("RepknotWorkout", "Action failed; local data retained", e); mutableError.value = R.string.error_sync_action }
-            }
+            try {
+                actionMutex.withLock {
+                    mutableError.value = null
+                    try { block() } catch (e: CancellationException) { throw e }
+                    catch (e: Exception) { Log.w("RepknotWorkout", "Action failed; local data retained", e); mutableError.value = R.string.error_sync_action }
+                }
+            } finally { onEnd() }
         }
     }
     class Factory(private val sessions: SessionDao, private val reference: ReferenceDao, private val sync: SessionSync,

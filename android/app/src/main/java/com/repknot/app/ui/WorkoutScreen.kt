@@ -51,6 +51,7 @@ import com.repknot.data.ExerciseRow
 import com.repknot.data.SessionExerciseRow
 import com.repknot.data.SessionRow
 import com.repknot.data.SetRow
+import com.repknot.data.SyncStep
 import com.repknot.domain.LoadUnit
 import com.repknot.domain.Prefill
 import com.repknot.domain.SetDelta
@@ -303,7 +304,7 @@ private fun SessionActions(session: WorkoutUiState.Session, vm: WorkoutViewModel
         RestStrip(session, vm, now, overrides)
     } else Surface(color = MaterialTheme.colorScheme.surface) {
         Column(Modifier.fillMaxWidth().navigationBarsPadding()) {
-            Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 RestLine(session, vm, now, overrides)
                 FinishSection(session.row, vm, { confirmDiscard = true }) { confirmFinish = true }
             }
@@ -383,7 +384,7 @@ private fun ExerciseCard(exercise: ExerciseUi, choices: List<ExerciseRow>, vm: W
             BoxWithConstraints {
                 val stacked = maxWidth.value / LocalDensity.current.fontScale < 250f
                 val plan = PreviewValues("${row.plannedSets?.toString() ?: "–"} × ${range(row.plannedRepMin, row.plannedRepMax) ?: "–"}",
-                    range(row.plannedRirMin, row.plannedRirMax) ?: "–", loadText(row.plannedLoad, row.plannedUnit) ?: "–")
+                    range(row.plannedRirMin, row.plannedRirMax) ?: "–", sessionPlanLoad(row.plannedLoad, row.plannedUnit, row.substitutedFor != null) ?: "–")
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     if (!stacked) PreviewTableRow("", PreviewValues(stringResource(R.string.preview_sets_reps), stringResource(R.string.label_rir), stringResource(R.string.label_load)), "", header = true)
                     PreviewTableRow(stringResource(R.string.preview_plan), plan, "", stacked = stacked)
@@ -479,25 +480,20 @@ private fun range(min: Int?, max: Int?): String? = when {
     max == null || min == max -> min.toString()
     else -> "$min–$max"
 }
-private fun loadText(load: Double?, unit: String?): String? = when (unit) {
-    "bodyweight" -> "bodyweight"
-    "plates" -> load?.let { "${number(it)}p" }
-    else -> load?.let { listOf(number(it), unit).filterNotNull().joinToString(" ") }
-}
 
 @Composable
 private fun Prescription(row: SessionExerciseRow) {
     PrescriptionLine(row.plannedSets, row.plannedRepMin, row.plannedRepMax, row.plannedRirMin,
-        row.plannedRirMax, row.plannedLoad, row.plannedUnit)
+        row.plannedRirMax, sessionPlanLoad(row.plannedLoad, row.plannedUnit, row.substitutedFor != null))
 }
 
 @Composable
-private fun PrescriptionLine(sets: Int?, repMin: Int?, repMax: Int?, rirMin: Int?, rirMax: Int?, load: Double?, unit: String?) {
+private fun PrescriptionLine(sets: Int?, repMin: Int?, repMax: Int?, rirMin: Int?, rirMax: Int?, load: String?) {
     val parts = listOfNotNull(
         sets?.let { pluralStringResource(R.plurals.prescription_sets, it, it) },
         range(repMin, repMax)?.let { stringResource(R.string.prescription_reps, it) },
         range(rirMin, rirMax)?.let { stringResource(R.string.prescription_rir, it) },
-        loadText(load, unit),
+        load,
     )
     if (parts.isNotEmpty()) Text(parts.joinToString(" · "), color = MaterialTheme.colorScheme.onSurfaceVariant)
 }
@@ -566,49 +562,93 @@ private fun ExercisePicker(choices: List<ExerciseRow>, onDismiss: () -> Unit, on
 @Composable
 private fun FinishSection(row: SessionRow, vm: WorkoutViewModel, requestDiscard: () -> Unit, requestFinish: () -> Unit) {
     val status = row.status
+    val uploadStep by vm.uploadStep.collectAsState()
     val context = LocalContext.current
     val shareTitle = stringResource(R.string.share_workout)
     val clipboardLabel = stringResource(R.string.clipboard_workout)
-    when (status) {
-        "in_progress" -> {
-            OutlinedButton(onClick = requestFinish, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.finish_workout)) }
-        }
-        "finished" -> {
-            val neverUploaded = row.number == null && row.baseRevision == null
-            if (row.uploadRequested) {
-                Text(stringResource(R.string.upload_pending))
-                Button(onClick = vm::upload) { Text(stringResource(R.string.retry_upload)) }
-            } else {
-                // Nothing reaches the server without this tap (task 028).
-                Text(stringResource(R.string.saved_not_uploaded))
-                Button(onClick = vm::upload, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.upload)) }
+    // Full width with even button pairs in every state, so nothing collapses to one side (task 041).
+    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+        val statusStyle = MaterialTheme.typography.bodyMedium
+        val statusColor = MaterialTheme.colorScheme.onSurfaceVariant
+        when (status) {
+            "in_progress" -> {
+                OutlinedButton(onClick = requestFinish, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.finish_workout)) }
             }
-            Row {
-                if (neverUploaded) OutlinedButton(onClick = vm::resume) { Text(stringResource(R.string.resume_workout)) }
-                if (row.discardable()) OutlinedButton(onClick = requestDiscard) { Text(stringResource(R.string.discard)) }
-                if (row.uploadRequested) OutlinedButton(onClick = vm::done) { Text(stringResource(R.string.done)) }
+            "finished" -> {
+                val step = uploadStep
+                if (step != null) UploadProgress(step)
+                else {
+                    // Nothing reaches the server without this tap (task 028).
+                    Text(stringResource(if (row.uploadRequested) R.string.upload_pending else R.string.saved_not_uploaded), style = statusStyle, color = statusColor)
+                    Button(onClick = vm::upload, modifier = Modifier.fillMaxWidth()) {
+                        Text(stringResource(if (row.uploadRequested) R.string.retry_upload else R.string.upload))
+                    }
+                }
+                val neverUploaded = row.number == null && row.baseRevision == null
+                ButtonPair(
+                    first = if (neverUploaded && step == null) ({ OutlinedButton(onClick = vm::resume, modifier = it) { Text(stringResource(R.string.resume_workout)) } }) else null,
+                    second = when {
+                        row.discardable() && step == null -> ({ OutlinedButton(onClick = requestDiscard, modifier = it) { Text(stringResource(R.string.discard)) } })
+                        row.uploadRequested -> ({ OutlinedButton(onClick = vm::done, modifier = it) { Text(stringResource(R.string.done)) } })
+                        else -> null
+                    },
+                )
+            }
+            "pushed" -> {
+                Text(stringResource(R.string.sync_uploaded), style = statusStyle, color = MaterialTheme.colorScheme.primary)
+                Button(onClick = vm::done, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.done)) }
+            }
+            "conflict", "conflict_deleted" -> {
+                Text(stringResource(if (status == "conflict") R.string.sync_conflict else R.string.sync_deleted_conflict), style = statusStyle)
+                ButtonPair(
+                    { Button(onClick = vm::keepMine, modifier = it) { Text(stringResource(R.string.keep_mine)) } },
+                    { OutlinedButton(onClick = vm::takeTheirs, modifier = it) { Text(stringResource(R.string.take_theirs)) } },
+                )
             }
         }
-        "pushed" -> {
-            Text(stringResource(R.string.sync_uploaded))
-            OutlinedButton(onClick = vm::done) { Text(stringResource(R.string.done)) }
-        }
-        "conflict", "conflict_deleted" -> {
-            Text(stringResource(if (status == "conflict") R.string.sync_conflict else R.string.sync_deleted_conflict))
-            Row {
-                Button(onClick = vm::keepMine) { Text(stringResource(R.string.keep_mine)) }
-                OutlinedButton(onClick = vm::takeTheirs) { Text(stringResource(R.string.take_theirs)) }
-            }
-        }
+        if (status != "in_progress") ButtonPair(
+            { OutlinedButton(onClick = { vm.share { text ->
+                val send = Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, text)
+                context.startActivity(Intent.createChooser(send, shareTitle))
+            } }, modifier = it) { Text(stringResource(R.string.share)) } },
+            { OutlinedButton(onClick = { vm.share { text ->
+                context.getSystemService(ClipboardManager::class.java).setPrimaryClip(ClipData.newPlainText(clipboardLabel, text))
+            } }, modifier = it) { Text(stringResource(R.string.copy)) } },
+        )
     }
-    if (status != "in_progress") Row {
-        OutlinedButton(onClick = { vm.share { text ->
-            val send = Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, text)
-            context.startActivity(Intent.createChooser(send, shareTitle))
-        } }) { Text(stringResource(R.string.share)) }
-        OutlinedButton(onClick = { vm.share { text ->
-            context.getSystemService(ClipboardManager::class.java).setPrimaryClip(ClipData.newPlainText(clipboardLabel, text))
-        } }) { Text(stringResource(R.string.copy)) }
+}
+
+/** Up to two buttons sharing the full width evenly; one alone fills it. */
+@Composable
+private fun ButtonPair(first: (@Composable (Modifier) -> Unit)?, second: (@Composable (Modifier) -> Unit)?) {
+    if (first == null && second == null) return
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        first?.invoke(Modifier.weight(1f))
+        second?.invoke(Modifier.weight(1f))
+    }
+}
+
+/** Live upload state: what the sync is doing now, with a bar that advances step by step. */
+@Composable
+private fun UploadProgress(step: SyncStep) {
+    val label = stringResource(when (step) {
+        SyncStep.ACCOUNT -> R.string.upload_step_account
+        SyncStep.REFERENCE -> R.string.upload_step_reference
+        SyncStep.HISTORY -> R.string.upload_step_history
+        SyncStep.CHECK_INS -> R.string.upload_step_check_ins
+        SyncStep.WORKOUTS -> R.string.upload_step_workout
+    })
+    val progress by androidx.compose.animation.core.animateFloatAsState(uploadFraction(step), label = "upload")
+    Column(Modifier.fillMaxWidth().semantics(mergeDescendants = true) {}, verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            Text(stringResource(R.string.uploading), style = MaterialTheme.typography.titleSmall)
+            Text(stringResource(R.string.upload_step_count, step.ordinal + 1, SyncStep.entries.size),
+                style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        LinearProgressIndicator(progress = { progress }, modifier = Modifier.fillMaxWidth().height(6.dp),
+            trackColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+            strokeCap = androidx.compose.ui.graphics.StrokeCap.Round)
+        Text(label, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 

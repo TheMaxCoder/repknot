@@ -52,3 +52,7 @@ fun restAlertPlan(session: WorkoutUiState.Session, overrides: Map<String, Int>):
     val target = restTargetS(exercise.row.exerciseId, exercise.programRestS, overrides)
     return RestAlertPlan(newest.loggedAt!! + target * 1000L, exercise.row.exerciseName, target)
 }
+
+/** Upload bar position while [step] runs: past steps are full, the running one counts half. */
+fun uploadFraction(step: com.repknot.data.SyncStep): Float =
+    (step.ordinal + 0.5f) / com.repknot.data.SyncStep.entries.size

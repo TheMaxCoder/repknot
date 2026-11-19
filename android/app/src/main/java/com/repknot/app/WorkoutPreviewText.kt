@@ -32,6 +32,18 @@ fun previewPlan(p: Prescription) = PreviewValues(
     "${p.sets} × ${previewRange(p.repMin, p.repMax)}",
     previewRange(p.rirMin, p.rirMax), previewLoad(p.load, p.unit))
 
+/**
+ * Load column of a started workout's plan (the row's stored unit text). A substitute keeps the
+ * slot's sets, reps and RIR, but the slot's load and unit belong to the exercise it replaced, so
+ * none is shown (null).
+ */
+fun sessionPlanLoad(load: Double?, unit: String?, substituted: Boolean): String? = when {
+    substituted -> null
+    unit == "bodyweight" -> "bodyweight"
+    unit == "plates" -> load?.let { "${previewNumber(it)}p" }
+    else -> load?.let { listOfNotNull(previewNumber(it), unit).joinToString(" ") }
+}
+
 private fun previewAmount(set: PastSet): String = listOfNotNull(
     set.reps?.let(::previewNumber), set.durationS?.let { "$it s" }
 ).joinToString(" / ").ifEmpty { DASH }

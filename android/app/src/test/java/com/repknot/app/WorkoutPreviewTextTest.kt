@@ -23,6 +23,17 @@ class WorkoutPreviewTextTest {
         assertEquals("–", previewPlan(prescription.copy(load = null)).load)
     }
 
+    @Test fun sessionPlanLoadHidesASubstitutesInheritedLoad() {
+        assertEquals("25 kg", sessionPlanLoad(25.0, "kg", substituted = false))
+        assertEquals("12p", sessionPlanLoad(12.0, "plates", substituted = false))
+        assertEquals("bodyweight", sessionPlanLoad(null, "bodyweight", substituted = false))
+        assertEquals("7.5", sessionPlanLoad(7.5, null, substituted = false))
+        assertEquals(null, sessionPlanLoad(null, "kg", substituted = false))
+        // The slot's load belongs to the exercise that was replaced.
+        assertEquals(null, sessionPlanLoad(25.0, "kg", substituted = true))
+        assertEquals(null, sessionPlanLoad(null, "bodyweight", substituted = true))
+    }
+
     @Test fun lastPreservesAllValuesAndPositions() {
         val previous = Prefill.Previous("s", listOf(set(1), set(2, reps = null, seconds = 30, rir = null), set(3, reps = 8.5, seconds = 20, rir = 0)))
         assertEquals(listOf(PreviewValues("10, 30 s, 8.5 / 20 s", "1, –, 0", "25 kg")), previewLast(previous))
