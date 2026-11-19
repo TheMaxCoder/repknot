@@ -58,7 +58,7 @@ import com.repknot.domain.SetDelta
 import java.time.LocalDate
 
 @Composable
-fun WorkoutScreen(vm: WorkoutViewModel, progress: ProgressUiState, coachNotes: CoachNotesUiState, markSeen: () -> Unit, toggleDone: (Int) -> Unit, openProgress: () -> Unit, openCheckIn: () -> Unit, signedOut: Boolean, openSettings: () -> Unit) {
+fun WorkoutScreen(vm: WorkoutViewModel, progress: ProgressUiState, coachNotes: CoachNotesUiState, expanded: Boolean, setExpanded: (Boolean) -> Unit, markSeen: () -> Unit, toggleDone: (Int) -> Unit, openProgress: () -> Unit, openCheckIn: () -> Unit, signedOut: Boolean, openSettings: () -> Unit) {
     val state by vm.state.collectAsState()
     val error by vm.error.collectAsState()
     val session = state as? WorkoutUiState.Session
@@ -112,7 +112,7 @@ fun WorkoutScreen(vm: WorkoutViewModel, progress: ProgressUiState, coachNotes: C
             when (val current = state) {
                 WorkoutUiState.Loading -> CircularProgressIndicator()
                 WorkoutUiState.NoProgram -> Text(stringResource(R.string.no_program))
-                is WorkoutUiState.Today -> HomeScreen(current, progress, coachNotes, markSeen, toggleDone,
+                is WorkoutUiState.Today -> HomeScreen(current, progress, coachNotes, expanded, setExpanded, markSeen, toggleDone,
                     onPreview = vm::preview, onStart = vm::start, openProgress = openProgress, openCheckIn = openCheckIn)
                 is WorkoutUiState.Session -> SessionScreen(current, vm, coachNotes, { editing = true }) { now }
                 is WorkoutUiState.Preview -> PreviewScreen(current, vm, coachNotes) { editing = true }

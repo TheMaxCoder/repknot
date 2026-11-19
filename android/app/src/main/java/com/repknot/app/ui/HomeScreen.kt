@@ -49,7 +49,7 @@ private fun AttentionRow(title: String, icon: Int, onClick: () -> Unit) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(today: WorkoutUiState.Today, progress: ProgressUiState,
-               coachNotes: CoachNotesUiState, markSeen: () -> Unit, toggleDone: (Int) -> Unit,
+               coachNotes: CoachNotesUiState, expanded: Boolean, setExpanded: (Boolean) -> Unit, markSeen: () -> Unit, toggleDone: (Int) -> Unit,
                onPreview: (String) -> Unit, onStart: (String) -> Unit, openProgress: () -> Unit, openCheckIn: () -> Unit) {
     var choosing by remember { mutableStateOf(false) }
     val workout = today.suggested
@@ -70,7 +70,7 @@ fun HomeScreen(today: WorkoutUiState.Today, progress: ProgressUiState,
             TextButton(onClick = { choosing = true }, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text("Other workouts") }
         }
     }
-    CoachNotesCard(coachNotes, workout.name, exercises.map { it.exerciseId }.toSet(), markSeen, toggleDone)
+    CoachNotesCard(coachNotes, workout.name, exercises.map { it.exerciseId }.toSet(), expanded, setExpanded, markSeen, toggleDone)
     AttentionRows(progress, openProgress, openCheckIn)
     if (choosing) {
         ModalBottomSheet(onDismissRequest = { choosing = false }, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {

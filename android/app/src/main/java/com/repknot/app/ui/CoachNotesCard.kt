@@ -12,7 +12,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
@@ -34,9 +33,8 @@ import java.time.LocalDate
 import java.time.ZoneId
 
 @Composable
-fun CoachNotesCard(state: CoachNotesUiState, workoutName: String, exerciseIds: Set<String>, markSeen: () -> Unit, toggleDone: (Int) -> Unit) {
+fun CoachNotesCard(state: CoachNotesUiState, workoutName: String, exerciseIds: Set<String>, expanded: Boolean, setExpanded: (Boolean) -> Unit, markSeen: () -> Unit, toggleDone: (Int) -> Unit) {
     val note = state.note ?: return
-    var expanded by rememberSaveable(note.id) { mutableStateOf(true) }
     LaunchedEffect(note.id, expanded) { if (expanded) markSeen() }
     val groups = groupCoachNotes(note.items, exerciseIds, state.done)
     val today = LocalDate.now()
@@ -47,7 +45,7 @@ fun CoachNotesCard(state: CoachNotesUiState, workoutName: String, exerciseIds: S
         modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(Modifier.fillMaxWidth().heightIn(min = 48.dp).semantics { stateDescription = description }
-                .clickable(role = Role.Button) { expanded = !expanded; if (expanded) markSeen() },
+                .clickable(role = Role.Button) { setExpanded(!expanded) },
                 horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
                 Surface(shape = CircleShape, color = MaterialTheme.colorScheme.primaryContainer, modifier = Modifier.size(36.dp)) {
                     Box(contentAlignment = Alignment.Center) { Icon(painterResource(R.drawable.ic_coach_notes), null, tint = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.size(24.dp)) }

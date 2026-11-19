@@ -2,6 +2,9 @@ package com.repknot.app
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import kotlinx.coroutines.delay
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.*
@@ -19,6 +22,7 @@ fun AppNavigation(workout: WorkoutViewModel, progress: ProgressViewModel,
                   history: HistoryViewModel, coachNotes: CoachNotesViewModel,
                   checkInRequested: Boolean, checkInOpened: () -> Unit, signedOut: Boolean, settings: @Composable () -> Unit) {
     val coachNotesState by coachNotes.state.collectAsState()
+    var coachExpanded by rememberSaveable(coachNotesState.note?.id) { mutableStateOf(true) }
     val progressState by progress.state.collectAsState()
     val historyState by history.state.collectAsState()
     val workoutState by workout.state.collectAsState()
@@ -83,7 +87,7 @@ fun AppNavigation(workout: WorkoutViewModel, progress: ProgressViewModel,
             }
             Box(Modifier.weight(1f)) {
                 if (showingLogger) holder.SaveableStateProvider("workout") {
-                    WorkoutScreen(workout, progressState, coachNotesState, coachNotes::markSeen, coachNotes::toggleDone, { nav = nav.select(RootTab.PROGRESS) }, openCheckIn, signedOut) { nav = nav.push("settings") }
+                    WorkoutScreen(workout, progressState, coachNotesState, coachExpanded, { coachExpanded = it }, coachNotes::markSeen, coachNotes::toggleDone, { nav = nav.select(RootTab.PROGRESS) }, openCheckIn, signedOut) { nav = nav.push("settings") }
                 } else if (route == "settings") holder.SaveableStateProvider("settings-${nav.selected}") { settings() }
                 else if (route == "body") holder.SaveableStateProvider("body") {
                     BodyScreen(progressState, checkInDialog, { checkInDialog = it }, progress::addCheckIn, progress::deleteCheckIn)
@@ -93,20 +97,34 @@ fun AppNavigation(workout: WorkoutViewModel, progress: ProgressViewModel,
                     WorkoutHistoryScreen(historyState, route.removePrefix("workout:")) { nav = nav.push("exercise:$it") }
                 } else when (nav.selected) {
                     RootTab.HOME -> if (session != null) {
-                        Column(Modifier.fillMaxSize().padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                            Text("Current workout", style = MaterialTheme.typography.headlineMedium)
+                        var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
+                        LaunchedEffect(session.row.id, session.row.status) {
+                            while (session.row.status == "in_progress") { now = System.currentTimeMillis(); delay(1000) }
+                        }
+                        val status = when (session.row.status) {
+                            "in_progress" -> listOfNotNull("In progress", elapsedWorkoutText(session.row.startedAt, now, session.row.status)).joinToString(" · ")
+                            "finished" -> if (session.row.uploadRequested) "Upload pending" else "Saved on this phone · not uploaded"
+                            "pushed" -> "Uploaded"
+                            else -> "Needs a decision"
+                        }
+                        val button = when (session.row.status) {
+                            "in_progress" -> "Resume"
+                            "finished" -> "Review & upload"
+                            else -> "Open"
+                        }
+                        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                             Surface(shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp), color = MaterialTheme.colorScheme.surfaceContainer, modifier = Modifier.fillMaxWidth()) {
-                                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    Text(session.row.title, style = MaterialTheme.typography.titleMedium)
-                                    Button(onClick = { focus = focus.copy(focused = true) }, modifier = Modifier.fillMaxWidth()) {
-                                        Text(if (session.row.status == "in_progress") "Resume workout" else "View workout summary")
-                                    }
+                                Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                                    Text(session.row.title, style = MaterialTheme.typography.displaySmall)
+                                    Text(status, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Button(onClick = { focus = focus.copy(focused = true) }, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text(button) }
                                 }
                             }
+                            CoachNotesCard(coachNotesState, session.row.title, session.exercises.map { it.row.exerciseId }.toSet(), coachExpanded, { coachExpanded = it }, coachNotes::markSeen, coachNotes::toggleDone)
                             AttentionRows(progressState, { nav = nav.select(RootTab.PROGRESS) }, openCheckIn)
                         }
                     } else holder.SaveableStateProvider("workout") {
-                        WorkoutScreen(workout, progressState, coachNotesState, coachNotes::markSeen, coachNotes::toggleDone, { nav = nav.select(RootTab.PROGRESS) }, openCheckIn, signedOut) { nav = nav.push("settings") }
+                        WorkoutScreen(workout, progressState, coachNotesState, coachExpanded, { coachExpanded = it }, coachNotes::markSeen, coachNotes::toggleDone, { nav = nav.select(RootTab.PROGRESS) }, openCheckIn, signedOut) { nav = nav.push("settings") }
                     }
                     RootTab.HISTORY -> holder.SaveableStateProvider("history") {
                         HistoryScreen(historyState, { nav = nav.push("workout:$it") }, { nav = nav.push("exercise:$it") })
