@@ -50,7 +50,7 @@ preview before Start. Background: task 041, task 039 (one ⋯ per screen).
 - Deferred: drag handles, a Swap action, persisting a preview draft across process death.
 
 ## Plan / progress
-- [ ] 1. **Ordering logic (data, JVM-tested)**: new `data/.../ExerciseOrder.kt` with pure functions on
+- [x] 1. **Ordering logic (data, JVM-tested)**: new `data/.../ExerciseOrder.kt` with pure functions on
       `List<SessionExerciseRow>` that return the list renumbered `position = 0..n-1` in list order:
       `moveTo(rows, id, toIndex)`, `insertAt(rows, row, index)`, `remove(rows, id)`,
       `replace(rows, id, exerciseId, exerciseName)` (substitutedFor rule as in
@@ -80,6 +80,7 @@ preview before Start. Background: task 041, task 039 (one ⋯ per screen).
       (workout editing paragraph) and this file.
 
 ## Verification (commands)
+- Step 1: `scripts/check --offline` passed (build, lint, JVM tests).
 - `scripts/check --offline` (build, lint, all JVM tests) after each step.
 - `cd android && ANDROID_SERIAL=emulator-5554 ./gradlew :data:connectedDebugAndroidTest
   -Pandroid.testInstrumentationRunnerArguments.class=com.repknot.data.SessionStoreTest`
@@ -93,5 +94,5 @@ preview before Start. Background: task 041, task 039 (one ⋯ per screen).
 - Preview draft lives in ViewModel memory: lost if Android kills the app before Start (accepted).
 
 ## Handoff
-- Next action: delegate steps 1–5 (`scripts/delegate docs/tasks/042-workout-editor.md`), then lead
-  review + emulator walk-through + phone install.
+- Step 1 complete. Next: implement step 2 DAO transactions and device tests, then run the
+  specified checks. Steps 2–5 and the lead's emulator walk-through remain pending.
