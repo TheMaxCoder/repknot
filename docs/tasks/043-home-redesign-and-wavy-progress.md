@@ -1,6 +1,6 @@
 # 043 — Home redesign and wavy progress
 
-Status: in progress · starting commit `0a28df0`
+Status: blocked · starting commit `0a28df0`
 
 Owner request (2026-11-19), after a UX review by a second model (Sol) and the lead:
 - Keep Preview (often wanted as an overview), add Start next to it: two buttons.
@@ -78,7 +78,8 @@ fill about half of Home today; the coach brief starts near the middle.
 - [ ] 5. `scripts/check --offline` after each step; commit per step; architecture note; this file.
 
 ## Verification
-- `scripts/check --offline` (build, lint, JVM tests) after each step.
+- Before implementation: `scripts/check --offline` passed (build, lint, JVM tests; most tasks up-to-date).
+- `scripts/check --offline` (build, lint, JVM tests) required after each step.
 - Lead: emulator (test2) screenshots of Home without and with a current workout, the Other workouts
   sheet, a rest bar mid-rest and at target, an upload; then install on the owner's phone.
 
@@ -87,7 +88,15 @@ fill about half of Home today; the coach brief starts near the middle.
   Replace with the official `LinearWavyProgressIndicator` once a stable BOM ships Material3 1.5.
 - Home always shows the suggested workout; choosing another workout happens in the sheet by
   previewing or starting it directly (owner: the select-then-preview round trip was the problem).
+- `WorkoutUiState.Session` exposes the session, exercises and choices, but neither the suggested
+  program workout nor the session's program workout. The ViewModel loads the active program only
+  when no session exists. The specified current-session coach grouping therefore needs state wiring
+  outside the listed scope, or a different fallback.
 
 ## Handoff
-- Next action: delegated 2026-11-19
-  (`scripts/delegate docs/tasks/043-home-redesign-and-wavy-progress.md`).
+- Question: May this task change `WorkoutViewModel.kt` to expose the current session's program
+  workout and the suggested workout for coach-note grouping? If neither is available, what grouping
+  should Home use? The listed scope excludes that file, and session state currently exposes neither.
+- Next action: resolve the question, then implement step 1 and run `scripts/check --offline`.
+  Steps 1–5 remain unstarted; no implementation changes are present. Lead emulator screenshots and
+  owner phone verification remain pending.
