@@ -1,6 +1,6 @@
 # 043 — Home redesign and wavy progress
 
-Status: ready (after 042) · starting commit: record when started
+Status: in progress · starting commit `0a28df0`
 
 Owner request (2026-11-19), after a UX review by a second model (Sol) and the lead:
 - Keep Preview (often wanted as an overview), add Start next to it: two buttons.
@@ -89,5 +89,5 @@ fill about half of Home today; the coach brief starts near the middle.
   previewing or starting it directly (owner: the select-then-preview round trip was the problem).
 
 ## Handoff
-- Next action: after 042 is reviewed, record the starting commit and delegate
+- Next action: delegated 2026-11-19
   (`scripts/delegate docs/tasks/043-home-redesign-and-wavy-progress.md`).
