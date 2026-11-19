@@ -13,11 +13,15 @@ the original start load; editing a saved set preserves its recorded unit. Unit c
 per-set logging control. Bodyweight inputs omit load; no conversions are inferred.
 
 The active workout uses a flat focused logger with Plan/Last comparison, saved-set rows,
-filled load/reps entry and RIR controls. The session header has the logger's only ⋯ menu
-(task 039): the current exercise's order/Substitute/Remove, then Add exercise, Session notes,
-Light day, Discard; the footer holds the rest timer and a
-quiet Finish action. Session headers omit date
-and global navigation; selection/preview retain their navigation.
+filled load/reps entry and RIR controls. The session header's ⋯ offers Edit workout, Replace
+current, Session notes, Light day and Discard. The full-list editor moves, inserts, replaces and
+removes rows immediately; unlogged removals offer undo, and logged removals need confirmation.
+Moves retain row identity and associated sets. Structural DAO writes only apply in progress and
+bump the session revision once per change. The editor is also available before Start on an
+in-memory preview draft; closing preview discards it, while Start creates the session from it and
+starts the clock. A draft is lost on process death. The rest strip remains visible during editing;
+the normal footer holds the rest timer and Finish action. Session headers omit date and global
+navigation; selection/preview retain their navigation.
 
 The app shell (task 030, [ADR 004](decisions/004-app-navigation-and-history.md)) has
 Home, History and Progress bottom destinations with independent saveable detail stacks.

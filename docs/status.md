@@ -24,9 +24,12 @@ Updated: 2026-11-19
 
 ## Current task
 
+[042 — Workout editor](tasks/042-workout-editor.md): implementation and automated checks complete;
+lead review and synthetic emulator walk-through pending.
+
 [041 — Gym feedback 2026-11-19](tasks/041-gym-feedback-2026-11-19.md) is done: substitutes no
 longer show the replaced exercise's plan load, Upload shows live steps, finish footer full width.
-Pending: owner phone check. Next: workout customization redesign (owner item 4, to be agreed).
+Pending: owner phone check. The workout customization redesign is task 042.
 
 [039 — Check-in reminder and workout menu](tasks/039-checkin-reminder-and-workout-menu.md): code
 done and checked; Mon/Wed/Fri 08:00 check-in reminder, Add exercise/Session notes in the header ⋯.

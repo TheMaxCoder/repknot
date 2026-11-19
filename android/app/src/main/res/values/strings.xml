@@ -81,7 +81,7 @@
     <string name="replace_current">Replace %1$s</string>
     <string name="edit_workout">Edit workout</string>
     <string name="has_logged_sets">Has logged sets</string>
-    <string name="in_workout"> · in workout</string>
+    <string name="in_workout">\u0020· in workout</string>
     <string name="move_to">Move to…</string>
     <string name="add_after">Add after</string>
     <string name="before_exercise">Before %1$s</string>

@@ -76,12 +76,12 @@ preview before Start. Background: task 041, task 039 (one ⋯ per screen).
 - [x] 4. **UI**: editor screen per acceptance 1–5 (Material 3, dark theme colors, 48 dp targets,
       row semantics "<n>. <name>, <k> sets logged"), menu per 7, View all button per 8, preview Edit per
       9. The rest strip keeps showing while editing a running workout; Finish is hidden while editing.
-- [ ] 5. `scripts/check --offline`; device tests; commit per step; update `docs/architecture.md`
+- [x] 5. `scripts/check --offline`; device tests; commit per step; update `docs/architecture.md`
       (workout editing paragraph) and this file.
 
 ## Verification (commands)
-- Steps 1–4: `scripts/check --offline` passed after each step (build, lint, JVM tests).
-- Step 2: `cd android && ANDROID_SERIAL=emulator-5554 ./gradlew :data:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.repknot.data.SessionStoreTest` passed (7 tests).
+- Steps 1–5: `scripts/check --offline` passed after each step (build, lint, JVM tests).
+- Steps 2 and 5: `cd android && ANDROID_SERIAL=emulator-5554 ./gradlew :data:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.repknot.data.SessionStoreTest` passed (7 tests each). Step 5 printed an emulator-console warning, but the tests ran and passed.
 - `scripts/check --offline` (build, lint, all JVM tests) after each step.
 - `cd android && ANDROID_SERIAL=emulator-5554 ./gradlew :data:connectedDebugAndroidTest
   -Pandroid.testInstrumentationRunnerArguments.class=com.repknot.data.SessionStoreTest`
@@ -97,5 +97,6 @@ preview before Start. Background: task 041, task 039 (one ⋯ per screen).
   transaction and revision changes, including the retained append and relative-move entry points.
 
 ## Handoff
-- Steps 1–4 complete. Next: run the step 5 checks and update architecture notes.
-  The lead's emulator walk-through remains pending.
+- Steps 1–5 complete. Next: the lead must review the commits and run the specified synthetic
+  emulator walk-through, including preview Edit → Start. UI interaction and visual checks remain
+  unverified by the worker. No unfinished changes are intended.
