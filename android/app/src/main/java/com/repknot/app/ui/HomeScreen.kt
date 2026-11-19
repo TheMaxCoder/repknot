@@ -28,7 +28,7 @@ fun AttentionRows(progress: ProgressUiState, openProgress: () -> Unit, openCheck
     var now by remember { mutableStateOf(LocalDateTime.now()) }
     LaunchedEffect(Unit) { while (true) { now = LocalDateTime.now(); delay(60_000) } }
     if (!progress.loading && checkInDue(now, progress.checkIns.mapNotNull { runCatching { LocalDate.parse(it.checkedOn) }.getOrNull() }))
-        AttentionRow("Weight & waist check-in due", R.drawable.ic_nav_progress, openCheckIn)
+        AttentionRow(stringResource(R.string.home_check_in_due), R.drawable.ic_nav_progress, openCheckIn)
     val alert = progress.dipAlert?.let { dipAlertText(it, progress.names) }
         ?: if (progress.declines > 0) pluralStringResource(R.plurals.home_declines, progress.declines, progress.declines) else null
     if (alert != null) AttentionRow(alert, R.drawable.ic_note_focus, openProgress)
@@ -64,10 +64,10 @@ fun HomeScreen(today: WorkoutUiState.Today, progress: ProgressUiState,
                     color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
             }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedButton(onClick = { onPreview(workout.key) }, modifier = Modifier.weight(1f).heightIn(min = 48.dp)) { Text("Preview") }
-                Button(onClick = { onStart(workout.key) }, enabled = exercises.isNotEmpty(), modifier = Modifier.weight(1f).heightIn(min = 48.dp)) { Text("Start") }
+                OutlinedButton(onClick = { onPreview(workout.key) }, modifier = Modifier.weight(1f).heightIn(min = 48.dp)) { Text(stringResource(R.string.home_preview_short)) }
+                Button(onClick = { onStart(workout.key) }, enabled = exercises.isNotEmpty(), modifier = Modifier.weight(1f).heightIn(min = 48.dp)) { Text(stringResource(R.string.home_start)) }
             }
-            TextButton(onClick = { choosing = true }, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text("Other workouts") }
+            TextButton(onClick = { choosing = true }, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text(stringResource(R.string.other_workouts)) }
         }
     }
     CoachNotesCard(coachNotes, workout.name, exercises.map { it.exerciseId }.toSet(), expanded, setExpanded, markSeen, toggleDone)
@@ -75,7 +75,7 @@ fun HomeScreen(today: WorkoutUiState.Today, progress: ProgressUiState,
     if (choosing) {
         ModalBottomSheet(onDismissRequest = { choosing = false }, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
             Column(Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 16.dp)) {
-                Text("Other workouts", style = MaterialTheme.typography.headlineSmall, modifier = Modifier.padding(12.dp))
+                Text(stringResource(R.string.other_workouts), style = MaterialTheme.typography.headlineSmall, modifier = Modifier.padding(12.dp))
                 Column(Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState())) {
                     today.workouts.forEach { item ->
                         Row(Modifier.fillMaxWidth().padding(vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -84,8 +84,8 @@ fun HomeScreen(today: WorkoutUiState.Today, progress: ProgressUiState,
                                 Text(pluralStringResource(R.plurals.preview_exercises, item.exercises.size, item.exercises.size), style = MaterialTheme.typography.bodySmall)
                                 if (item.key == workout.key) Text(stringResource(R.string.home_next), color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelMedium)
                             }
-                            OutlinedButton(onClick = { choosing = false; onPreview(item.key) }, modifier = Modifier.weight(1f).heightIn(min = 48.dp), contentPadding = PaddingValues(horizontal = 8.dp, vertical = 8.dp)) { Text("Preview") }
-                            Button(onClick = { choosing = false; onStart(item.key) }, enabled = item.exercises.isNotEmpty(), modifier = Modifier.weight(1f).heightIn(min = 48.dp), contentPadding = PaddingValues(horizontal = 8.dp, vertical = 8.dp)) { Text("Start") }
+                            OutlinedButton(onClick = { choosing = false; onPreview(item.key) }, modifier = Modifier.weight(1f).heightIn(min = 48.dp), contentPadding = PaddingValues(horizontal = 8.dp, vertical = 8.dp)) { Text(stringResource(R.string.home_preview_short)) }
+                            FilledTonalButton(onClick = { choosing = false; onStart(item.key) }, enabled = item.exercises.isNotEmpty(), modifier = Modifier.weight(1f).heightIn(min = 48.dp), contentPadding = PaddingValues(horizontal = 8.dp, vertical = 8.dp)) { Text(stringResource(R.string.home_start)) }
                         }
                     }
                 }

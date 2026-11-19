@@ -1,6 +1,6 @@
 # 043 — Home redesign and wavy progress
 
-Status: in progress · starting commit `0a28df0`
+Status: done (owner phone check pending) · starting commit `0a28df0`
 
 Owner request (2026-11-19), after a UX review by a second model (Sol) and the lead:
 - Keep Preview (often wanted as an overview), add Start next to it: two buttons.
@@ -93,8 +93,17 @@ fill about half of Home today; the coach brief starts near the middle.
   `CoachNotesCard`: use the suggestion without a current workout, and the session title and session
   exercise row IDs with a current workout.
 
+## Lead review (2026-11-19)
+- `scripts/check --offline` BUILD SUCCESSFUL; lint 27 (one below the pre-task 28).
+- Lead fixes: the new Home text was hardcoded; moved to string resources and removed 12 Home strings
+  the old layout left unused; Start in the Other workouts sheet is tonal (a column of filled buttons
+  was heavy).
+- Emulator (test2): Home without a workout (card, Preview | Start, Other workouts, attention row);
+  with one ("In progress · 18 min", Resume); sheet Preview opens that workout's preview directly;
+  Start → log → finish → upload shows the wavy upload bar, then rotation moves on; rest bar wavy
+  mid-rest, flat tertiary at target; animator scale 0 keeps the wave still; font scale 1.3 Home and
+  sheet fit. Check-in-due row not seen (test day is not a reminder day; JVM-tested).
+
 ## Handoff
-- Implementation is committed in steps. Lead: review the diff from the starting commit and run the
-  specified synthetic emulator screenshots, including large-font layouts and animation scale zero.
-  Owner phone verification remains pending. Keep this task in progress until those checks finish.
-- Review: custom wave rendering and reduced-motion behavior have not been checked on a device.
+- Done. Owner checks on the phone: Home with the coach brief expanded, Preview | Start, Other
+  workouts, the check-in row on a Mon/Wed/Fri morning, wavy rest and upload bars.

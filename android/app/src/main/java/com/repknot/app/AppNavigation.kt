@@ -102,15 +102,15 @@ fun AppNavigation(workout: WorkoutViewModel, progress: ProgressViewModel,
                             while (session.row.status == "in_progress") { now = System.currentTimeMillis(); delay(1000) }
                         }
                         val status = when (session.row.status) {
-                            "in_progress" -> listOfNotNull("In progress", elapsedWorkoutText(session.row.startedAt, now, session.row.status)).joinToString(" · ")
-                            "finished" -> if (session.row.uploadRequested) "Upload pending" else "Saved on this phone · not uploaded"
-                            "pushed" -> "Uploaded"
-                            else -> "Needs a decision"
+                            "in_progress" -> listOfNotNull(stringResource(R.string.home_in_progress), elapsedWorkoutText(session.row.startedAt, now, session.row.status)).joinToString(" · ")
+                            "finished" -> stringResource(if (session.row.uploadRequested) R.string.upload_pending else R.string.saved_not_uploaded)
+                            "pushed" -> stringResource(R.string.sync_uploaded)
+                            else -> stringResource(R.string.home_needs_decision)
                         }
                         val button = when (session.row.status) {
-                            "in_progress" -> "Resume"
-                            "finished" -> "Review & upload"
-                            else -> "Open"
+                            "in_progress" -> stringResource(R.string.home_resume)
+                            "finished" -> stringResource(R.string.home_review_upload)
+                            else -> stringResource(R.string.home_open)
                         }
                         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                             Surface(shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp), color = MaterialTheme.colorScheme.surfaceContainer, modifier = Modifier.fillMaxWidth()) {
