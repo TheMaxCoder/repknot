@@ -1,6 +1,6 @@
 # 042 — Workout editor (customize before and during a workout)
 
-Status: in progress · starting commit `7bff928`
+Status: done (owner phone check pending) · starting commit `7bff928`
 
 Owner request (2026-11-19): customizing a workout (add, remove, move) took a lot of back and
 forth. Design agreed with the owner after a UX review by a second model (Sol) and the lead:
@@ -88,6 +88,13 @@ preview before Start. Background: task 041, task 039 (one ⋯ per screen).
   (the emulator is running; never run device tests without `ANDROID_SERIAL=emulator-5554`).
 - Lead (not the worker): emulator walk-through as test2 — in one editor visit reverse two
   non-adjacent rows, insert one between them, remove a third and undo; preview Edit → Start.
+- Lead review 2026-11-19: re-ran `scripts/check --offline` (BUILD SUCCESSFUL, lint back to the
+  pre-task 28 after removing 12 resources the old menu left unused). Emulator (test2): preview Edit →
+  move first row before the last (one tap, row stays expanded) → remove + Undo (restored in place) →
+  Add after inserts at the right spot, picker marks exercises in the workout → Done shows the draft
+  in the preview → Start creates the session in the edited order with the clock at 0. In-session ⋯:
+  Edit workout, Replace <current>, Session notes, Light day, Discard. Lead polish: 2×2 row actions,
+  Move sheet title, snackbar names the exercise, added rows read "Added · no plan".
 
 ## Decisions / discoveries
 - Owner (2026-11-19): keep "Replace current" in ⋯; build preview editing now (customizing should
@@ -97,6 +104,4 @@ preview before Start. Background: task 041, task 039 (one ⋯ per screen).
   transaction and revision changes, including the retained append and relative-move entry points.
 
 ## Handoff
-- Steps 1–5 complete. Next: the lead must review the commits and run the specified synthetic
-  emulator walk-through, including preview Edit → Start. UI interaction and visual checks remain
-  unverified by the worker. No unfinished changes are intended.
+- Done. Owner checks on the phone: customize before Start and during a workout. Next: task 043.

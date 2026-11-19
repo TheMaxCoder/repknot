@@ -71,12 +71,6 @@
     <string name="log_set">Log set</string>
     <string name="update_set">Update set</string>
     <string name="cancel">Cancel</string>
-    <string name="menu_section_workout">Workout</string>
-    <string name="exercise_order">Order</string>
-    <string name="remove_from_workout">Remove from workout</string>
-    <string name="move_up">Move up</string>
-    <string name="move_down">Move down</string>
-    <string name="substitute">Replace</string>
     <string name="replace">Replace</string>
     <string name="replace_current">Replace %1$s</string>
     <string name="edit_workout">Edit workout</string>
@@ -86,7 +80,9 @@
     <string name="add_after">Add after</string>
     <string name="before_exercise">Before %1$s</string>
     <string name="at_end">At the end</string>
-    <string name="exercise_removed">Exercise removed</string>
+    <string name="exercise_removed">%1$s removed</string>
+    <string name="move_title">Move %1$s to…</string>
+    <string name="added_no_plan">Added · no plan</string>
     <string name="undo">Undo</string>
     <string name="editor_row_description">%1$d. %2$s, %3$s</string>
     <plurals name="editor_logged_sets">
@@ -98,8 +94,6 @@
         <item quantity="other">Remove %1$s and its %2$d logged sets?</item>
     </plurals>
     <string name="remove">Remove</string>
-    <string name="remove_exercise">Remove exercise?</string>
-    <string name="remove_exercise_confirm">Remove %1$s and its logged sets?</string>
     <string name="exercise_notes">Exercise notes</string>
     <string name="choose_exercise">Choose exercise</string>
     <string name="search">Search</string>

@@ -165,9 +165,11 @@ private fun PreviewScreen(preview: WorkoutUiState.Preview, vm: WorkoutViewModel,
                 val stacked = maxWidth.value / LocalDensity.current.fontScale < 250f
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     if (!stacked) PreviewTableRow("", PreviewValues(stringResource(R.string.preview_sets_reps), stringResource(R.string.label_rir), stringResource(R.string.label_load)), "", header = true)
-                    val plan = previewPlan(exercise.prescription)
+                    val row = preview.rows.getOrNull(index)
+                    // An exercise added in the editor has no prescription: show dashes, not "0 × –".
+                    val plan = previewPlan(exercise.prescription).let { if (row != null && row.plannedSets == null) it.copy(reps = "–", rir = "–") else it }
                     PreviewTableRow(stringResource(R.string.preview_plan),
-                        if (preview.rows.getOrNull(index)?.substitutedFor != null) plan.copy(load = "–") else plan, "", stacked = stacked)
+                        if (row?.substitutedFor != null) plan.copy(load = "–") else plan, "", stacked = stacked)
                     if (last.isEmpty()) Text(stringResource(R.string.no_previous_session), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     else last.forEachIndexed { i, values ->
                         PreviewTableRow(stringResource(R.string.preview_last), values, if (i == 0) date else "", stacked = stacked)
@@ -693,7 +695,9 @@ private fun WorkoutOptionsSheet(session: WorkoutUiState.Session, current: Exerci
                     val enabled = exercise.sets.isEmpty()
                     ListItem(headlineContent = { Text(stringResource(R.string.replace_current, exercise.row.exerciseName)) },
                         supportingContent = if (enabled) null else { { Text(stringResource(R.string.has_logged_sets)) } },
-                        leadingContent = { Icon(painterResource(R.drawable.ic_swap), contentDescription = null) },
+                        leadingContent = { Icon(painterResource(R.drawable.ic_swap), contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant) },
+                        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
                         modifier = Modifier.clickable(enabled = enabled, role = Role.Button) { onSubstitute(exercise.row.id) }.padding(horizontal = 8.dp))
                 }
                 HorizontalDivider(Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
