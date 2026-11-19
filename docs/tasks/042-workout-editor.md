@@ -1,6 +1,6 @@
 # 042 — Workout editor (customize before and during a workout)
 
-Status: done (owner phone check pending) · starting commit `7bff928`
+Status: done (owner phone check pending) · starting commit `8e87639`
 
 Owner request (2026-11-19): customizing a workout (add, remove, move) took a lot of back and
 forth. Design agreed with the owner after a UX review by a second model (Sol) and the lead:

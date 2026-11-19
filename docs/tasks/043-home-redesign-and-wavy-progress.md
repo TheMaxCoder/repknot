@@ -1,6 +1,6 @@
 # 043 — Home redesign and wavy progress
 
-Status: done (owner phone check pending) · starting commit `0a28df0`
+Status: done (owner phone check pending) · starting commit `623cfa7`
 
 Owner request (2026-11-19), after a UX review by a second model (Sol) and the lead:
 - Keep Preview (often wanted as an overview), add Start next to it: two buttons.
