@@ -20,6 +20,37 @@ class SessionStoreTest {
         exercises = listOf(exercise("ex-remote", "Bench", ServerSet("00000000-0000-4000-a000-000000000003", 0, 32.5, "kg", 7.0, rir = 3, notes = "set note"))))
     private suspend fun edit(load: Double) = db.logSet(id, db.sessions().sets(id).firstOrNull()?.id ?: setId, load)
 
+    @Test fun structuralEditsKeepSetsAndFinishedSessionsAreImmutable() = runBlocking {
+        val dao = db.sessions()
+        dao.put(draft(id))
+        val a = SessionExerciseRow("a", id, 0, "a", "A", notes = "note")
+        val b = SessionExerciseRow("b", id, 1, "b", "B")
+        val c = SessionExerciseRow("c", id, 2, "c", "C")
+        dao.putExercises(listOf(a, b, c))
+        dao.putSets(listOf(SetRow("set-a", id, "a", 0, null, null, 8.0),
+            SetRow("set-b", id, "b", 0, null, null, 8.0)))
+        val revision = dao.get(id)!!.localRevision
+        dao.moveExerciseTo("a", 2)
+        assertEquals(listOf("b", "c", "a"), dao.exercises(id).map { it.id })
+        assertEquals("a", dao.getSet("set-a")!!.sessionExerciseId)
+        assertEquals(revision + 1, dao.get(id)!!.localRevision)
+        val d = SessionExerciseRow("d", id, 0, "d", "D")
+        dao.insertExercise(d, 1)
+        assertEquals(listOf("b", "d", "c", "a"), dao.exercises(id).map { it.id })
+        assertEquals(listOf(0, 1, 2, 3), dao.exercises(id).map { it.position })
+        dao.removeExercise("b")
+        assertNull(dao.getSet("set-b"))
+        assertNotNull(dao.getSet("set-a"))
+        dao.finish(id)
+        val before = dao.snapshot(id)!!
+        dao.moveExerciseTo("a", 0)
+        dao.insertExercise(b, 0)
+        dao.addExercise(b)
+        dao.removeExercise("a")
+        dao.substituteExercise("a", "x", "X")
+        assertEquals(before, dao.snapshot(id))
+    }
+
     @Test fun resumeReopensOnlyAFinishedWorkoutThatWasNeverUploaded() = runBlocking {
         edit(20.0); db.sessions().finishAt(id, 1000L)
         assertEquals(1, db.sessions().resume(id))

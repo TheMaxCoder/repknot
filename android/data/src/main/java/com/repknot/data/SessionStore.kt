@@ -112,32 +112,49 @@ interface SessionDao {
 
     @Transaction
     suspend fun addExercise(row: SessionExerciseRow) {
-        val position = (exercises(row.sessionId).maxOfOrNull { it.position } ?: -1) + 1
-        putExercises(listOf(row.copy(position = position)))
+        insertExercise(row, Int.MAX_VALUE)
+    }
+    @Transaction
+    suspend fun insertExercise(row: SessionExerciseRow, index: Int) {
+        if (get(row.sessionId)?.status != "in_progress" || getExercise(row.id) != null) return
+        val rows = exercises(row.sessionId)
+        putExercises(insertAt(rows, row, index))
         bump(row.sessionId)
     }
     @Transaction
     suspend fun removeExercise(id: String) {
         val row = getExercise(id) ?: return
+        if (get(row.sessionId)?.status != "in_progress") return
+        val rows = exercises(row.sessionId)
         deleteExerciseSets(id)
         deleteExerciseRow(id)
-        putExercises(exercises(row.sessionId).mapIndexed { index, exercise -> exercise.copy(position = index) })
+        putExercises(remove(rows, id))
         bump(row.sessionId)
     }
     @Transaction
     suspend fun moveExercise(id: String, delta: Int) {
         if (delta != -1 && delta != 1) return
         val row = getExercise(id) ?: return
-        val neighbor = exercises(row.sessionId).firstOrNull { it.position == row.position + delta } ?: return
-        putExercises(listOf(row.copy(position = neighbor.position), neighbor.copy(position = row.position)))
+        moveExerciseTo(id, row.position + delta)
+    }
+    @Transaction
+    suspend fun moveExerciseTo(id: String, toIndex: Int) {
+        val row = getExercise(id) ?: return
+        if (get(row.sessionId)?.status != "in_progress") return
+        val rows = exercises(row.sessionId)
+        val updated = moveTo(rows, id, toIndex)
+        if (updated == rows) return
+        putExercises(updated)
         bump(row.sessionId)
     }
     @Transaction
     suspend fun substituteExercise(id: String, exerciseId: String, exerciseName: String) {
         val row = getExercise(id) ?: return
-        val original = row.substitutedFor ?: row.exerciseId
-        putExercises(listOf(row.copy(exerciseId = exerciseId, exerciseName = exerciseName,
-            substitutedFor = if (exerciseId == original) null else original)))
+        if (get(row.sessionId)?.status != "in_progress") return
+        val rows = exercises(row.sessionId)
+        val updated = replace(rows, id, exerciseId, exerciseName)
+        if (updated == rows) return
+        putExercises(updated)
         bump(row.sessionId)
     }
     @Transaction

@@ -58,7 +58,7 @@ preview before Start. Background: task 041, task 039 (one ⋯ per screen).
       `0..size`. JVM tests in `data/src/test/.../ExerciseOrderTest.kt` covering: move first→last,
       last→first, to own index (no change), insert at 0 / middle / end, remove middle, replace and
       replace-back clears `substitutedFor`, positions always contiguous, row ids preserved.
-- [ ] 2. **DAO**: `moveExerciseTo(id, toIndex)`, `insertExercise(row, index)` (row's sessionId set by
+- [x] 2. **DAO**: `moveExerciseTo(id, toIndex)`, `insertExercise(row, index)` (row's sessionId set by
       caller), and make `removeExercise`/`substituteExercise` use the step-1 functions; each in one
       `@Transaction`, each a no-op unless the session is `in_progress`, each `bump`s once on change.
       Keep `moveExercise(id, delta)` working (callers may be removed in step 4; delete it if unused).
@@ -80,7 +80,8 @@ preview before Start. Background: task 041, task 039 (one ⋯ per screen).
       (workout editing paragraph) and this file.
 
 ## Verification (commands)
-- Step 1: `scripts/check --offline` passed (build, lint, JVM tests).
+- Steps 1 and 2: `scripts/check --offline` passed (build, lint, JVM tests).
+- Step 2: `cd android && ANDROID_SERIAL=emulator-5554 ./gradlew :data:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.repknot.data.SessionStoreTest` passed (7 tests).
 - `scripts/check --offline` (build, lint, all JVM tests) after each step.
 - `cd android && ANDROID_SERIAL=emulator-5554 ./gradlew :data:connectedDebugAndroidTest
   -Pandroid.testInstrumentationRunnerArguments.class=com.repknot.data.SessionStoreTest`
@@ -92,7 +93,9 @@ preview before Start. Background: task 041, task 039 (one ⋯ per screen).
 - Owner (2026-11-19): keep "Replace current" in ⋯; build preview editing now (customizing should
   not start the workout clock).
 - Preview draft lives in ViewModel memory: lost if Android kills the app before Start (accepted).
+- Structural DAO operations now check session status and bump the revision on change. Review these
+  transaction and revision changes, including the retained append and relative-move entry points.
 
 ## Handoff
-- Step 1 complete. Next: implement step 2 DAO transactions and device tests, then run the
-  specified checks. Steps 2–5 and the lead's emulator walk-through remain pending.
+- Steps 1–2 complete. Next: implement step 3 ViewModel draft and editing operations, then run
+  the specified checks. Steps 3–5 and the lead's emulator walk-through remain pending.
