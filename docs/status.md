@@ -24,11 +24,14 @@ Updated: 2026-11-19
 
 ## Current task
 
-[043 — Home redesign and wavy progress](tasks/043-home-redesign-and-wavy-progress.md): implementation
-and automated checks complete; lead emulator review and owner phone verification pending.
+[043 — Home redesign and wavy progress](tasks/043-home-redesign-and-wavy-progress.md) is done:
+compact workout card with Preview | Start, Other workouts sheet with per-workout Preview/Start,
+coach brief expanded under the card, attention rows, current-workout states, wavy rest/upload bars.
+Installed on the phone 2026-11-19; owner check pending.
 
-[042 — Workout editor](tasks/042-workout-editor.md): implementation and automated checks complete;
-lead review and synthetic emulator walk-through pending.
+[042 — Workout editor](tasks/042-workout-editor.md) is done: full-list editor (drag handles,
+swipe left to remove with Undo, Move to…, Add after, Replace) before Start and during a workout.
+Installed on the phone 2026-11-19; owner check pending.
 
 [041 — Gym feedback 2026-11-19](tasks/041-gym-feedback-2026-11-19.md) is done: substitutes no
 longer show the replaced exercise's plan load, Upload shows live steps, finish footer full width.
