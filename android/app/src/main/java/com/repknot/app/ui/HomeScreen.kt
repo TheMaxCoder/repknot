@@ -2,19 +2,16 @@ package com.repknot.app.ui
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.selection.selectable
-import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import com.repknot.app.CoachNotesUiState
 import com.repknot.app.ProgressUiState
@@ -25,7 +22,6 @@ import com.repknot.app.dipAlertText
 import java.time.LocalDate
 import java.time.LocalDateTime
 import kotlinx.coroutines.delay
-import com.repknot.domain.ProgramWorkout
 
 @Composable
 fun AttentionRows(progress: ProgressUiState, openProgress: () -> Unit, openCheckIn: () -> Unit) {
@@ -52,67 +48,49 @@ private fun AttentionRow(title: String, icon: Int, onClick: () -> Unit) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen(today: WorkoutUiState.Today, selected: ProgramWorkout, progress: ProgressUiState,
-               coachNotes: CoachNotesUiState, markSeen: () -> Unit, toggleDone: (Int) -> Unit, onSelect: (String) -> Unit, onPreview: (String) -> Unit, openProgress: () -> Unit, openCheckIn: () -> Unit) {
+fun HomeScreen(today: WorkoutUiState.Today, progress: ProgressUiState,
+               coachNotes: CoachNotesUiState, markSeen: () -> Unit, toggleDone: (Int) -> Unit,
+               onPreview: (String) -> Unit, onStart: (String) -> Unit, openProgress: () -> Unit, openCheckIn: () -> Unit) {
     var choosing by remember { mutableStateOf(false) }
-    var pending by remember { mutableStateOf(selected.key) }
-    val exercises = selected.exercises.sortedBy { it.position }
-    Text(stringResource(R.string.home_heading), style = MaterialTheme.typography.headlineMedium)
+    val workout = today.suggested
+    val exercises = workout.exercises.sortedBy { it.position }
     Surface(shape = RoundedCornerShape(8.dp), color = MaterialTheme.colorScheme.surfaceContainer) {
         Column(Modifier.fillMaxWidth().padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(stringResource(if (selected.key == today.suggested.key) R.string.home_next_rotation else R.string.home_selection),
-                    color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelMedium)
-                Text(selected.name, style = MaterialTheme.typography.displaySmall)
-                Text(pluralStringResource(R.plurals.preview_exercises, exercises.size, exercises.size),
+                Text(stringResource(R.string.home_next_rotation), color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelMedium)
+                Text(workout.name, style = MaterialTheme.typography.displaySmall)
+                val count = pluralStringResource(R.plurals.preview_exercises, exercises.size, exercises.size)
+                Text(count + (exercises.firstOrNull()?.let { " · ${it.exerciseName}" } ?: ""),
                     color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
             }
-            if (exercises.isEmpty()) Text(stringResource(R.string.home_empty_exercises))
-            exercises.take(3).forEachIndexed { index, exercise ->
-                Column {
-                    HorizontalDivider()
-                    Row(Modifier.padding(top = 10.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        Text((index + 1).toString().padStart(2, '0'), color = MaterialTheme.colorScheme.primary)
-                        Text(exercise.exerciseName)
-                    }
-                }
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedButton(onClick = { onPreview(workout.key) }, modifier = Modifier.weight(1f).heightIn(min = 48.dp)) { Text("Preview") }
+                Button(onClick = { onStart(workout.key) }, enabled = exercises.isNotEmpty(), modifier = Modifier.weight(1f).heightIn(min = 48.dp)) { Text("Start") }
             }
-            if (exercises.size > 3) Text(stringResource(R.string.home_remaining, exercises.drop(3).joinToString(", ") { it.exerciseName }),
-                color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
-            Button(onClick = { onPreview(selected.key) }, modifier = Modifier.fillMaxWidth()) {
-                Text(stringResource(R.string.home_preview))
-            }
+            TextButton(onClick = { choosing = true }, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) { Text("Other workouts") }
         }
     }
-    TextButton(onClick = { pending = selected.key; choosing = true }, modifier = Modifier.fillMaxWidth()) {
-        Text(stringResource(R.string.home_choose))
-    }
-    CoachNotesCard(coachNotes, selected, markSeen, toggleDone)
+    CoachNotesCard(coachNotes, workout.name, exercises.map { it.exerciseId }.toSet(), markSeen, toggleDone)
     AttentionRows(progress, openProgress, openCheckIn)
     if (choosing) {
-        ModalBottomSheet(onDismissRequest = { choosing = false },
-            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
+        ModalBottomSheet(onDismissRequest = { choosing = false }, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
             Column(Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 16.dp)) {
-                Text(stringResource(R.string.home_choose_title), style = MaterialTheme.typography.headlineSmall,
-                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 12.dp))
-                Column(Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState()).selectableGroup()) {
-                    today.workouts.forEach { workout ->
-                        Row(Modifier.fillMaxWidth().heightIn(min = 48.dp)
-                            .selectable(selected = pending == workout.key, role = Role.RadioButton, onClick = { pending = workout.key })
-                            .padding(horizontal = 12.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Column(Modifier.weight(1f)) {
-                                Text(workout.name, style = MaterialTheme.typography.titleMedium)
-                                Text(pluralStringResource(R.plurals.preview_exercises, workout.exercises.size, workout.exercises.size),
-                                    style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                if (workout.key == today.suggested.key) Text(stringResource(R.string.home_next),
-                                    style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+                Text("Other workouts", style = MaterialTheme.typography.headlineSmall, modifier = Modifier.padding(12.dp))
+                Column(Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState())) {
+                    today.workouts.forEach { item ->
+                        Column(Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Text(item.name, style = MaterialTheme.typography.titleMedium)
+                                if (item.key == workout.key) Text(stringResource(R.string.home_next), color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelMedium)
                             }
-                            RadioButton(selected = pending == workout.key, onClick = null)
+                            Text(pluralStringResource(R.plurals.preview_exercises, item.exercises.size, item.exercises.size), style = MaterialTheme.typography.bodySmall)
+                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                OutlinedButton(onClick = { choosing = false; onPreview(item.key) }, modifier = Modifier.weight(1f).heightIn(min = 48.dp)) { Text("Preview") }
+                                Button(onClick = { choosing = false; onStart(item.key) }, enabled = item.exercises.isNotEmpty(), modifier = Modifier.weight(1f).heightIn(min = 48.dp)) { Text("Start") }
+                            }
                         }
                     }
                 }
-                Button(onClick = { onSelect(pending); choosing = false }, modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
-                    enabled = today.workouts.any { it.key == pending }) { Text(stringResource(R.string.home_use_selected)) }
             }
         }
     }

@@ -63,25 +63,9 @@ fun WorkoutScreen(vm: WorkoutViewModel, progress: ProgressUiState, coachNotes: C
     val error by vm.error.collectAsState()
     val session = state as? WorkoutUiState.Session
     val preview = state as? WorkoutUiState.Preview
-    val today = state as? WorkoutUiState.Today
     var editing by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(session?.row?.id, session?.row?.status, preview?.workout?.key) {
         if (session?.row?.status != "in_progress" && preview == null) editing = false
-    }
-    var selectedProgram by rememberSaveable { mutableStateOf<String?>(null) }
-    var selectedSuggestion by rememberSaveable { mutableStateOf<String?>(null) }
-    var selectedKey by rememberSaveable { mutableStateOf<String?>(null) }
-    val selected = today?.let { current ->
-        current.workouts.firstOrNull {
-            selectedProgram == current.programId && selectedSuggestion == current.suggested.key && it.key == selectedKey
-        } ?: current.suggested
-    }
-    LaunchedEffect(today) {
-        if (today != null) {
-            selectedProgram = today.programId
-            selectedSuggestion = today.suggested.key
-            selectedKey = selected?.key
-        }
     }
     val overrides by vm.restOverrides.collectAsState()
     val context = LocalContext.current
@@ -128,8 +112,8 @@ fun WorkoutScreen(vm: WorkoutViewModel, progress: ProgressUiState, coachNotes: C
             when (val current = state) {
                 WorkoutUiState.Loading -> CircularProgressIndicator()
                 WorkoutUiState.NoProgram -> Text(stringResource(R.string.no_program))
-                is WorkoutUiState.Today -> HomeScreen(current, selected ?: current.suggested, progress, coachNotes, markSeen, toggleDone,
-                    onSelect = { selectedKey = it }, onPreview = vm::preview, openProgress = openProgress, openCheckIn = openCheckIn)
+                is WorkoutUiState.Today -> HomeScreen(current, progress, coachNotes, markSeen, toggleDone,
+                    onPreview = vm::preview, onStart = vm::start, openProgress = openProgress, openCheckIn = openCheckIn)
                 is WorkoutUiState.Session -> SessionScreen(current, vm, coachNotes, { editing = true }) { now }
                 is WorkoutUiState.Preview -> PreviewScreen(current, vm, coachNotes) { editing = true }
             }

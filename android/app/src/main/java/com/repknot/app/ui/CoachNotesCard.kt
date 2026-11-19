@@ -29,16 +29,16 @@ import com.repknot.app.R
 import com.repknot.app.coachDate
 import com.repknot.app.coachNoteDate
 import com.repknot.domain.CoachNoteItem
-import com.repknot.domain.ProgramWorkout
 import com.repknot.domain.groupCoachNotes
 import java.time.LocalDate
 import java.time.ZoneId
 
 @Composable
-fun CoachNotesCard(state: CoachNotesUiState, workout: ProgramWorkout, markSeen: () -> Unit, toggleDone: (Int) -> Unit) {
+fun CoachNotesCard(state: CoachNotesUiState, workoutName: String, exerciseIds: Set<String>, markSeen: () -> Unit, toggleDone: (Int) -> Unit) {
     val note = state.note ?: return
-    var expanded by rememberSaveable(note.id) { mutableStateOf(false) }
-    val groups = groupCoachNotes(note.items, workout.exercises.map { it.exerciseId }.toSet(), state.done)
+    var expanded by rememberSaveable(note.id) { mutableStateOf(true) }
+    LaunchedEffect(note.id, expanded) { if (expanded) markSeen() }
+    val groups = groupCoachNotes(note.items, exerciseIds, state.done)
     val today = LocalDate.now()
     val date = coachNoteDate(note.publishedAt, ZoneId.systemDefault(), today)
     val description = stringResource(if (expanded) R.string.coach_expanded else R.string.coach_collapsed)
@@ -69,7 +69,7 @@ fun CoachNotesCard(state: CoachNotesUiState, workout: ProgramWorkout, markSeen: 
                 val activeCount = note.items.size - groups.done.size
                 val count = if (activeCount == 0 && groups.done.isNotEmpty()) pluralStringResource(R.plurals.coach_all_done, groups.done.size, groups.done.size)
                     else pluralStringResource(R.plurals.coach_note_count, activeCount, activeCount)
-                val relevant = if (groups.forWorkout.isNotEmpty()) " · " + stringResource(R.string.coach_for_count, groups.forWorkout.size, workout.name) else ""
+                val relevant = if (groups.forWorkout.isNotEmpty()) " · " + stringResource(R.string.coach_for_count, groups.forWorkout.size, workoutName) else ""
                 val doneText = if (activeCount > 0 && groups.done.isNotEmpty()) " · " + stringResource(R.string.coach_done_count, groups.done.size) else ""
                 Text(count + relevant + doneText, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
@@ -79,7 +79,7 @@ fun CoachNotesCard(state: CoachNotesUiState, workout: ProgramWorkout, markSeen: 
                     sections.forEachIndexed { index, (title, items) ->
                         if (index > 0) HorizontalDivider()
                         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                            if (sections.size >= 2) Text(if (title == R.string.coach_for_workout) stringResource(title, workout.name) else stringResource(title),
+                            if (sections.size >= 2) Text(if (title == R.string.coach_for_workout) stringResource(title, workoutName) else stringResource(title),
                                 style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             items.forEach { CoachNoteItemRow(it, state.exerciseNames, it.index in state.done) { toggleDone(it.index) } }
                         }
