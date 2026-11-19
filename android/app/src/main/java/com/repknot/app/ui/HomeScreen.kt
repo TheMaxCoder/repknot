@@ -78,16 +78,14 @@ fun HomeScreen(today: WorkoutUiState.Today, progress: ProgressUiState,
                 Text("Other workouts", style = MaterialTheme.typography.headlineSmall, modifier = Modifier.padding(12.dp))
                 Column(Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState())) {
                     today.workouts.forEach { item ->
-                        Column(Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Row(Modifier.fillMaxWidth().padding(vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                                 Text(item.name, style = MaterialTheme.typography.titleMedium)
+                                Text(pluralStringResource(R.plurals.preview_exercises, item.exercises.size, item.exercises.size), style = MaterialTheme.typography.bodySmall)
                                 if (item.key == workout.key) Text(stringResource(R.string.home_next), color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelMedium)
                             }
-                            Text(pluralStringResource(R.plurals.preview_exercises, item.exercises.size, item.exercises.size), style = MaterialTheme.typography.bodySmall)
-                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                OutlinedButton(onClick = { choosing = false; onPreview(item.key) }, modifier = Modifier.weight(1f).heightIn(min = 48.dp)) { Text("Preview") }
-                                Button(onClick = { choosing = false; onStart(item.key) }, enabled = item.exercises.isNotEmpty(), modifier = Modifier.weight(1f).heightIn(min = 48.dp)) { Text("Start") }
-                            }
+                            OutlinedButton(onClick = { choosing = false; onPreview(item.key) }, modifier = Modifier.weight(1f).heightIn(min = 48.dp), contentPadding = PaddingValues(horizontal = 8.dp, vertical = 8.dp)) { Text("Preview") }
+                            Button(onClick = { choosing = false; onStart(item.key) }, enabled = item.exercises.isNotEmpty(), modifier = Modifier.weight(1f).heightIn(min = 48.dp), contentPadding = PaddingValues(horizontal = 8.dp, vertical = 8.dp)) { Text("Start") }
                         }
                     }
                 }

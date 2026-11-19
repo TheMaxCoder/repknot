@@ -75,11 +75,11 @@ fill about half of Home today; the coach brief starts near the middle.
       state removed; coach brief moved under the card and expanded by default.
 - [x] 3. Current-workout card states (acceptance 3).
 - [x] 4. `WavyLinearProgress` + use in rest and upload bars.
-- [ ] 5. `scripts/check --offline` after each step; commit per step; architecture note; this file.
+- [x] 5. `scripts/check --offline` after each step; commit per step; architecture note; this file.
 
 ## Verification
 - Before implementation: `scripts/check --offline` passed (build, lint, JVM tests; most tasks up-to-date).
-- Steps 1–4: `scripts/check --offline` passed after each (build, lint, JVM tests).
+- Steps 1–5: `scripts/check --offline` passed after each (build, lint, JVM tests).
 - `scripts/check --offline` (build, lint, JVM tests) required after each step.
 - Lead: emulator (test2) screenshots of Home without and with a current workout, the Other workouts
   sheet, a rest bar mid-rest and at target, an upload; then install on the owner's phone.
@@ -94,5 +94,7 @@ fill about half of Home today; the coach brief starts near the middle.
   exercise row IDs with a current workout.
 
 ## Handoff
-- Next action: complete step 5: architecture note, final checks and handoff.
-  Lead emulator screenshots and owner phone verification remain pending.
+- Implementation is committed in steps. Lead: review the diff from the starting commit and run the
+  specified synthetic emulator screenshots, including large-font layouts and animation scale zero.
+  Owner phone verification remains pending. Keep this task in progress until those checks finish.
+- Review: custom wave rendering and reduced-motion behavior have not been checked on a device.

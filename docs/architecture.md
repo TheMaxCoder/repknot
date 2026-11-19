@@ -32,15 +32,13 @@ preserves the current session and unsaved input, with Resume/summary access from
 Workout preview retains bottom navigation and its separate Start action. The bar hides
 while the keyboard is open, and outer insets are consumed before nested screen scaffolds.
 
-Home (task 029) shows a flat tonal card for the selected program workout, its actual
-exercise count and ordered exercise teaser, with a separate preview action. A native
-single-choice sheet applies a temporary alternate selection; dismissing it cancels.
-Selection survives navigation/configuration changes and resets when program identity
-or the rotation suggestion changes, or the chosen workout disappears. Home and Progress
-share one ProgressViewModel; Home's attention summary uses its existing recent-decline
-count, with neutral copy while loading or at zero. Selection and preview do not start or
-alter a workout. The Home header has a labeled Settings icon, no app title; Progress is
-available in bottom navigation and the summary shortcut.
+Home (task 043) shows the suggested workout with its count, first exercise, and direct
+Preview and Start actions. The Other workouts sheet offers those actions for each workout;
+there is no persistent alternate selection. A current session replaces the suggestion with
+its title, status and logger action. Coach notes sit directly below the card, followed by
+conditional check-in and training attention rows. The check-in row opens Progress → Body
+with Add check-in, and the training row opens Progress. Preview does not start a workout.
+The Home header has a labeled Settings icon, no app title.
 
 Program versions (task 038, [ADR 006](decisions/006-program-versions-and-coach-publishing.md)):
 the coach workspace publishes new versions directly; the rotation counts sessions from every
@@ -49,8 +47,9 @@ cached version with the active program's key, matched by workout key.
 Coach notes (task 034, [ADR 005](decisions/005-coach-notes.md)): coach tools publish
 append-only briefs with `scripts/repknot publish-notes`; each refresh caches only the newest one
 (Room `coach_notes`, replaced wholesale; a fetch failure never blocks uploads). Home shows it in a
-collapsible card after the workout chooser: items for the selected workout's exercises first, then
-general, then other workouts. The opened brief id is device-local (a New badge until opened).
+collapsible card under the workout card, expanded by default: items for the suggested workout's
+exercises or the current session's exercises first, then general, then other workouts. The opened
+brief id is device-local (a New badge until opened).
 Task 035: items can be marked done on Home (device-local, per brief; hidden elsewhere); the
 logger shows an exercise's notes under its title, and Up next/preview show a one-line marker.
 
@@ -108,7 +107,8 @@ and the signed-in user's session; RLS restricts every table to its owner. Schema
   the phone and refreshed before sessions. Upload is explicit per workout (task 028):
   finishing keeps it local; only an Upload tap marks it for push/retry. While it runs, the
   footer shows `SessionSync.step` (account, reference, history, check-ins, workouts) with a
-  step bar (task 041). History includes
+  animated wavy step bar (tasks 041 and 043). The rest timer uses the same custom indicator,
+which respects system animation duration settings. History includes
   those local completed records. Refresh still downloads independently.
 - Check-ins: the phone caches the server's check-ins (replaced on refresh) and keeps
   phone-added ones `pending`; saving one requests a sync, which upserts every pending row by

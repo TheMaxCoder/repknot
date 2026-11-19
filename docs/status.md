@@ -24,6 +24,9 @@ Updated: 2026-11-19
 
 ## Current task
 
+[043 — Home redesign and wavy progress](tasks/043-home-redesign-and-wavy-progress.md): implementation
+and automated checks complete; lead emulator review and owner phone verification pending.
+
 [042 — Workout editor](tasks/042-workout-editor.md): implementation and automated checks complete;
 lead review and synthetic emulator walk-through pending.
 
