@@ -64,6 +64,10 @@ fun WorkoutScreen(vm: WorkoutViewModel, progress: ProgressUiState, coachNotes: C
     val session = state as? WorkoutUiState.Session
     val preview = state as? WorkoutUiState.Preview
     val today = state as? WorkoutUiState.Today
+    var editing by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(session?.row?.id, session?.row?.status, preview?.workout?.key) {
+        if (session?.row?.status != "in_progress" && preview == null) editing = false
+    }
     var selectedProgram by rememberSaveable { mutableStateOf<String?>(null) }
     var selectedSuggestion by rememberSaveable { mutableStateOf<String?>(null) }
     var selectedKey by rememberSaveable { mutableStateOf<String?>(null) }
@@ -104,15 +108,18 @@ fun WorkoutScreen(vm: WorkoutViewModel, progress: ProgressUiState, coachNotes: C
             notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
     }
     Scaffold(bottomBar = {
-        if (session != null) SessionActions(session, vm, { now }, overrides)
-        if (preview != null) Surface(color = MaterialTheme.colorScheme.surfaceContainer, tonalElevation = 3.dp) {
+        if (session != null && !editing) SessionActions(session, vm, { now }, overrides)
+        if (session != null && editing) RestStrip(session, vm, { now }, overrides)
+        if (preview != null && !editing) Surface(color = MaterialTheme.colorScheme.surfaceContainer, tonalElevation = 3.dp) {
             Button(onClick = { vm.start(preview.workout.key) }, modifier = Modifier.fillMaxWidth()
                 .padding(horizontal = 18.dp, vertical = 12.dp)) {
                 Text(stringResource(R.string.start_workout))
             }
         }
     }) { padding ->
-        Column(Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding).imePadding().verticalScroll(rememberScrollState()).padding(24.dp),
+        if (editing && (preview != null || session?.row?.status == "in_progress")) {
+            WorkoutEditor(session, preview, vm, Modifier.padding(padding).consumeWindowInsets(padding)) { editing = false }
+        } else Column(Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding).imePadding().verticalScroll(rememberScrollState()).padding(24.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)) {
             if (session == null && preview != null) Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                 SettingsButton(signedOut, openSettings)
@@ -123,23 +130,26 @@ fun WorkoutScreen(vm: WorkoutViewModel, progress: ProgressUiState, coachNotes: C
                 WorkoutUiState.NoProgram -> Text(stringResource(R.string.no_program))
                 is WorkoutUiState.Today -> HomeScreen(current, selected ?: current.suggested, progress, coachNotes, markSeen, toggleDone,
                     onSelect = { selectedKey = it }, onPreview = vm::preview, openProgress = openProgress)
-                is WorkoutUiState.Session -> SessionScreen(current, vm, coachNotes) { now }
-                is WorkoutUiState.Preview -> PreviewScreen(current, vm, coachNotes)
+                is WorkoutUiState.Session -> SessionScreen(current, vm, coachNotes, { editing = true }) { now }
+                is WorkoutUiState.Preview -> PreviewScreen(current, vm, coachNotes) { editing = true }
             }
         }
     }
 }
 
 @Composable
-private fun PreviewScreen(preview: WorkoutUiState.Preview, vm: WorkoutViewModel, notes: CoachNotesUiState) {
+private fun PreviewScreen(preview: WorkoutUiState.Preview, vm: WorkoutViewModel, notes: CoachNotesUiState, edit: () -> Unit) {
     BackHandler(onBack = vm::closePreview)
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom) {
         Column(Modifier.weight(1f)) {
             if (preview.suggested) Text(stringResource(R.string.next_workout), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Text(preview.workout.name, style = MaterialTheme.typography.headlineMedium)
         }
-        Text(pluralStringResource(R.plurals.preview_exercises, preview.exercises.size, preview.exercises.size),
-            style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Column(horizontalAlignment = Alignment.End) {
+            TextButton(onClick = edit) { Text(stringResource(R.string.edit)) }
+            Text(pluralStringResource(R.plurals.preview_exercises, preview.exercises.size, preview.exercises.size),
+                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
     }
     preview.exercises.forEachIndexed { index, exercise ->
         Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -155,7 +165,9 @@ private fun PreviewScreen(preview: WorkoutUiState.Preview, vm: WorkoutViewModel,
                 val stacked = maxWidth.value / LocalDensity.current.fontScale < 250f
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     if (!stacked) PreviewTableRow("", PreviewValues(stringResource(R.string.preview_sets_reps), stringResource(R.string.label_rir), stringResource(R.string.label_load)), "", header = true)
-                    PreviewTableRow(stringResource(R.string.preview_plan), previewPlan(exercise.prescription), "", stacked = stacked)
+                    val plan = previewPlan(exercise.prescription)
+                    PreviewTableRow(stringResource(R.string.preview_plan),
+                        if (preview.rows.getOrNull(index)?.substitutedFor != null) plan.copy(load = "–") else plan, "", stacked = stacked)
                     if (last.isEmpty()) Text(stringResource(R.string.no_previous_session), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     else last.forEachIndexed { i, values ->
                         PreviewTableRow(stringResource(R.string.preview_last), values, if (i == 0) date else "", stacked = stacked)
@@ -191,7 +203,7 @@ private fun PreviewTableRow(label: String, values: PreviewValues, date: String, 
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun SessionScreen(session: WorkoutUiState.Session, vm: WorkoutViewModel, notes: CoachNotesUiState, now: () -> Long) {
+private fun SessionScreen(session: WorkoutUiState.Session, vm: WorkoutViewModel, notes: CoachNotesUiState, edit: () -> Unit, now: () -> Long) {
     var picker by rememberSaveable(session.row.id) { mutableStateOf<String?>(null) }
     var selected by rememberSaveable(session.row.id) { mutableStateOf<String?>(null) }
     var showAll by rememberSaveable(session.row.id) { mutableStateOf(false) }
@@ -206,7 +218,7 @@ private fun SessionScreen(session: WorkoutUiState.Session, vm: WorkoutViewModel,
             ElapsedText(session.row, now)
             if (index >= 0) Text(stringResource(R.string.exercise_position, index + 1, session.exercises.size),
                 style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            WorkoutMenu(session, vm, session.exercises.getOrNull(index)) { picker = it }
+            WorkoutMenu(session, vm, session.exercises.getOrNull(index), edit) { picker = it }
         }
     }
     if (session.row.light) Text(stringResource(R.string.light_day), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
@@ -243,8 +255,11 @@ private fun SessionScreen(session: WorkoutUiState.Session, vm: WorkoutViewModel,
             Text("${exercise.row.exerciseName} · ${exercise.sets.size}${exercise.row.plannedSets?.let { " / $it" } ?: ""}")
         }
     }
-    if (picker != null) ExercisePicker(session.choices, onDismiss = { picker = null }) { id ->
-        picker?.let { vm.substitute(it, id) }
+    if (showAll && session.row.status == "in_progress") TextButton(onClick = edit, modifier = Modifier.fillMaxWidth()) {
+        Text(stringResource(R.string.edit_workout))
+    }
+    if (picker != null) ExercisePicker(session.choices, session.exercises.map { it.row.exerciseId }.toSet(), onDismiss = { picker = null }) { id ->
+        picker?.let { vm.replace(it, id) }
         picker = null
     }
 }
@@ -321,35 +336,22 @@ private fun SessionActions(session: WorkoutUiState.Session, vm: WorkoutViewModel
     if (confirmDiscard && session.row.discardable()) DiscardDialog(vm) { confirmDiscard = false }
 }
 
-/**
- * The logger's only ⋯ (task 039), in the session header: the current exercise's actions, then
- * workout actions, then Discard. Reordering keeps the sheet open so several moves take one visit.
- */
+/** The logger's only ⋯, with editing and workout actions. */
 @Composable
-private fun WorkoutMenu(session: WorkoutUiState.Session, vm: WorkoutViewModel, current: ExerciseUi?, substitute: (String) -> Unit) {
+private fun WorkoutMenu(session: WorkoutUiState.Session, vm: WorkoutViewModel, current: ExerciseUi?, edit: () -> Unit, substitute: (String) -> Unit) {
     var menuOpen by rememberSaveable(session.row.id) { mutableStateOf(false) }
-    var picker by rememberSaveable(session.row.id) { mutableStateOf(false) }
     var notesOpen by rememberSaveable(session.row.id) { mutableStateOf(false) }
     var confirmDiscard by rememberSaveable(session.row.id) { mutableStateOf(false) }
-    var removeId by rememberSaveable(session.row.id) { mutableStateOf<String?>(null) }
     var notes by rememberSaveable(session.row.id) { mutableStateOf(session.row.notes.orEmpty()) }
     IconButton(onClick = { menuOpen = true }) {
         Icon(painterResource(R.drawable.ic_more_vert), contentDescription = stringResource(R.string.workout_menu))
     }
     if (menuOpen) WorkoutOptionsSheet(session, current, vm,
         onSubstitute = { menuOpen = false; substitute(it) },
-        onRemove = { menuOpen = false; removeId = it },
-        onAddExercise = { menuOpen = false; picker = true },
+        onEdit = { menuOpen = false; edit() },
         onNotes = { menuOpen = false; notes = session.row.notes.orEmpty(); notesOpen = true },
         onDiscard = { menuOpen = false; confirmDiscard = true }) { menuOpen = false }
     if (confirmDiscard && session.row.discardable()) DiscardDialog(vm) { confirmDiscard = false }
-    session.exercises.firstOrNull { it.row.id == removeId }?.let { target ->
-        AlertDialog(onDismissRequest = { removeId = null }, title = { Text(stringResource(R.string.remove_exercise)) },
-            text = { Text(stringResource(R.string.remove_exercise_confirm, target.row.exerciseName)) },
-            confirmButton = { TextButton(onClick = { vm.removeExercise(target.row.id); removeId = null }) { Text(stringResource(R.string.remove)) } },
-            dismissButton = { TextButton(onClick = { removeId = null }) { Text(stringResource(R.string.cancel)) } })
-    }
-    if (picker) ExercisePicker(session.choices, onDismiss = { picker = false }) { vm.addExercise(it); picker = false }
     if (notesOpen) AlertDialog(onDismissRequest = { notesOpen = false }, title = { Text(stringResource(R.string.session_notes)) },
         text = { OutlinedTextField(notes, { notes = it }, modifier = Modifier.fillMaxWidth()) },
         confirmButton = { TextButton(onClick = { vm.saveSessionNotes(notes); notesOpen = false }) { Text(stringResource(R.string.save_notes)) } },
@@ -545,14 +547,14 @@ private fun SetInput(exercise: ExerciseUi, set: SetRow?, vm: WorkoutViewModel, c
 }
 
 @Composable
-private fun ExercisePicker(choices: List<ExerciseRow>, onDismiss: () -> Unit, onChoose: (String) -> Unit) {
+internal fun ExercisePicker(choices: List<ExerciseRow>, inWorkout: Set<String>, onDismiss: () -> Unit, onChoose: (String) -> Unit) {
     var query by rememberSaveable { mutableStateOf("") }
     AlertDialog(onDismissRequest = onDismiss, title = { Text(stringResource(R.string.choose_exercise)) }, text = {
         Column {
             OutlinedTextField(query, { query = it }, label = { Text(stringResource(R.string.search)) }, singleLine = true)
             Column(Modifier.heightIn(max = 400.dp).verticalScroll(rememberScrollState())) {
                 choices.filter { it.name.contains(query, ignoreCase = true) }.forEach { choice ->
-                    TextButton(onClick = { onChoose(choice.id) }, modifier = Modifier.fillMaxWidth()) { Text(choice.name) }
+                    TextButton(onClick = { onChoose(choice.id) }, modifier = Modifier.fillMaxWidth()) { Text(choice.name + if (choice.id in inWorkout) stringResource(R.string.in_workout) else "") }
                 }
             }
         }
@@ -680,39 +682,22 @@ private fun MenuSection(title: String, subtitle: String? = null) =
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun WorkoutOptionsSheet(session: WorkoutUiState.Session, current: ExerciseUi?, vm: WorkoutViewModel,
-                                onSubstitute: (String) -> Unit, onRemove: (String) -> Unit, onAddExercise: () -> Unit,
+                                onSubstitute: (String) -> Unit, onEdit: () -> Unit,
                                 onNotes: () -> Unit, onDiscard: () -> Unit, onDismiss: () -> Unit) {
     val row = session.row
     ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).navigationBarsPadding().padding(bottom = 16.dp)) {
-            current?.let { exercise ->
-                // Look the position up live: reordering keeps the sheet open.
-                val index = session.exercises.indexOfFirst { it.row.id == exercise.row.id }
-                MenuSection(exercise.row.exerciseName)
-                ListItem(
-                    headlineContent = { Text(stringResource(R.string.exercise_order)) },
-                    supportingContent = { Text(stringResource(R.string.exercise_position, index + 1, session.exercises.size)) },
-                    leadingContent = { Icon(painterResource(R.drawable.ic_reorder), contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant) },
-                    trailingContent = {
-                        Row {
-                            FilledTonalIconButton(onClick = { vm.moveExercise(exercise.row.id, -1) }, enabled = index > 0) {
-                                Icon(painterResource(R.drawable.ic_arrow_up), contentDescription = stringResource(R.string.move_up))
-                            }
-                            FilledTonalIconButton(onClick = { vm.moveExercise(exercise.row.id, 1) }, enabled = index < session.exercises.lastIndex) {
-                                Icon(painterResource(R.drawable.ic_arrow_down), contentDescription = stringResource(R.string.move_down))
-                            }
-                        }
-                    },
-                    colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                    modifier = Modifier.padding(horizontal = 8.dp),
-                )
-                MenuItem(R.drawable.ic_swap, stringResource(R.string.substitute), { onSubstitute(exercise.row.id) })
-                MenuItem(R.drawable.ic_remove_circle, stringResource(R.string.remove_from_workout), { onRemove(exercise.row.id) })
+            if (row.status == "in_progress") {
+                MenuItem(R.drawable.ic_reorder, stringResource(R.string.edit_workout), onEdit)
+                current?.let { exercise ->
+                    val enabled = exercise.sets.isEmpty()
+                    ListItem(headlineContent = { Text(stringResource(R.string.replace_current, exercise.row.exerciseName)) },
+                        supportingContent = if (enabled) null else { { Text(stringResource(R.string.has_logged_sets)) } },
+                        leadingContent = { Icon(painterResource(R.drawable.ic_swap), contentDescription = null) },
+                        modifier = Modifier.clickable(enabled = enabled, role = Role.Button) { onSubstitute(exercise.row.id) }.padding(horizontal = 8.dp))
+                }
                 HorizontalDivider(Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
             }
-            MenuSection(stringResource(R.string.menu_section_workout))
-            MenuItem(R.drawable.ic_add, stringResource(R.string.add_exercise), onAddExercise)
             MenuItem(R.drawable.ic_notes, stringResource(R.string.session_notes), onNotes, supporting = row.notes?.takeIf { it.isNotBlank() })
             ListItem(
                 headlineContent = { Text(stringResource(R.string.light_day)) },
